@@ -41,6 +41,7 @@ import {
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { cn } from '@/lib/utils';
+import { formatDisplayDate } from '../Dashboard/utils';
 import type { GranteeRecord, GranteeSortKey } from '../Dashboard/types';
 
 export const granteeColumns: { key: GranteeSortKey; label: string; group: string }[] = [
@@ -1019,6 +1020,14 @@ export function GranteeView({
                         );
                       }
 
+                      if (['birthday', 'date_tagged', 'date_of_enumeration', 'date_registered', 'date_registered_v2'].includes(col.key)) {
+                        return (
+                          <td key={col.key} className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                            {formatDisplayDate(value)}
+                          </td>
+                        );
+                      }
+
                       return (
                         <td key={col.key} className="px-4 py-3 text-muted-foreground">
                           {value || '—'}
@@ -1258,7 +1267,7 @@ export function GranteeView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">BIRTHDAY</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedGrantee.birthday || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedGrantee.birthday)}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">SEX</span>
@@ -1342,12 +1351,12 @@ export function GranteeView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">DATE_OF_ENUMERATION</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedGrantee.date_of_enumeration || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedGrantee.date_of_enumeration)}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">DATE_REGISTERED (_V2)</span>
                     <p className="font-semibold text-foreground mt-0.5">
-                      {selectedGrantee.date_registered || selectedGrantee.date_registered_v2 || '—'}
+                      {formatDisplayDate(selectedGrantee.date_registered || selectedGrantee.date_registered_v2)}
                     </p>
                   </div>
                 </div>
@@ -1407,7 +1416,7 @@ export function GranteeView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">DATE_TAGGED</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedGrantee.date_tagged || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedGrantee.date_tagged)}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">TAGGED_BY</span>

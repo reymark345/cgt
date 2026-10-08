@@ -54,6 +54,7 @@ Route::middleware('sso.auth')->group(function () {
 
     Route::get('/opening/search', [OpeningController::class, 'search'])->name('opening.search');
     Route::get('/opening/export', [OpeningController::class, 'export'])->name('opening.export');
+    Route::get('/opening/print', [OpeningController::class, 'print'])->name('opening.print');
     Route::post('/opening/store', [OpeningController::class, 'store'])->name('opening.store');
 });
 

@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
   --background: hsl(240 6.6667% 97.0588%);
   --foreground: hsl(210 29.7297% 14.5098%);
   --card: hsl(0 0% 100%);
@@ -58,7 +59,9 @@
   --spacing: 0.25rem;
 }
 
-.dark {
+.dark,
+html.dark {
+  color-scheme: dark;
   --background: hsl(210 25% 7.8431%);
   --foreground: hsl(213.3333 20.9302% 91.5686%);
   --card: hsl(214.2857 24.1379% 11.3725%);
@@ -171,6 +174,209 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ==========================================================================
+   Modern Custom Scrollbar Styling (Cross-Browser)
+   ========================================================================== */
+
+/* Standard W3C Scrollbar (Firefox 64+ & modern browsers) */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.32) transparent;
+}
+
+html.dark,
+.dark,
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+}
+
+/* WebKit / Chromium Browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.28);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.55);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(14, 116, 144, 0.7);
+}
+
+/* Eliminate native Windows 95/classic arrow buttons */
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb,
+html.dark::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.22);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark::-webkit-scrollbar-thumb:hover,
+html.dark ::-webkit-scrollbar-thumb:hover,
+html.dark::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb:active,
+.dark::-webkit-scrollbar-thumb:active,
+html.dark ::-webkit-scrollbar-thumb:active,
+html.dark::-webkit-scrollbar-thumb:active {
+  background-color: rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Specialized Scrollbar Utility Classes
+   -------------------------------------------------------------------------- */
+
+/* 1. Ultra-Thin Pill Scrollbar (Sidebars, compact navigation, dropdown menus) */
+.custom-scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.22);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.45);
+}
+
+.dark .custom-scrollbar-thin::-webkit-scrollbar-thumb,
+html.dark .custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
+.dark .custom-scrollbar-thin:hover::-webkit-scrollbar-thumb,
+html.dark .custom-scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+/* 2. Horizontal Data Table Scrollbar (Easy grip, capsule track, subtle glow) */
+.custom-scrollbar-table,
+.overflow-x-auto {
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.custom-scrollbar-table::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar-table::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(100, 116, 139, 0.06);
+  border-radius: 9999px;
+  margin: 0 4px;
+}
+
+.dark .custom-scrollbar-table::-webkit-scrollbar-track,
+.dark .overflow-x-auto::-webkit-scrollbar-track,
+html.dark .custom-scrollbar-table::-webkit-scrollbar-track,
+html.dark .overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.custom-scrollbar-table::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.32);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar-table::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+
+.dark .custom-scrollbar-table::-webkit-scrollbar-thumb,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb,
+html.dark .custom-scrollbar-table::-webkit-scrollbar-thumb,
+html.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.28);
+}
+
+.dark .custom-scrollbar-table::-webkit-scrollbar-thumb:hover,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+html.dark .custom-scrollbar-table::-webkit-scrollbar-thumb:hover,
+html.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+/* 3. Ghost / Subtle Autohide Scrollbar (Visible only on hover) */
+.custom-scrollbar-ghost {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.25s ease;
+}
+
+.custom-scrollbar-ghost:hover {
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
+}
+
+.dark .custom-scrollbar-ghost:hover,
+html.dark .custom-scrollbar-ghost:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.custom-scrollbar-ghost::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  transition: background-color 0.25s ease;
+}
+
+.custom-scrollbar-ghost:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+}
+
+.dark .custom-scrollbar-ghost:hover::-webkit-scrollbar-thumb,
+html.dark .custom-scrollbar-ghost:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(56, 189, 248, 0.45);
 }
 
 @keyframes live-dot-pulse {

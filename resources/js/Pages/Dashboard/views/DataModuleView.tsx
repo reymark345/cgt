@@ -14,6 +14,7 @@ import {
   Loader2,
   Lock,
   Plus,
+  Printer,
   RefreshCw,
   Scissors,
   Search,
@@ -64,6 +65,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name of Old Grantee',
       'Card Number of Old',
       'Status of Old Grantee',
+      'Action',
     ],
   },
   distribution: {
@@ -296,14 +298,26 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
             {view === 'opening' ? (
-              <a
-                href="/opening/export"
-                download
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Data</span>
-              </a>
+              <>
+                <a
+                  href={debouncedSearch ? `/opening/print?search=${encodeURIComponent(debouncedSearch)}` : '/opening/print'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 text-xs font-semibold text-blue-700 shadow-2xs transition hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25"
+                  title="Open printable LBP Account Opening Form in new tab"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Print Form</span>
+                </a>
+                <a
+                  href="/opening/export"
+                  download
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export Data</span>
+                </a>
+              </>
             ) : (
               <>
                 <button
@@ -406,7 +420,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
         </div>
 
         {/* Table Data Preview */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar-table">
           <table className="w-full min-w-[900px] text-left text-xs">
             <thead className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:bg-secondary/30">
               <tr>
@@ -464,6 +478,18 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                         >
                           {item.status_of_old_grantee || 'Active'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <a
+                          href={`/opening/print?ids=${item.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400"
+                          title="Print Endorsement Form for this grantee"
+                        >
+                          <Printer className="h-3 w-3" />
+                          <span>Print</span>
+                        </a>
                       </td>
                     </tr>
                   ))

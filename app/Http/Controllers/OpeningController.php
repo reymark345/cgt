@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Opening;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OpeningController extends Controller
@@ -121,6 +123,41 @@ class OpeningController extends Controller
             'success' => true,
             'message' => 'Opening record successfully created.',
             'data' => $record,
+        ]);
+    }
+
+    /**
+     * Display printable endorsement letter / account opening request form.
+     */
+    public function print(Request $request): Response
+    {
+        Opening::ensureTableExists();
+
+        $query = Opening::query();
+
+        if ($ids = $request->input('ids')) {
+            $idList = is_array($ids) ? $ids : explode(',', (string) $ids);
+            $query->whereIn('id', array_filter($idList));
+        } elseif ($search = trim((string) $request->input('search', ''))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('item_no', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('household_id_number', 'like', "%{$search}%")
+                    ->orWhere('name_of_new_grantee', 'like', "%{$search}%")
+                    ->orWhere('name_of_old_grantee', 'like', "%{$search}%")
+                    ->orWhere('card_number_of_old', 'like', "%{$search}%")
+                    ->orWhere('status_of_old_grantee', 'like', "%{$search}%");
+            });
+        }
+
+        $records = $query->orderBy('id', 'asc')->get();
+
+        return Inertia::render('OpeningPrint', [
+            'records' => $records,
+            'defaultDate' => now()->format('F d, Y'),
+            'search' => $request->input('search'),
+            'dswdLogoUrl' => asset('images/dswd_caraga_logo.png'),
+            'bagongPilipinasLogoUrl' => asset('images/bagong_pilipinas_logo.png'),
         ]);
     }
 }

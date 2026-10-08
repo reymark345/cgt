@@ -46,7 +46,7 @@ import type {
   PayrollRecord,
   RequestOptionItem,
 } from '../Dashboard/types';
-import { formatAmount } from '../Dashboard/utils';
+import { formatAmount, formatDisplayDate } from '../Dashboard/utils';
 
 type InquiryViewProps = {
   onSetNotice?: (notice: string) => void;
@@ -859,7 +859,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                       <DetailField label="Extension Name" value={result.grantee.ext_name} />
                       <DetailField label="Maiden Name" value={result.grantee.maiden_name} />
                       <DetailField label="Sex" value={result.grantee.sex} />
-                      <DetailField label="Birthday" value={result.grantee.birthday} />
+                      <DetailField label="Birthday" value={formatDisplayDate(result.grantee.birthday)} />
                       <DetailField label="Current Age" value={result.grantee.current_age ? `${result.grantee.current_age} yrs` : '-'} />
                       <DetailField label="Age at Registration" value={result.grantee.age} />
                       <DetailField label="Contact Number" value={result.grantee.contact_number} />
@@ -903,7 +903,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                       <DetailField label="Old Client Status" value={result.grantee.old_client_status} />
                       <DetailField label="Registration Status" value={result.grantee.registration_status} />
                       <DetailField label="Member Status" value={result.grantee.member_status} />
-                      <DetailField label="Date Tagged" value={result.grantee.date_tagged} />
+                      <DetailField label="Date Tagged" value={formatDisplayDate(result.grantee.date_tagged)} />
                       <DetailField label="Tagged By" value={result.grantee.tagged_by} />
                       <DetailField label="CS Category" value={result.grantee.cs_category} />
                       <DetailField label="IP Label / Status" value={result.grantee.ip_label || result.grantee.ip_status} />
@@ -928,8 +928,8 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                         onCopy={(val) => handleCopy(val, 'grantee_lbp')}
                         isCopied={copiedHhid === 'grantee_lbp'}
                       />
-                      <DetailField label="Date Enumerated" value={result.grantee.date_of_enumeration} />
-                      <DetailField label="Date Registered" value={result.grantee.date_registered || result.grantee.date_registered_v2} />
+                      <DetailField label="Date Enumerated" value={formatDisplayDate(result.grantee.date_of_enumeration)} />
+                      <DetailField label="Date Registered" value={formatDisplayDate(result.grantee.date_registered || result.grantee.date_registered_v2)} />
                       <DetailField label="Family ID" value={result.grantee.family_id} />
                       <DetailField label="Final L3 Result" value={result.grantee.final_l3_result} />
                     </div>
@@ -1581,9 +1581,9 @@ function EmvCardDetail({
       {/* Grid of EMV attributes */}
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <DetailField label="Servicing Branch" value={record.lbp_servicing_branch} />
-        <DetailField label="Run Date" value={record.run_date} />
-        <DetailField label="Date Claimed" value={record.date_claimed} highlight={record.date_claimed ? 'emerald' : undefined} />
-        <DetailField label="Agreed Distribution Date" value={record.agreed_distribution_date} />
+        <DetailField label="Run Date" value={formatDisplayDate(record.run_date)} />
+        <DetailField label="Date Claimed" value={formatDisplayDate(record.date_claimed)} highlight={record.date_claimed ? 'emerald' : undefined} />
+        <DetailField label="Agreed Distribution Date" value={formatDisplayDate(record.agreed_distribution_date)} />
         <DetailField label="Beneficiary (EMV)" value={`${record.first_name || ''} ${record.mid_name || ''} ${record.last_name || ''}`.trim()} />
         <DetailField label="Municipality" value={record.municipality} />
         <DetailField label="Barangay" value={record.barangay} />
@@ -1613,7 +1613,7 @@ function EmvCardDetail({
             {record.action_taken && (
               <div>
                 <span className="font-medium text-amber-800 dark:text-amber-300">
-                  Action Taken {record.date_acted ? `(${record.date_acted})` : ''}:
+                  Action Taken {record.date_acted ? `(${formatDisplayDate(record.date_acted)})` : ''}:
                 </span>
                 <p className="mt-0.5 text-foreground">{record.action_taken}</p>
               </div>

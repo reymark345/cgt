@@ -138,7 +138,27 @@ export default function Home({
   const [activeStatus, setActiveStatus] = useState('All');
   const [notice, setNotice] = useState('Ready');
   const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_dark_mode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cgt_dark_mode', String(darkMode));
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [darkMode]);
   const [importingGrantee, setImportingGrantee] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
 

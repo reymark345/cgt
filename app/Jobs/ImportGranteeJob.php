@@ -233,6 +233,12 @@ class ImportGranteeJob implements ShouldQueue
                     $attributes[$k] = $v !== null && $v !== '' ? trim((string) $v) : null;
                 }
 
+                foreach (GranteeSpreadsheetImporter::DATE_COLUMNS as $dCol) {
+                    if (isset($attributes[$dCol])) {
+                        $attributes[$dCol] = GranteeSpreadsheetImporter::normalizeDateValue($attributes[$dCol]);
+                    }
+                }
+
                 $rawHhId = $attributes['hh_id'] ?? null;
                 $rawEntryId = $attributes['entry_id'] ?? null;
 

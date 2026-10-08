@@ -58,7 +58,7 @@ export function UsersView({ users }: UsersViewProps) {
           <h3 className="text-sm font-semibold">User List</h3>
         </div>
 
-        <div className="hidden overflow-x-auto xl:block">
+        <div className="hidden overflow-x-auto xl:block custom-scrollbar-table">
           <table className="w-full min-w-[1180px] text-left text-sm">
             <thead className="bg-secondary text-xs uppercase text-muted-foreground dark:bg-card dark:text-accent-foreground">
               <tr>

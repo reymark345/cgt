@@ -632,7 +632,7 @@ export function DashboardView({
           </Button>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 overflow-x-auto custom-scrollbar-table">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30 text-muted-foreground">

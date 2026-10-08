@@ -299,7 +299,7 @@ export function AppShell({
       </div>
 
       {/* Navigation Groups */}
-      <nav className="mt-4 flex-1 space-y-4 overflow-y-auto pr-0.5">
+      <nav className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1 custom-scrollbar-thin">
         <div>
           <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
             Overview

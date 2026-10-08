@@ -8,6 +8,8 @@ use App\Models\HouseholdRequest;
 use App\Models\Opening;
 use App\Models\PayrollRecord;
 use App\Models\RequestType;
+use App\Support\EmvSpreadsheetImporter;
+use App\Support\GranteeSpreadsheetImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,14 +72,14 @@ class InquiryController extends Controller
                 'ext_name' => (string) ($grantee->ext_name ?? ''),
                 'maiden_name' => (string) ($grantee->maiden_name ?? ''),
                 'contact_number' => (string) ($grantee->contact_number ?? ''),
-                'birthday' => (string) ($grantee->birthday ?? ''),
+                'birthday' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->birthday) ?? (string) ($grantee->birthday ?? ''),
                 'hh_grantee' => (string) ($grantee->hh_grantee ?? ''),
                 'current_age' => (string) ($grantee->current_age ?? ''),
                 'age' => (string) ($grantee->age ?? ''),
                 'sex' => (string) ($grantee->sex ?? ''),
                 'old_client_status' => (string) ($grantee->old_client_status ?? ''),
                 'client_status' => (string) ($grantee->client_status ?? ''),
-                'date_tagged' => (string) ($grantee->date_tagged ?? ''),
+                'date_tagged' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_tagged) ?? (string) ($grantee->date_tagged ?? ''),
                 'tagged_by' => (string) ($grantee->tagged_by ?? ''),
                 'cs_category' => (string) ($grantee->cs_category ?? ''),
                 'member_status' => (string) ($grantee->member_status ?? ''),
@@ -88,9 +90,9 @@ class InquiryController extends Controller
                 'ip_status' => (string) ($grantee->ip_status ?? ''),
                 'payment_mode' => (string) ($grantee->payment_mode ?? ''),
                 'lbp_account' => (string) ($grantee->lbp_account ?? ''),
-                'date_of_enumeration' => (string) ($grantee->date_of_enumeration ?? ''),
-                'date_registered' => (string) ($grantee->date_registered ?? ''),
-                'date_registered_v2' => (string) ($grantee->date_registered_v2 ?? ''),
+                'date_of_enumeration' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_of_enumeration) ?? (string) ($grantee->date_of_enumeration ?? ''),
+                'date_registered' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_registered) ?? (string) ($grantee->date_registered ?? ''),
+                'date_registered_v2' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_registered_v2) ?? (string) ($grantee->date_registered_v2 ?? ''),
                 'family_id' => (string) ($grantee->family_id ?? ''),
                 'rel_to_fam_head' => (string) ($grantee->rel_to_fam_head ?? ''),
                 'selected_family' => (string) ($grantee->selected_family ?? ''),
@@ -118,7 +120,7 @@ class InquiryController extends Controller
                 'barangay' => (string) ($record->barangay ?? ''),
                 'hh_id' => (string) ($record->hh_id ?? ''),
                 'lbp_account' => (string) ($record->lbp_account ?? ''),
-                'run_date' => (string) ($record->run_date ?? ''),
+                'run_date' => EmvSpreadsheetImporter::normalizeDateValue($record->run_date) ?? (string) ($record->run_date ?? ''),
                 'first_name' => (string) ($record->first_name ?? ''),
                 'mid_name' => (string) ($record->mid_name ?? ''),
                 'last_name' => (string) ($record->last_name ?? ''),
@@ -126,12 +128,12 @@ class InquiryController extends Controller
                 'cct_type' => (string) ($record->cct_type ?? ''),
                 'lbp_servicing_branch' => (string) ($record->lbp_servicing_branch ?? ''),
                 'distribution_status' => (string) ($record->distribution_status ?? ''),
-                'date_claimed' => (string) ($record->date_claimed ?? ''),
+                'date_claimed' => EmvSpreadsheetImporter::normalizeDateValue($record->date_claimed) ?? (string) ($record->date_claimed ?? ''),
                 'reason_why_unclaimed' => (string) ($record->reason_why_unclaimed ?? ''),
                 'recommended_action' => (string) ($record->recommended_action ?? ''),
                 'action_taken' => (string) ($record->action_taken ?? ''),
-                'date_acted' => (string) ($record->date_acted ?? ''),
-                'agreed_distribution_date' => (string) ($record->agreed_distribution_date ?? ''),
+                'date_acted' => EmvSpreadsheetImporter::normalizeDateValue($record->date_acted) ?? (string) ($record->date_acted ?? ''),
+                'agreed_distribution_date' => EmvSpreadsheetImporter::normalizeDateValue($record->agreed_distribution_date) ?? (string) ($record->agreed_distribution_date ?? ''),
                 'createdAt' => optional($record->created_at)->format('M d, Y'),
                 'updatedAt' => optional($record->updated_at)->format('M d, Y'),
             ];

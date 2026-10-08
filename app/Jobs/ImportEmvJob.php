@@ -235,6 +235,12 @@ class ImportEmvJob implements ShouldQueue
                     $attributes[$k] = $v !== null && $v !== '' ? trim((string) $v) : null;
                 }
 
+                foreach (EmvSpreadsheetImporter::DATE_COLUMNS as $dCol) {
+                    if (isset($attributes[$dCol])) {
+                        $attributes[$dCol] = EmvSpreadsheetImporter::normalizeDateValue($attributes[$dCol]);
+                    }
+                }
+
                 $rawHhId = $attributes['hh_id'] ?? null;
                 $rawAccount = $attributes['lbp_account'] ?? null;
                 $rawItem = $attributes['item_no'] ?? null;

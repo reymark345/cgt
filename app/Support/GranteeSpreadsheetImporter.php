@@ -52,6 +52,14 @@ class GranteeSpreadsheetImporter
         'final_l3_result',
     ];
 
+    public const DATE_COLUMNS = [
+        'birthday',
+        'date_tagged',
+        'date_of_enumeration',
+        'date_registered',
+        'date_registered_v2',
+    ];
+
     private const HEADER_ALIASES = [
         // REGION
         'region' => 'region',
@@ -540,7 +548,11 @@ class GranteeSpreadsheetImporter
                 foreach ($fullRow as $idx => $val) {
                     $col = $headers[$idx] ?? null;
                     if ($col !== null && $val !== '') {
-                        $row[$col] = $val;
+                        if (in_array($col, self::DATE_COLUMNS, true)) {
+                            $row[$col] = self::normalizeDateValue($val);
+                        } else {
+                            $row[$col] = $val;
+                        }
                         $hasData = true;
                     }
                 }
@@ -607,7 +619,11 @@ class GranteeSpreadsheetImporter
                 if ($col !== null) {
                     $v = trim((string) $val);
                     if ($v !== '') {
-                        $row[$col] = $v;
+                        if (in_array($col, self::DATE_COLUMNS, true)) {
+                            $row[$col] = self::normalizeDateValue($v);
+                        } else {
+                            $row[$col] = $v;
+                        }
                         $hasData = true;
                     }
                 }
@@ -677,7 +693,11 @@ class GranteeSpreadsheetImporter
             foreach ($cells as $idx => $val) {
                 $col = $headers[$idx] ?? null;
                 if ($col !== null && $val !== '') {
-                    $row[$col] = $val;
+                    if (in_array($col, self::DATE_COLUMNS, true)) {
+                        $row[$col] = self::normalizeDateValue($val);
+                    } else {
+                        $row[$col] = $val;
+                    }
                     $hasData = true;
                 }
             }
@@ -821,5 +841,56 @@ class GranteeSpreadsheetImporter
         throw ValidationException::withMessages([
             'file' => 'Could not access the uploaded file on the server. Please verify file permissions or try CSV format.',
         ]);
+    }
+
+    /**
+     * Normalize date string or Excel serial number into ISO format (YYYY-MM-DD).
+     */
+    public static function normalizeDateValue(?string $val): ?string
+    {
+        if ($val === null) {
+            return null;
+        }
+        $val = trim($val);
+        if ($val === '' || $val === '-' || $val === '—' || strtolower($val) === 'null' || strtolower($val) === 'n/a') {
+            return null;
+        }
+
+        // Already YYYY-MM-DD
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $val, $matches)) {
+            return sprintf('%04d-%02d-%02d', (int) $matches[1], (int) $matches[2], (int) $matches[3]);
+        }
+
+        // Numeric Excel serial (e.g. 43207 or 43207.5)
+        if (is_numeric($val) && ! str_contains($val, '-') && ! str_contains($val, '/')) {
+            $num = (float) $val;
+            if ($num >= 1 && $num <= 100000) {
+                $days = (int) floor($num);
+                $timestamp = ($days - 25569) * 86400;
+                return gmdate('Y-m-d', $timestamp);
+            }
+        }
+
+        // MM/DD/YYYY or DD/MM/YYYY
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $val, $matches)) {
+            $first = (int) $matches[1];
+            $second = (int) $matches[2];
+            $year = (int) $matches[3];
+
+            if ($first > 12 && $second <= 12) {
+                // Must be DD/MM/YYYY
+                return sprintf('%04d-%02d-%02d', $year, $second, $first);
+            }
+            // Default to MM/DD/YYYY
+            return sprintf('%04d-%02d-%02d', $year, $first, $second);
+        }
+
+        // Fallback to strtotime if possible
+        $ts = strtotime($val);
+        if ($ts !== false && $ts > 0) {
+            return gmdate('Y-m-d', $ts);
+        }
+
+        return $val;
     }
 }
