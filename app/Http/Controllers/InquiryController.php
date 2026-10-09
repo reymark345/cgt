@@ -8,6 +8,7 @@ use App\Models\HouseholdRequest;
 use App\Models\Opening;
 use App\Models\PayrollRecord;
 use App\Models\RequestType;
+use App\Models\User;
 use App\Support\EmvSpreadsheetImporter;
 use App\Support\GranteeSpreadsheetImporter;
 use Illuminate\Http\JsonResponse;
@@ -222,12 +223,18 @@ class InquiryController extends Controller
         $totalMatches = $grantees->count() + $emvRecords->count() + $payrollRecords->count();
 
         // 4. Query Household Requests
+        $defaultCreator = $this->resolveCurrentUserName($request);
         $requests = HouseholdRequest::where(function ($q) use ($candidates, $stripped) {
             $q->whereIn('hh_id', $candidates);
             if (! empty($stripped) && strlen($stripped) >= 6) {
                 $q->orWhere('hh_id', 'like', "%{$stripped}%");
             }
-        })->orderBy('created_at', 'desc')->get()->map(function (HouseholdRequest $req) {
+        })->orderBy('created_at', 'desc')->get()->map(function (HouseholdRequest $req) use ($defaultCreator) {
+            $creator = $req->created_by;
+            if (empty($creator) || $creator === 'Authorized User') {
+                $creator = $defaultCreator;
+            }
+
             return [
                 'id' => $req->id,
                 'hh_id' => $req->hh_id,
@@ -236,7 +243,7 @@ class InquiryController extends Controller
                 'beneficiary_name' => $req->beneficiary_name,
                 'remarks' => $req->remarks,
                 'status' => $req->status,
-                'created_by' => $req->created_by,
+                'created_by' => $creator,
                 'created_at' => optional($req->created_at)->format('M d, Y h:i A'),
                 'updated_at' => optional($req->updated_at)->format('M d, Y h:i A'),
             ];
@@ -316,9 +323,8 @@ class InquiryController extends Controller
         // Load all requested type rows
         $typeRows = DB::table('request')->whereIn('name', $requestNames)->get()->keyBy('name');
 
-        // Get creator info from session / auth
-        $user = auth()->user() ?? session('user');
-        $creator = is_object($user) ? ($user->name ?? $user->username ?? 'Authorized User') : (is_array($user) ? ($user['name'] ?? 'Authorized User') : 'Authorized User');
+        // Get creator info from session / auth / input
+        $creator = $this->resolveCurrentUserName($request);
 
         $createdRecords = [];
         foreach ($requestNames as $reqName) {
@@ -413,10 +419,16 @@ class InquiryController extends Controller
 
         HouseholdRequest::ensureTableExists();
 
+        $defaultCreator = $this->resolveCurrentUserName($request);
         $requests = HouseholdRequest::where('hh_id', $hhId)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($req) {
+            ->map(function ($req) use ($defaultCreator) {
+                $creator = $req->created_by;
+                if (empty($creator) || $creator === 'Authorized User') {
+                    $creator = $defaultCreator;
+                }
+
                 return [
                     'id' => $req->id,
                     'hh_id' => $req->hh_id,
@@ -425,7 +437,7 @@ class InquiryController extends Controller
                     'beneficiary_name' => $req->beneficiary_name,
                     'remarks' => $req->remarks,
                     'status' => $req->status,
-                    'created_by' => $req->created_by,
+                    'created_by' => $creator,
                     'created_at' => optional($req->created_at)->format('M d, Y h:i A'),
                 ];
             });
@@ -434,6 +446,45 @@ class InquiryController extends Controller
             'success' => true,
             'requests' => $requests,
         ]);
+    }
+
+    /**
+     * Resolve the current authenticated user's full name.
+     */
+    protected function resolveCurrentUserName(Request $request): string
+    {
+        $passed = trim((string) $request->input('created_by', ''));
+        if ($passed !== '' && $passed !== 'Authorized User') {
+            return $passed;
+        }
+
+        $ssoUserId = $request->session()->get('sso_user_id');
+        if ($ssoUserId) {
+            $user = User::find($ssoUserId);
+            if ($user && ! empty($user->name)) {
+                return $user->name;
+            }
+        }
+
+        $sessionUser = session('user');
+        if (is_object($sessionUser) && ! empty($sessionUser->name)) {
+            return $sessionUser->name;
+        }
+        if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
+            return $sessionUser['name'];
+        }
+
+        $authUser = auth()->user();
+        if ($authUser && ! empty($authUser->name)) {
+            return $authUser->name;
+        }
+
+        $firstUser = User::first();
+        if ($firstUser && ! empty($firstUser->name)) {
+            return $firstUser->name;
+        }
+
+        return 'Authorized User';
     }
 
     /**

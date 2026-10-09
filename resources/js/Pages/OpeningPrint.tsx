@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import {
   ArrowLeft,
+  Bold,
   Building2,
   Calendar,
   Check,
@@ -13,7 +14,63 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+const DEFAULT_INTRO_MESSAGE = `This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on June 7, 2022.
+
+The following beneficiary has transferred residence or LBP servicing branch:`;
+
+const DEFAULT_CLOSING_MESSAGE = `With this, we would like to request for **ACCOUNT OPENING** of the above beneficiary.
+
+Attached herewith are the requirements such as duly accomplished enrollment form with recent ID picture, barangay ID/certificate, and photocopy of 4Ps ID.
+
+We are hoping to receive a **report on the new cash card number** within seven (7) banking days from receipt of this request based on the said guideline.
+
+Moreover, we would like to request for **TRANSFER OF FUND** from old account to new account once opened.
+
+Thank you very much for your continued support.`;
+
+function renderFormattedMessage(rawText: string, containerClassName = '') {
+  const paragraphs = rawText
+    .replace(/\r\n/g, '\n')
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
+  if (paragraphs.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={containerClassName}>
+      {paragraphs.map((para, pIdx) => {
+        const lines = para.split('\n');
+        return (
+          <p key={pIdx} className="text-justify text-sm leading-relaxed text-black">
+            {lines.map((line, lIdx) => {
+              const parts = line.split(/(\*\*.*?\*\*)/g);
+              return (
+                <React.Fragment key={lIdx}>
+                  {lIdx > 0 && <br />}
+                  {parts.map((part, partIdx) => {
+                    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                      return (
+                        <strong key={partIdx} className="font-bold">
+                          {part.slice(2, -2)}
+                        </strong>
+                      );
+                    }
+                    return <React.Fragment key={partIdx}>{part}</React.Fragment>;
+                  })}
+                </React.Fragment>
+              );
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 type OpeningRecord = {
   id: number;
@@ -93,12 +150,106 @@ export default function OpeningPrint({
   const [bankAddressLine1, setBankAddressLine1] = useState('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
   const [bankAddressLine2, setBankAddressLine2] = useState('Butuan City');
   const [salutationName, setSalutationName] = useState('Ms. Escalante');
-  const [guidelineDate, setGuidelineDate] = useState('June 7, 2022');
   const [signatoryName, setSignatoryName] = useState('MARI-FLOR A. DOLLAGA-LIBANG');
   const [signatoryTitle, setSignatoryTitle] = useState('Regional Director');
 
+  // Letter body message states with localStorage persistence
+  const introInputRef = useRef<HTMLTextAreaElement>(null);
+  const closingInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const [introMessage, setIntroMessage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_opening_intro_message');
+      if (saved !== null && saved.trim() !== '') {
+        return saved;
+      }
+    }
+    return DEFAULT_INTRO_MESSAGE;
+  });
+
+  const [closingMessage, setClosingMessage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_opening_closing_message');
+      if (saved !== null && saved.trim() !== '') {
+        return saved;
+      }
+    }
+    return DEFAULT_CLOSING_MESSAGE;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cgt_opening_intro_message', introMessage);
+    }
+  }, [introMessage]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cgt_opening_closing_message', closingMessage);
+    }
+  }, [closingMessage]);
+
+  const handleResetIntro = () => {
+    setIntroMessage(DEFAULT_INTRO_MESSAGE);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cgt_opening_intro_message');
+    }
+  };
+
+  const handleResetClosing = () => {
+    setClosingMessage(DEFAULT_CLOSING_MESSAGE);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cgt_opening_closing_message');
+    }
+  };
+
+  const focusIntroEditor = () => {
+    setIsEditorOpen(true);
+    setTimeout(() => {
+      introInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      introInputRef.current?.focus();
+    }, 120);
+  };
+
+  const focusClosingEditor = () => {
+    setIsEditorOpen(true);
+    setTimeout(() => {
+      closingInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      closingInputRef.current?.focus();
+    }, 120);
+  };
+
+  const applyBoldToTextarea = (
+    ref: React.RefObject<HTMLTextAreaElement | null>,
+    currentText: string,
+    setText: (newText: string) => void,
+    placeholderText = 'bold text'
+  ) => {
+    const el = ref.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    if (start !== end) {
+      const selected = currentText.substring(start, end);
+      const replacement = `**${selected}**`;
+      const nextText = currentText.substring(0, start) + replacement + currentText.substring(end);
+      setText(nextText);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start, start + replacement.length);
+      }, 0);
+    } else {
+      const replacement = `**${placeholderText}**`;
+      const nextText = currentText.substring(0, start) + replacement + currentText.substring(end);
+      setText(nextText);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + 2, start + replacement.length - 2);
+      }, 0);
+    }
+  };
+
   // Dynamic pagination settings (default 7 rows on Page 1 to utilize available A4 space)
-  const [customPageIndicator, setCustomPageIndicator] = useState<string>('');
   const [rowsPerPageFirst, setRowsPerPageFirst] = useState<number>(7);
   const [rowsPerPageOther, setRowsPerPageOther] = useState<number>(10);
 
@@ -211,9 +362,6 @@ export default function OpeningPrint({
   const totalPages = pagesData.length;
 
   const getPageInfo = (currentPage: number, total: number) => {
-    if (customPageIndicator && customPageIndicator.trim() !== '') {
-      return customPageIndicator;
-    }
     return `PAGE ${currentPage} of ${total}`;
   };
 
@@ -406,7 +554,7 @@ export default function OpeningPrint({
               <div className="mb-2.5 flex items-center justify-between font-bold text-blue-900 dark:text-blue-200">
                 <span className="flex items-center gap-1.5">
                   <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  Customize Header, Addressee & Signatory
+                  Customize Header, Addressee, Messages & Signatory
                 </span>
                 <button
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -490,32 +638,7 @@ export default function OpeningPrint({
                     value={signatoryTitle}
                   />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                    Page Indicator Override
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 shadow-2xs placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                      onChange={(e) => setCustomPageIndicator(e.target.value)}
-                      placeholder={`Dynamic (e.g. PAGE 1 of ${totalPages})`}
-                      type="text"
-                      value={customPageIndicator}
-                    />
-                    {customPageIndicator ? (
-                      <button
-                        className="absolute right-2 top-1.5 text-[10px] font-medium text-blue-600 hover:underline dark:text-blue-400"
-                        onClick={() => setCustomPageIndicator('')}
-                        type="button"
-                      >
-                        Reset Auto
-                      </button>
-                    ) : null}
-                  </div>
-                  <p className="mt-0.5 text-[10px] text-slate-500">
-                    Leave blank to automatically show {totalPages === 1 ? 'PAGE 1 of 1' : `PAGE 1 of ${totalPages}`}.
-                  </p>
-                </div>
+
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                     Max Rows on Page 1
@@ -531,6 +654,122 @@ export default function OpeningPrint({
                   <p className="mt-0.5 text-[10px] text-slate-500">
                     Default 7. Fits 7 beneficiaries on Page 1 before continuing to Page 2.
                   </p>
+                </div>
+              </div>
+
+              {/* Section 2: Letter Body Messages (Opening & Closing Requests) */}
+              <div className="mt-4 border-t border-blue-200/80 pt-3 dark:border-blue-900/50">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-blue-950 dark:text-blue-200">
+                    <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    Letter Body Messages (Opening &amp; Closing Requests)
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Supports <code className="rounded bg-blue-100 px-1 py-0.5 font-mono text-[10px] text-blue-800 dark:bg-blue-900/60 dark:text-blue-200">**bold**</code> text formatting &amp; multi-line paragraphs
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Introductory Message Card */}
+                  <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Introductory Message (Page 1 - Above Table)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                          onClick={() => applyBoldToTextarea(introInputRef, introMessage, setIntroMessage)}
+                          title="Wrap selection with **bold**"
+                          type="button"
+                        >
+                          <Bold className="h-3 w-3" />
+                          Bold
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                          onClick={handleResetIntro}
+                          title="Reset to official default intro text"
+                          type="button"
+                        >
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          Reset Default
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      ref={introInputRef}
+                      className="w-full flex-1 rounded-md border border-slate-300 bg-slate-50/50 px-2.5 py-2 font-sans text-xs leading-relaxed text-slate-800 shadow-inner focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:focus:bg-slate-800"
+                      onChange={(e) => setIntroMessage(e.target.value)}
+                      placeholder="Enter introductory message paragraphs..."
+                      rows={4}
+                      value={introMessage}
+                    />
+                    <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      Separate paragraphs with a blank line. Appears above the beneficiaries table on Page 1.
+                    </p>
+                  </div>
+
+                  {/* Closing Request & Remarks Card */}
+                  <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Closing Request &amp; Remarks (Last Page - Below Table)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                          onClick={() => applyBoldToTextarea(closingInputRef, closingMessage, setClosingMessage, 'ACCOUNT OPENING')}
+                          title="Wrap selection with **bold**"
+                          type="button"
+                        >
+                          <Bold className="h-3 w-3" />
+                          Bold
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                          onClick={handleResetClosing}
+                          title="Reset to official default closing request text"
+                          type="button"
+                        >
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          Reset Default
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      ref={closingInputRef}
+                      className="w-full flex-1 rounded-md border border-slate-300 bg-slate-50/50 px-2.5 py-2 font-sans text-xs leading-relaxed text-slate-800 shadow-inner focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:focus:bg-slate-800"
+                      onChange={(e) => setClosingMessage(e.target.value)}
+                      placeholder="Enter closing request paragraphs..."
+                      rows={5}
+                      value={closingMessage}
+                    />
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span>Separate paragraphs with a blank line.</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-slate-400">Quick bold:</span>
+                        <button
+                          className="rounded bg-slate-100 px-1 font-mono text-[9px] text-slate-600 hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-300"
+                          onClick={() => {
+                            setClosingMessage((prev) => prev.includes('**ACCOUNT OPENING**') ? prev : prev.replace(/ACCOUNT OPENING/g, '**ACCOUNT OPENING**'));
+                          }}
+                          type="button"
+                        >
+                          **ACCOUNT OPENING**
+                        </button>
+                        <button
+                          className="rounded bg-slate-100 px-1 font-mono text-[9px] text-slate-600 hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-300"
+                          onClick={() => {
+                            setClosingMessage((prev) => prev.includes('**TRANSFER OF FUND**') ? prev : prev.replace(/TRANSFER OF FUND/g, '**TRANSFER OF FUND**'));
+                          }}
+                          type="button"
+                        >
+                          **TRANSFER OF FUND**
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -633,15 +872,18 @@ export default function OpeningPrint({
                           Dear <span className="font-bold">{salutationName}</span>:
                         </div>
 
-                        {/* Body Paragraph 1 */}
-                        <p className="mt-5 text-justify text-sm leading-relaxed text-black print:mt-3">
-                          This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on {guidelineDate}.
-                        </p>
-
-                        {/* Body Paragraph 2 */}
-                        <p className="mt-3 text-justify text-sm leading-relaxed text-black print:mt-2">
-                          The following beneficiary has transferred residence or LBP servicing branch:
-                        </p>
+                        {/* Introductory Body Message (Editable) */}
+                        <div
+                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
+                          onClick={focusIntroEditor}
+                          title="Click to edit introductory message"
+                        >
+                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                            <Edit3 className="h-2.5 w-2.5" />
+                            <span>Edit Message</span>
+                          </div>
+                          {renderFormattedMessage(introMessage, 'space-y-3 print:space-y-2')}
+                        </div>
                       </>
                     ) : (
                       /* Continuation Page Header */
@@ -719,27 +961,17 @@ export default function OpeningPrint({
                     {/* Request Statements and Signatory on the Last Page */}
                     {pageItem.isLastPage && (
                       <>
-                        {/* Request Statements */}
-                        <div className="mt-5 space-y-3 text-justify text-sm leading-relaxed text-black print:mt-3 print:space-y-1.5">
-                          <p>
-                            With this, we would like to request for <span className="font-bold uppercase">ACCOUNT OPENING</span> of the above beneficiary.
-                          </p>
-
-                          <p>
-                            Attached herewith are the requirements such as duly accomplished enrollment form with recent ID picture, barangay ID/certificate, and photocopy of 4Ps ID.
-                          </p>
-
-                          <p>
-                            We are hoping to receive a <span className="font-bold">report on the new cash card number</span> within seven (7) banking days from receipt of this request based on the said guideline.
-                          </p>
-
-                          <p>
-                            Moreover, we would like to request for <span className="font-bold uppercase">TRANSFER OF FUND</span> from old account to new account once opened.
-                          </p>
-
-                          <p className="pt-1 print:pt-0">
-                            Thank you very much for your continued support.
-                          </p>
+                        {/* Closing Request Statements (Editable) */}
+                        <div
+                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
+                          onClick={focusClosingEditor}
+                          title="Click to edit closing request message"
+                        >
+                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                            <Edit3 className="h-2.5 w-2.5" />
+                            <span>Edit Request Message</span>
+                          </div>
+                          {renderFormattedMessage(closingMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
 
                         {/* Signatory Block */}

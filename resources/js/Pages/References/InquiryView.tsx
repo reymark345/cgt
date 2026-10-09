@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
+import { usePage } from '@inertiajs/react';
 import {
   AlertCircle,
   Building2,
@@ -70,6 +71,18 @@ const defaultRequestOptions: RequestOptionItem[] = [
 ];
 
 export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
+  const page = usePage<{
+    auth?: {
+      user?: {
+        id: number;
+        name: string;
+        email?: string | null;
+        username?: string | null;
+      } | null;
+    };
+  }>();
+  const currentUserName = page?.props?.auth?.user?.name || '';
+
   const [searchInput, setSearchInput] = useState(initialQuery || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +104,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const [automatingRequest, setAutomatingRequest] = useState(false);
   const [automateRemarks, setAutomateRemarks] = useState('Automated request batch triggered via Inquiry console');
   const [householdRequestsList, setHouseholdRequestsList] = useState<HouseholdRequestItem[]>([]);
+  const [requestsExpanded, setRequestsExpanded] = useState(false);
   const [requestFeedback, setRequestFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -187,6 +201,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
             setResult(json);
             setActiveEmvIndex(0);
             setHouseholdRequestsList(json.requests || []);
+            setRequestsExpanded(false);
             setSelectedRequests([]);
           });
           if (json.total_matches === 0) {
@@ -232,6 +247,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
     setResult(null);
     setError(null);
     setHouseholdRequestsList([]);
+    setRequestsExpanded(false);
     setRequestFeedback(null);
     setSelectedRequests([]);
     setRequestDropdownOpen(false);
@@ -268,6 +284,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           request_names: selectedRequests,
           beneficiary_name: result.summary?.full_name || '',
           remarks: requestRemarks.trim(),
+          created_by: currentUserName || undefined,
         }),
       });
 
@@ -278,6 +295,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         } else if (data.request) {
           setHouseholdRequestsList((prev) => [data.request, ...prev]);
         }
+        setRequestsExpanded(true);
         setShowRequestModal(false);
         setRequestRemarks('');
         setSelectedRequests([]);
@@ -311,7 +329,23 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   };
 
   const handleExecuteAutomate = async () => {
-    if (!result || !result.display_hhid || selectedRequests.length === 0) return;
+    if (!result || !result.display_hhid) return;
+
+    if (selectedRequests.length === 0) {
+      setAutomatingRequest(true);
+      setTimeout(() => {
+        setAutomatingRequest(false);
+        setShowAutomateModal(false);
+        const successMsg = `⚡ Automated workflow executed for Household ${result.display_hhid}`;
+        setRequestFeedback({
+          type: 'success',
+          message: successMsg,
+        });
+        onSetNotice?.(successMsg);
+        setTimeout(() => setRequestFeedback(null), 6000);
+      }, 500);
+      return;
+    }
 
     setAutomatingRequest(true);
     setRequestFeedback(null);
@@ -335,6 +369,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           request_names: selectedRequests,
           beneficiary_name: result.summary?.full_name || '',
           remarks: automateRemarks.trim() || 'Automated request batch triggered via Inquiry console',
+          created_by: currentUserName || undefined,
         }),
       });
 
@@ -345,6 +380,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         } else if (data.request) {
           setHouseholdRequestsList((prev) => [data.request, ...prev]);
         }
+        setRequestsExpanded(true);
         setShowAutomateModal(false);
         setSelectedRequests([]);
         const successMsg = `⚡ Automated Request: Successfully queued ${selectedRequests.length} request(s) for Household ${result.display_hhid}`;
@@ -714,8 +750,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 <Button
                   type="button"
                   onClick={handleOpenAutomateModal}
-                  disabled={selectedRequests.length === 0 || automatingRequest}
-                  className="h-10 gap-1.5 rounded-xl border border-violet-500/30 bg-violet-600/10 px-4 text-xs font-semibold text-violet-700 hover:bg-violet-600 hover:text-white dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white shadow-xs active:scale-95 transition disabled:opacity-50 disabled:pointer-events-none"
+                  className="h-10 gap-1.5 rounded-xl border border-violet-500/40 bg-violet-600/10 px-4 text-xs font-semibold text-violet-700 hover:bg-violet-600 hover:text-white dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white shadow-xs active:scale-95 transition"
                 >
                   <Sparkles className="h-4 w-4" />
                   Automate Request
@@ -754,8 +789,16 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
           {/* Household Requests History Card */}
           {householdRequestsList.length > 0 && (
-            <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
-              <div className="flex flex-col gap-2 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-all dark:border-border dark:bg-card">
+              <button
+                type="button"
+                onClick={() => setRequestsExpanded((prev) => !prev)}
+                className={cn(
+                  "flex w-full flex-col gap-2 px-6 py-4 text-left transition-colors sm:flex-row sm:items-center sm:justify-between hover:bg-muted/40 cursor-pointer select-none",
+                  requestsExpanded && "border-b border-border/80"
+                )}
+                aria-expanded={requestsExpanded}
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
                     <ClipboardList className="h-5 w-5" />
@@ -770,48 +813,73 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     <p className="text-xs text-muted-foreground">Requests initiated and recorded for this household.</p>
                   </div>
                 </div>
-              </div>
 
-              <div className="divide-y divide-border/60">
-                {householdRequestsList.map((req, idx) => (
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                    {requestsExpanded ? 'Hide Details' : 'View Details'}
+                  </span>
                   <div
-                    key={req.id || idx}
-                    className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between hover:bg-muted/30 transition"
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 bg-background/60 text-muted-foreground transition-transform duration-200",
+                      requestsExpanded && "rotate-180 text-foreground"
+                    )}
                   >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-md bg-indigo-500/15 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                          {req.request_label || req.request_name}
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
-                          <Clock className="h-3 w-3" />
-                          {req.status || 'Pending'}
-                        </span>
-                      </div>
-                      {req.remarks && (
-                        <p className="text-xs text-muted-foreground pt-1">
-                          <span className="font-medium text-foreground">Remarks:</span> {req.remarks}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
-                      {req.created_by && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{req.created_by}</span>
-                        </div>
-                      )}
-                      {req.created_at && (
-                        <div className="flex items-center gap-1 font-mono text-[11px]">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{new Date(req.created_at).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
+                    <ChevronDown className="h-4 w-4" />
                   </div>
-                ))}
-              </div>
+                </div>
+              </button>
+
+              {requestsExpanded && (
+                <div className="divide-y divide-border/60 animate-in fade-in-50 duration-200">
+                  {householdRequestsList.map((req, idx) => (
+                    <div
+                      key={req.id || idx}
+                      className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between hover:bg-muted/30 transition"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-md bg-indigo-500/15 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                            {req.request_label || req.request_name}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                            <Clock className="h-3 w-3" />
+                            {req.status || 'Pending'}
+                          </span>
+                        </div>
+                        {req.remarks && (
+                          <p className="text-xs text-muted-foreground pt-1">
+                            <span className="font-medium text-foreground">Remarks:</span> {req.remarks}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                        {(() => {
+                          const creatorName =
+                            req.created_by && req.created_by !== 'Authorized User'
+                              ? req.created_by
+                              : (currentUserName || req.created_by || 'Authorized User');
+                          return (
+                            <div
+                              className="flex items-center gap-1.5 font-medium text-foreground/90"
+                              title={`Requested by: ${creatorName}`}
+                            >
+                              <User className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                              <span className="truncate max-w-[220px]">{creatorName}</span>
+                            </div>
+                          );
+                        })()}
+                        {req.created_at && (
+                          <div className="flex items-center gap-1 font-mono text-[11px]">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{new Date(req.created_at).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1221,6 +1289,13 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     <span className="font-semibold text-foreground">{result.summary.full_name}</span>
                   </div>
                 )}
+                <div className="mt-1.5 flex items-center justify-between border-t border-border/50 pt-1.5">
+                  <span className="text-muted-foreground">Requested By:</span>
+                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-indigo-500" />
+                    {currentUserName || 'Authorized User'}
+                  </span>
+                </div>
               </div>
 
               {/* Request Type Selector (Multi-select) */}
@@ -1385,7 +1460,15 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 <div className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
                   <span>
-                    This automated workflow will immediately register and queue <strong>{selectedRequests.length}</strong> service request(s) into the household registry with automated verification.
+                    {selectedRequests.length > 0 ? (
+                      <>
+                        This automated workflow will immediately register and queue <strong>{selectedRequests.length}</strong> service request(s) into the household registry with automated verification.
+                      </>
+                    ) : (
+                      <>
+                        This independent automated workflow will execute automated verification and routine processing for Household <strong>{result?.display_hhid}</strong>.
+                      </>
+                    )}
                   </span>
                 </div>
               </div>
@@ -1402,27 +1485,43 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     <span className="font-semibold text-foreground">{result.summary.full_name}</span>
                   </div>
                 )}
+                <div className="mt-1.5 flex items-center justify-between border-t border-border/50 pt-1.5">
+                  <span className="text-muted-foreground">Requested By:</span>
+                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-violet-500" />
+                    {currentUserName || 'Authorized User'}
+                  </span>
+                </div>
               </div>
 
               {/* Requests to Automate */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Requests to Automate ({selectedRequests.length})
-                </label>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto rounded-xl border border-violet-500/20 bg-violet-50/50 p-2 dark:border-violet-500/20 dark:bg-violet-950/20">
-                  {selectedRequests.map((name) => {
-                    const opt = requestOptions.find((o) => o.name === name);
-                    return (
-                      <span
-                        key={name}
-                        className="inline-flex items-center gap-1 rounded-md border border-violet-500/30 bg-background px-2 py-0.5 text-xs font-semibold text-violet-700 shadow-2xs dark:text-violet-300"
-                      >
-                        {opt?.label || name}
-                      </span>
-                    );
-                  })}
+              {selectedRequests.length > 0 ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Requests to Automate ({selectedRequests.length})
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto rounded-xl border border-violet-500/20 bg-violet-50/50 p-2 dark:border-violet-500/20 dark:bg-violet-950/20">
+                    {selectedRequests.map((name) => {
+                      const opt = requestOptions.find((o) => o.name === name);
+                      return (
+                        <span
+                          key={name}
+                          className="inline-flex items-center gap-1 rounded-md border border-violet-500/30 bg-background px-2 py-0.5 text-xs font-semibold text-violet-700 shadow-2xs dark:text-violet-300"
+                        >
+                          {opt?.label || name}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-violet-500/30 bg-violet-500/5 p-3 text-xs text-muted-foreground flex items-center justify-between">
+                  <span className="font-medium text-foreground">Mode:</span>
+                  <span className="rounded-md bg-violet-500/15 px-2 py-0.5 font-semibold text-violet-700 dark:text-violet-300">
+                    Independent Automation Workflow
+                  </span>
+                </div>
+              )}
 
               {/* Automation Remarks */}
               <div className="space-y-1.5">
@@ -1455,7 +1554,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 type="button"
                 size="sm"
                 onClick={handleExecuteAutomate}
-                disabled={automatingRequest || selectedRequests.length === 0}
+                disabled={automatingRequest}
                 className="gap-2 rounded-xl bg-violet-600 px-4 text-white hover:bg-violet-700 active:scale-95 transition disabled:opacity-50"
               >
                 {automatingRequest ? (
@@ -1466,7 +1565,9 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 ) : (
                   <>
                     <Sparkles className="h-3.5 w-3.5" />
-                    Confirm & Automate ({selectedRequests.length})
+                    {selectedRequests.length > 0
+                      ? `Confirm & Automate (${selectedRequests.length})`
+                      : 'Confirm & Automate'}
                   </>
                 )}
               </Button>

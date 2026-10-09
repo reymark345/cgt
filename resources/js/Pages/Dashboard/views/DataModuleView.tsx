@@ -1,8 +1,10 @@
 import {
+  AlertTriangle,
   Archive,
   ArrowRightLeft,
   ArrowUpDown,
   Banknote,
+  CheckCircle2,
   Download,
   FileSpreadsheet,
   FileText,
@@ -19,9 +21,11 @@ import {
   Scissors,
   Search,
   Truck,
+  Undo2,
   Unlock,
   Upload,
   UserX,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -271,6 +275,63 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     }
   }, [view, currentPage, debouncedSearch, fetchOpeningData]);
 
+  const [recordToUndo, setRecordToUndo] = useState<OpeningRecord | null>(null);
+  const [isUndoing, setIsUndoing] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleConfirmUndo = async () => {
+    if (!recordToUndo) return;
+    setIsUndoing(true);
+    setFeedback(null);
+
+    try {
+      const metaToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+      const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+
+      const res = await fetch(`/opening/${recordToUndo.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(metaToken ? { 'X-CSRF-TOKEN': metaToken } : {}),
+          ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+        },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setOpeningRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+        setOpeningTotal((prev) => Math.max(0, prev - 1));
+        setFeedback({
+          type: 'success',
+          message: data.message || `Opening record for Household ${recordToUndo.household_id_number} was successfully undone and removed.`,
+        });
+        setRecordToUndo(null);
+      } else {
+        setFeedback({
+          type: 'error',
+          message: data.message || 'Failed to remove the opening record.',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to undo opening record:', err);
+      setFeedback({
+        type: 'error',
+        message: 'A network error occurred while removing the opening record.',
+      });
+    } finally {
+      setIsUndoing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
+
   return (
     <section className="mx-auto w-full max-w-[1800px] space-y-5">
       {/* Header Banner */}
@@ -425,7 +486,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             <thead className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:bg-secondary/30">
               <tr>
                 {config.columns.map((col, idx) => (
-                  <th key={idx} className="px-4 py-3">
+                  <th key={idx} className={`px-4 py-3 ${col === 'Action' ? 'text-right' : ''}`}>
                     {col}
                   </th>
                 ))}
@@ -480,16 +541,27 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <a
-                          href={`/opening/print?ids=${item.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400"
-                          title="Print Endorsement Form for this grantee"
-                        >
-                          <Printer className="h-3 w-3" />
-                          <span>Print</span>
-                        </a>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/opening/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="Print Endorsement Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setRecordToUndo(item)}
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Opening list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -586,6 +658,130 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           )}
         </div>
       </div>
+
+      {/* Undo Confirmation Modal */}
+      {recordToUndo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl transition-all">
+            <div className="flex items-center justify-between border-b border-border/80 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                  <Undo2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Undo Opening Record</h3>
+                  <p className="text-xs text-muted-foreground">Remove grantee from Account Opening</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isUndoing && setRecordToUndo(null)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Are you sure you want to remove this grantee from the Opening list? If this was added by mistake in the Inquiry page, this action will remove the record from Opening and cancel its pending request.
+              </p>
+
+              <div className="rounded-xl border border-border/80 bg-muted/40 p-3.5 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Household ID:</span>
+                  <span className="font-mono font-bold text-foreground">{recordToUndo.household_id_number || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Grantee Name:</span>
+                  <span className="font-semibold text-foreground">
+                    {recordToUndo.name_of_old_grantee || recordToUndo.name_of_new_grantee || '-'}
+                  </span>
+                </div>
+                {recordToUndo.address && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Address:</span>
+                    <span className="max-w-[220px] truncate text-foreground">{recordToUndo.address}</span>
+                  </div>
+                )}
+                {recordToUndo.card_number_of_old && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Card Number:</span>
+                    <span className="font-mono text-muted-foreground">{recordToUndo.card_number_of_old}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2 border-t border-border/80 pt-4">
+              <button
+                type="button"
+                disabled={isUndoing}
+                onClick={() => setRecordToUndo(null)}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-4 text-xs font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isUndoing}
+                onClick={handleConfirmUndo}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50 dark:bg-rose-600 dark:hover:bg-rose-700"
+              >
+                {isUndoing ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Undo2 className="h-3.5 w-3.5" />
+                    <span>Confirm Undo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Toast */}
+      {feedback && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex max-w-md items-center gap-3 rounded-xl border p-4 shadow-xl transition-all animate-in slide-in-from-bottom-2 ${
+            feedback.type === 'success'
+              ? 'border-emerald-500/30 bg-card text-foreground dark:border-emerald-500/40'
+              : 'border-rose-500/30 bg-card text-foreground dark:border-rose-500/40'
+          }`}
+        >
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+              feedback.type === 'success'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                : 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
+            }`}
+          >
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+          </div>
+          <div className="flex-1 text-xs">
+            <p className="font-semibold text-foreground">
+              {feedback.type === 'success' ? 'Action Completed' : 'Action Failed'}
+            </p>
+            <p className="mt-0.5 text-muted-foreground">{feedback.message}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

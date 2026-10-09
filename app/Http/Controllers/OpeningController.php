@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HouseholdRequest;
 use App\Models\Opening;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -114,8 +116,7 @@ class OpeningController extends Controller
             $validated['item_no'] = (string) ((Opening::max('id') ?? 0) + 1);
         }
 
-        $user = auth()->user() ?? session('user');
-        $validated['created_by'] = is_object($user) ? ($user->name ?? $user->username ?? 'Authorized User') : 'Authorized User';
+        $validated['created_by'] = $this->resolveCurrentUserName($request);
 
         $record = Opening::create($validated);
 
@@ -159,6 +160,84 @@ class OpeningController extends Controller
             'dswdLogoUrl' => asset('images/dswd_caraga_logo.png'),
             'bagongPilipinasLogoUrl' => asset('images/bagong_pilipinas_logo.png'),
         ]);
+    }
+
+    /**
+     * Remove / undo an opening record and clean up associated household request if present.
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        Opening::ensureTableExists();
+
+        $record = Opening::find($id);
+
+        if (! $record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Record not found or already removed.',
+            ], 404);
+        }
+
+        $hhId = $record->household_id_number;
+
+        // If this was added via Inquiry request, also clean up the corresponding household request
+        if (! empty($hhId)) {
+            HouseholdRequest::ensureTableExists();
+            HouseholdRequest::where('hh_id', $hhId)
+                ->where('request_name', 'opening')
+                ->latest('id')
+                ->first()
+                ?->delete();
+        }
+
+        $record->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $hhId
+                ? "Opening record for Household {$hhId} has been undone and removed successfully."
+                : 'Opening record has been undone and removed successfully.',
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * Resolve the current authenticated user's full name.
+     */
+    protected function resolveCurrentUserName(Request $request): string
+    {
+        $passed = trim((string) $request->input('created_by', ''));
+        if ($passed !== '' && $passed !== 'Authorized User') {
+            return $passed;
+        }
+
+        $ssoUserId = $request->session()->get('sso_user_id');
+        if ($ssoUserId) {
+            $user = User::find($ssoUserId);
+            if ($user && ! empty($user->name)) {
+                return $user->name;
+            }
+        }
+
+        $sessionUser = session('user');
+        if (is_object($sessionUser) && ! empty($sessionUser->name)) {
+            return $sessionUser->name;
+        }
+        if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
+            return $sessionUser['name'];
+        }
+
+        $authUser = auth()->user();
+        if ($authUser && ! empty($authUser->name)) {
+            return $authUser->name;
+        }
+
+        $firstUser = User::first();
+        if ($firstUser && ! empty($firstUser->name)) {
+            return $firstUser->name;
+        }
+
+        return 'Authorized User';
     }
 }
 

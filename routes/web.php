@@ -56,5 +56,7 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/opening/export', [OpeningController::class, 'export'])->name('opening.export');
     Route::get('/opening/print', [OpeningController::class, 'print'])->name('opening.print');
     Route::post('/opening/store', [OpeningController::class, 'store'])->name('opening.store');
+    Route::delete('/opening/{id}', [OpeningController::class, 'destroy'])->name('opening.destroy');
+    Route::post('/opening/{id}/destroy', [OpeningController::class, 'destroy']);
 });
 
