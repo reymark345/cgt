@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Distribution;
 use App\Models\EmvRecord;
 use App\Models\GranteeList;
 use App\Models\HouseholdRequest;
 use App\Models\Opening;
+use App\Models\OtcWithdrawal;
 use App\Models\PayrollRecord;
+use App\Models\Replacement;
 use App\Models\RequestType;
 use App\Models\User;
 use App\Support\EmvSpreadsheetImporter;
@@ -341,37 +344,150 @@ class InquiryController extends Controller
                 'created_by' => $creator,
             ]);
 
-            if ($reqName === 'opening') {
-                Opening::ensureTableExists();
+            // Resolve candidate HH_IDs to handle any prefixes (e.g., HHID)
+            $strippedHhId = preg_replace('/^hhid[-\s]*/i', '', $hhId);
+            $hhCandidates = array_values(array_unique(array_filter([
+                $hhId,
+                $strippedHhId,
+                'HHID' . $strippedHhId,
+                'HHID ' . $strippedHhId,
+                'HHID-' . $strippedHhId,
+            ])));
 
-                $grantee = GranteeList::where('hh_id', $hhId)->first();
-                $emv = EmvRecord::where('hh_id', $hhId)->latest('id')->first();
-                $payroll = PayrollRecord::where('household_id', $hhId)->latest('id')->first();
+            $grantee = GranteeList::whereIn('hh_id', $hhCandidates)->first();
+            if (! $grantee && strlen($strippedHhId) >= 6) {
+                $grantee = GranteeList::where('hh_id', 'like', "%{$strippedHhId}%")->first();
+            }
 
+            $emv = EmvRecord::whereIn('hh_id', $hhCandidates)->latest('id')->first();
+            if (! $emv && strlen($strippedHhId) >= 6) {
+                $emv = EmvRecord::where('hh_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+            }
+
+            $payroll = PayrollRecord::whereIn('household_id', $hhCandidates)->latest('id')->first();
+            if (! $payroll && strlen($strippedHhId) >= 6) {
+                $payroll = PayrollRecord::where('household_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+            }
+
+            // Resolve Address Parts
+            $addressParts = [];
+            if ($grantee) {
                 $addressParts = array_filter([
                     $grantee->purok ?? null,
                     $grantee->barangay ?? null,
                     $grantee->municipality ?? null,
                     $grantee->province ?? null,
                 ]);
-                $address = ! empty($addressParts) ? implode(', ', $addressParts) : null;
+            }
+            if (empty($addressParts) && $emv) {
+                $addressParts = array_filter([
+                    $emv->barangay ?? null,
+                    $emv->municipality ?? null,
+                    $emv->province ?? null,
+                ]);
+            }
+            if (empty($addressParts) && $payroll) {
+                $addressParts = array_filter([
+                    $payroll->barangay ?? null,
+                    $payroll->municipality ?? null,
+                    $payroll->province ?? null,
+                ]);
+            }
+            $resolvedAddress = ! empty($addressParts) ? implode(', ', $addressParts) : null;
 
-                $oldGranteeName = $grantee
-                    ? trim("{$grantee->first_name} {$grantee->middle_name} {$grantee->last_name} {$grantee->ext_name}")
-                    : ($beneficiaryName ?: null);
+            // Resolve Beneficiary Name
+            $resolvedName = null;
+            if ($grantee) {
+                $resolvedName = trim("{$grantee->first_name} {$grantee->middle_name} {$grantee->last_name} {$grantee->ext_name}");
+            }
+            if (empty($resolvedName) && $emv) {
+                $resolvedName = trim("{$emv->first_name} {$emv->mid_name} {$emv->last_name}");
+            }
+            if (empty($resolvedName) && $payroll) {
+                $resolvedName = trim("{$payroll->first_name} {$payroll->middle_name} {$payroll->last_name}");
+            }
+            if (empty($resolvedName)) {
+                $resolvedName = $beneficiaryName ?: null;
+            }
 
-                $oldCardNumber = $emv->card_number ?? $grantee->lbp_account ?? $payroll->card_number ?? null;
+            // Resolve Card Number
+            $resolvedCardNumber = $emv->card_number ?? $emv->lbp_account ?? $grantee->lbp_account ?? $payroll->account_number ?? $payroll->new_account_number ?? null;
+
+            if ($reqName === 'opening') {
+                Opening::ensureTableExists();
+
                 $oldStatus = $grantee->client_status ?? $grantee->old_client_status ?? 'Active';
                 $nextItemNo = (Opening::max('id') ?? 0) + 1;
 
                 Opening::create([
                     'item_no' => (string) $nextItemNo,
-                    'address' => $address,
+                    'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
                     'name_of_new_grantee' => null,
-                    'name_of_old_grantee' => $oldGranteeName,
-                    'card_number_of_old' => $oldCardNumber,
+                    'name_of_old_grantee' => $resolvedName,
+                    'card_number_of_old' => $resolvedCardNumber,
                     'status_of_old_grantee' => $oldStatus,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if ($reqName === 'distribution' || in_array(strtolower($reqName), ['distribution', 'distribution-series', 'distribution_series'])) {
+                Distribution::ensureTableExists();
+
+                $runDate = EmvSpreadsheetImporter::normalizeDateValue($emv->run_date ?? null) ?? ($emv->run_date ?? null);
+                $schedule = EmvSpreadsheetImporter::normalizeDateValue($emv->agreed_distribution_date ?? null) ?? ($emv->agreed_distribution_date ?? null);
+                $nextItemNo = (Distribution::max('id') ?? 0) + 1;
+
+                Distribution::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'run_date' => $runDate,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'schedule' => $schedule,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['otc-withdrawal', 'otc_withdrawal', 'otc'])) {
+                OtcWithdrawal::ensureTableExists();
+
+                $nextItemNo = (OtcWithdrawal::max('id') ?? 0) + 1;
+                $payrollBalance = ($payroll && ! empty($payroll->net_amount) && (float) $payroll->net_amount > 0)
+                    ? number_format((float) $payroll->net_amount, 2)
+                    : null;
+
+                OtcWithdrawal::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'reason_of_request' => $remarks ?: 'Unwithdrawn grant / Cash card replacement endorsement',
+                    'account_balance' => $payrollBalance,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['replacement', 'replacement-series', 'replacement_series'])) {
+                Replacement::ensureTableExists();
+
+                $nextItemNo = (Replacement::max('id') ?? 0) + 1;
+
+                Replacement::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'reason_of_request' => $remarks ?: 'Damaged / Defective / Lost cash card replacement',
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
                     'created_by' => $creator,

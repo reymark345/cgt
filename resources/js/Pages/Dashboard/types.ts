@@ -276,5 +276,7 @@ export type DashboardMetrics = {
     total: number;
     pending: number;
   };
+  moduleCounts?: Record<string, number>;
+  recentRequests?: HouseholdRequestItem[];
   topMunicipalities: TopMunicipalityStat[];
 };

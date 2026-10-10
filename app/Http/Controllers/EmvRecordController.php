@@ -36,7 +36,7 @@ class EmvRecordController extends Controller
         PayrollRecord::ensureTableExists();
 
         // Cached summary statistics (refreshed every 10 minutes for sub-1ms response)
-        $dashboardMetrics = Cache::remember('dashboard_system_metrics_v2', 600, function () {
+        $dashboardMetrics = Cache::remember('dashboard_system_metrics_v3', 600, function () {
             $emvTotal = EmvRecord::count();
             $emvClaimed = EmvRecord::where('distribution_status', 'like', 'Claimed%')->count();
             $emvUnclaimed = max(0, $emvTotal - $emvClaimed);
@@ -90,11 +90,44 @@ class EmvRecordController extends Controller
 
         // Query live service requests
         $reqTotal = Schema::hasTable('household_requests') ? DB::table('household_requests')->count() : 0;
-        $reqPending = Schema::hasTable('household_requests') ? DB::table('household_requests')->where('status', 'pending')->count() : 0;
+        $reqPending = Schema::hasTable('household_requests')
+            ? DB::table('household_requests')->whereRaw('LOWER(status) = ?', ['pending'])->count()
+            : 0;
         $dashboardMetrics['requests'] = [
             'total' => $reqTotal,
             'pending' => $reqPending,
         ];
+
+        // Query live record counts across the 8 standard service request modules
+        $moduleTableMap = [
+            'opening' => 'opening',
+            'distribution' => 'distribution',
+            'otc-withdrawal' => 'otc_withdrawal',
+            'replacement' => 'replacement',
+            'transfer-of-fund' => 'transfer_of_fund',
+            'force-pin' => 'force_pin',
+            'locking' => 'locking',
+            'lifting' => 'lifting',
+        ];
+        $moduleCounts = [];
+        foreach ($moduleTableMap as $slug => $tbl) {
+            if (Schema::hasTable($tbl)) {
+                $moduleCounts[$slug] = DB::table($tbl)->count();
+            } elseif (Schema::hasTable('household_requests')) {
+                $moduleCounts[$slug] = DB::table('household_requests')->where('request_name', $slug)->count();
+            } else {
+                $moduleCounts[$slug] = 0;
+            }
+        }
+        $dashboardMetrics['moduleCounts'] = $moduleCounts;
+
+        // Query recent requests from household_requests
+        $dashboardMetrics['recentRequests'] = Schema::hasTable('household_requests')
+            ? DB::table('household_requests')
+                ->orderByDesc('id')
+                ->limit(8)
+                ->get()
+            : [];
 
         // Cache filter dropdown lists so page loads instantly
         $filters = Cache::remember('dashboard_filter_lists_v1', 1800, function () {
@@ -151,6 +184,7 @@ class EmvRecordController extends Controller
             'payrollPeriods' => $filters['payrollPeriods'],
             'payrollYears' => $filters['payrollYears'],
             'payrollHhSets' => $filters['payrollHhSets'],
+            'moduleCounts' => $moduleCounts,
             'users' => User::query()
                 ->latest()
                 ->get()

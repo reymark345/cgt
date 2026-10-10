@@ -24,20 +24,16 @@ return new class extends Migration
             });
         }
 
-        // 2. Populate initial 12 request types if not present
+        // 2. Populate initial 8 request types if not present
         $defaultRequests = [
             ['name' => 'opening', 'label' => 'Opening', 'description' => 'Account opening and bank endorsement batch'],
-            ['name' => 'matching', 'label' => 'Matching', 'description' => 'Cross-match cash cards with depository database'],
-            ['name' => 'lock', 'label' => 'Lock', 'description' => 'Card lock requests and frozen transactions'],
+            ['name' => 'distribution', 'label' => 'Distribution', 'description' => 'Payout distribution logistics and field issuance logs'],
+            ['name' => 'otc-withdrawal', 'label' => 'OTC Withdrawal', 'description' => 'Over The Counter payout schedules and authorization'],
+            ['name' => 'replacement', 'label' => 'Replacement', 'description' => 'Card replacement batch series and re-issuance'],
+            ['name' => 'transfer-of-fund', 'label' => 'Transfer of Fund', 'description' => 'Transfer of Funds crediting batches and transmittals'],
+            ['name' => 'force-pin', 'label' => 'Force PIN', 'description' => 'Card PIN reset and force authorization requests'],
+            ['name' => 'locking', 'label' => 'Locking', 'description' => 'Card lock requests and frozen transactions'],
             ['name' => 'lifting', 'label' => 'Lifting', 'description' => 'Card restriction lifting and unfreeze clearance'],
-            ['name' => 'replacement-series', 'label' => 'Replacement series', 'description' => 'Card replacement batch series and re-issuance'],
-            ['name' => 'otc', 'label' => 'Otc', 'description' => 'Over The Counter payout schedules and authorization'],
-            ['name' => 'tof', 'label' => 'Tof', 'description' => 'Transfer of Funds crediting batches and transmittals'],
-            ['name' => 'tof-branch', 'label' => 'Tof branch', 'description' => 'TOF branch routing and servicing assignments'],
-            ['name' => 'perforation-series', 'label' => 'Perforaton series', 'description' => 'Decommissioned and perforated cards audit registry'],
-            ['name' => 'closure', 'label' => 'Closure', 'description' => 'Account closures and settlement terminations'],
-            ['name' => 'deactivation', 'label' => 'Deactivation', 'description' => 'Card deactivations and beneficiary status invalidations'],
-            ['name' => 'distribution-series', 'label' => 'Distribution series', 'description' => 'Payout distribution logistics and field issuance logs'],
         ];
 
         $now = now();

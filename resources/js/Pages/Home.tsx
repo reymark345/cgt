@@ -83,6 +83,7 @@ type HomeProps = {
   payrollPeriods?: string[];
   payrollYears?: string[];
   payrollHhSets?: string[];
+  moduleCounts?: Record<string, number>;
   users?: UserListItem[];
 };
 
@@ -120,6 +121,7 @@ export default function Home({
   payrollPeriods = [],
   payrollYears = [],
   payrollHhSets = [],
+  moduleCounts,
   users = [],
 }: HomeProps) {
   const { props } = usePage<SharedPageProps>();
@@ -261,6 +263,7 @@ export default function Home({
         granteeCount={granteeTotalCount}
         payrollCount={payrollTotalCount}
         incomingCount={records.length}
+        moduleCounts={moduleCounts || dashboardMetrics?.moduleCounts}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
         onOpenView={openView}

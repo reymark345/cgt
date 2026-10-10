@@ -43,7 +43,8 @@ class RequestType extends Model
             });
         }
 
-        if (DB::table('request')->count() === 0) {
+        $count = DB::table('request')->count();
+        if ($count !== count(self::DEFAULT_REQUESTS)) {
             self::syncDefaultRequests();
         }
     }

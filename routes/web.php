@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\EmvRecordController;
 use App\Http\Controllers\GranteeListController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\OpeningController;
+use App\Http\Controllers\OtcWithdrawalController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\SSOController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,5 +61,26 @@ Route::middleware('sso.auth')->group(function () {
     Route::post('/opening/store', [OpeningController::class, 'store'])->name('opening.store');
     Route::delete('/opening/{id}', [OpeningController::class, 'destroy'])->name('opening.destroy');
     Route::post('/opening/{id}/destroy', [OpeningController::class, 'destroy']);
+
+    Route::get('/distribution/search', [DistributionController::class, 'search'])->name('distribution.search');
+    Route::get('/distribution/export', [DistributionController::class, 'export'])->name('distribution.export');
+    Route::get('/distribution/print', [DistributionController::class, 'print'])->name('distribution.print');
+    Route::post('/distribution/store', [DistributionController::class, 'store'])->name('distribution.store');
+    Route::delete('/distribution/{id}', [DistributionController::class, 'destroy'])->name('distribution.destroy');
+    Route::post('/distribution/{id}/destroy', [DistributionController::class, 'destroy']);
+
+    Route::get('/otc-withdrawal/search', [OtcWithdrawalController::class, 'search'])->name('otc-withdrawal.search');
+    Route::get('/otc-withdrawal/export', [OtcWithdrawalController::class, 'export'])->name('otc-withdrawal.export');
+    Route::get('/otc-withdrawal/print', [OtcWithdrawalController::class, 'print'])->name('otc-withdrawal.print');
+    Route::post('/otc-withdrawal/store', [OtcWithdrawalController::class, 'store'])->name('otc-withdrawal.store');
+    Route::delete('/otc-withdrawal/{id}', [OtcWithdrawalController::class, 'destroy'])->name('otc-withdrawal.destroy');
+    Route::post('/otc-withdrawal/{id}/destroy', [OtcWithdrawalController::class, 'destroy']);
+
+    Route::get('/replacement/search', [ReplacementController::class, 'search'])->name('replacement.search');
+    Route::get('/replacement/export', [ReplacementController::class, 'export'])->name('replacement.export');
+    Route::get('/replacement/print', [ReplacementController::class, 'print'])->name('replacement.print');
+    Route::post('/replacement/store', [ReplacementController::class, 'store'])->name('replacement.store');
+    Route::delete('/replacement/{id}', [ReplacementController::class, 'destroy'])->name('replacement.destroy');
+    Route::post('/replacement/{id}/destroy', [ReplacementController::class, 'destroy']);
 });
 

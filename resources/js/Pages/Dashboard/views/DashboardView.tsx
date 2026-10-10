@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import {
+  Activity,
   ArrowRight,
+  ArrowRightLeft,
   ArrowUpRight,
+  Banknote,
   BarChart3,
   Building2,
   Calendar,
@@ -16,14 +19,19 @@ import {
   FolderOpen,
   GitPullRequest,
   GraduationCap,
+  KeyRound,
   Landmark,
   Layers,
+  Lock,
   MapPin,
   PackageCheck,
+  RefreshCw,
   Search,
   ShieldCheck,
   Sparkles,
   TrendingUp,
+  Truck,
+  Unlock,
   UserCheck,
   Users,
   Wallet,
@@ -78,16 +86,27 @@ const defaultMetrics: DashboardMetrics = {
     activePercentage: 43.5,
   },
   payroll: {
-    total: 126220,
-    gross: 536257650,
-    net: 536249550,
+    total: 127220,
+    gross: 540489000,
+    net: 540480900,
     withholdings: 8100,
     period: 'Period 4 (2026)',
   },
   requests: {
-    total: 0,
-    pending: 0,
+    total: 30,
+    pending: 30,
   },
+  moduleCounts: {
+    opening: 23,
+    distribution: 2,
+    'otc-withdrawal': 1,
+    replacement: 1,
+    'transfer-of-fund': 0,
+    'force-pin': 0,
+    locking: 1,
+    lifting: 1,
+  },
+  recentRequests: [],
   topMunicipalities: [
     { municipality: 'BUTUAN CITY (Capital)', count: 23467 },
     { municipality: 'SURIGAO CITY (Capital)', count: 11575 },
@@ -101,14 +120,62 @@ const defaultMetrics: DashboardMetrics = {
 };
 
 const dataModules = [
-  { id: 'opening', name: 'Opening', desc: 'Account opening queue' },
-  { id: 'distribution', name: 'Distribution', desc: 'Card distribution series' },
-  { id: 'otc-withdrawal', name: 'OTC Withdrawal', desc: 'Over-the-counter payments' },
-  { id: 'replacement', name: 'Replacement', desc: 'Card replacement series' },
-  { id: 'transfer-of-fund', name: 'Transfer of Fund', desc: 'Transfer of funds tracking' },
-  { id: 'force-pin', name: 'Force PIN', desc: 'Card PIN reset & auth' },
-  { id: 'locking', name: 'Locking', desc: 'Account lock requests' },
-  { id: 'lifting', name: 'Lifting', desc: 'Account lock lifting' },
+  {
+    id: 'opening',
+    name: 'Opening',
+    desc: 'Account opening queue',
+    icon: FolderOpen,
+    color: 'text-sky-600 bg-sky-500/10 border-sky-500/20 dark:text-sky-400',
+  },
+  {
+    id: 'distribution',
+    name: 'Distribution',
+    desc: 'Card distribution series',
+    icon: Truck,
+    color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-400',
+  },
+  {
+    id: 'otc-withdrawal',
+    name: 'OTC Withdrawal',
+    desc: 'Over-the-counter payments',
+    icon: Banknote,
+    color: 'text-amber-600 bg-amber-500/10 border-amber-500/20 dark:text-amber-400',
+  },
+  {
+    id: 'replacement',
+    name: 'Replacement',
+    desc: 'Card replacement series',
+    icon: RefreshCw,
+    color: 'text-violet-600 bg-violet-500/10 border-violet-500/20 dark:text-violet-400',
+  },
+  {
+    id: 'transfer-of-fund',
+    name: 'Transfer of Fund',
+    desc: 'Transfer of funds tracking',
+    icon: ArrowRightLeft,
+    color: 'text-rose-600 bg-rose-500/10 border-rose-500/20 dark:text-rose-400',
+  },
+  {
+    id: 'force-pin',
+    name: 'Force PIN',
+    desc: 'Card PIN reset & auth',
+    icon: KeyRound,
+    color: 'text-orange-600 bg-orange-500/10 border-orange-500/20 dark:text-orange-400',
+  },
+  {
+    id: 'locking',
+    name: 'Locking',
+    desc: 'Account lock requests',
+    icon: Lock,
+    color: 'text-red-600 bg-red-500/10 border-red-500/20 dark:text-red-400',
+  },
+  {
+    id: 'lifting',
+    name: 'Lifting',
+    desc: 'Account lock lifting',
+    icon: Unlock,
+    color: 'text-teal-600 bg-teal-500/10 border-teal-500/20 dark:text-teal-400',
+  },
 ];
 
 export function DashboardView({
@@ -131,6 +198,8 @@ export function DashboardView({
       grantee: { ...defaultMetrics.grantee, ...dashboardMetrics.grantee },
       payroll: { ...defaultMetrics.payroll, ...dashboardMetrics.payroll },
       requests: { ...defaultMetrics.requests, ...dashboardMetrics.requests },
+      moduleCounts: dashboardMetrics.moduleCounts || defaultMetrics.moduleCounts,
+      recentRequests: dashboardMetrics.recentRequests || defaultMetrics.recentRequests,
       topMunicipalities:
         dashboardMetrics.topMunicipalities?.length > 0
           ? dashboardMetrics.topMunicipalities
@@ -397,16 +466,16 @@ export function DashboardView({
               <span className="font-semibold text-amber-600 dark:text-amber-400">
                 {metrics.requests.pending} Pending Review
               </span>
-              <span>12 Action Types</span>
+              <span>8 Action Modules</span>
             </div>
             <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-amber-500 transition-all duration-500"
-                style={{ width: metrics.requests.total > 0 ? '50%' : '10%' }}
+                style={{ width: metrics.requests.total > 0 ? '100%' : '10%' }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Automate & Manual</span>
+              <span>Automate & Operations</span>
               <span className="font-semibold text-amber-600 dark:text-amber-400 group-hover:underline flex items-center gap-0.5">
                 Open Inquiry <ArrowRight className="h-3 w-3" />
               </span>
@@ -711,43 +780,145 @@ export function DashboardView({
 
       {/* Quick Access: Service Request Modules Grid */}
       <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs dark:border-border dark:bg-card">
-        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-3">
           <div>
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
               Data & Service Request Modules
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Quick access navigation to specific grievance and operational modules
+              Direct access navigation to the 8 standard grievance and operational modules
             </p>
           </div>
-          <span className="text-xs font-semibold text-muted-foreground">{dataModules.length} Modules Available</span>
+          <span className="text-xs font-semibold text-muted-foreground">{dataModules.length} Modules Active</span>
         </div>
 
-        <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {dataModules.map((mod) => (
-            <button
-              key={mod.id}
-              onClick={() => onOpenDataModule?.(mod.id)}
-              type="button"
-              className="group flex flex-col justify-between rounded-xl border border-border/80 bg-secondary/30 p-3.5 text-left transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-secondary/60 hover:shadow-xs dark:bg-secondary/20"
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="rounded-md bg-primary/10 p-1.5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <FolderOpen className="h-3.5 w-3.5" />
-                  </span>
-                  <ArrowUpRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+        <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
+          {dataModules.map((mod) => {
+            const count = metrics.moduleCounts?.[mod.id] ?? 0;
+            const IconComponent = mod.icon;
+
+            return (
+              <button
+                key={mod.id}
+                onClick={() => onOpenDataModule?.(mod.id)}
+                type="button"
+                className="group flex flex-col justify-between rounded-xl border border-border/80 bg-secondary/30 p-4 text-left transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-secondary/60 hover:shadow-xs dark:bg-secondary/20"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className={cn('rounded-lg p-2 border transition-colors', mod.color)}>
+                      <IconComponent className="h-4 w-4" />
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {count > 0 ? (
+                        <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary dark:text-cyan-300">
+                          {count} {count === 1 ? 'record' : 'records'}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground/60 font-medium">0 records</span>
+                      )}
+                      <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    {mod.name}
+                  </div>
                 </div>
-                <div className="mt-2.5 text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  {mod.name}
-                </div>
-              </div>
-              <p className="mt-1 text-[10px] text-muted-foreground line-clamp-1">
-                {mod.desc}
-              </p>
-            </button>
-          ))}
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-1">
+                  {mod.desc}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Service Requests & Endorsements Activity Feed */}
+      <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs dark:border-border dark:bg-card">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4 text-amber-500" />
+              Recent Service Requests & Endorsements
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Live operational requests logged through Household Inquiry & Grievance modules ({metrics.requests.total} total recorded)
+            </p>
+          </div>
+          <Button
+            className="gap-1.5 text-xs font-semibold shrink-0"
+            onClick={() => onOpenInquiry?.()}
+            size="sm"
+            variant="outline"
+          >
+            Manage in Inquiry
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </div>
+
+        <div className="mt-4 overflow-x-auto custom-scrollbar-table">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30 text-muted-foreground">
+                <th className="py-2.5 px-3 font-semibold">Beneficiary Name</th>
+                <th className="py-2.5 px-3 font-semibold">Household ID</th>
+                <th className="py-2.5 px-3 font-semibold">Request Type</th>
+                <th className="py-2.5 px-3 font-semibold">Requested By</th>
+                <th className="py-2.5 px-3 font-semibold">Date Logged</th>
+                <th className="py-2.5 px-3 font-semibold">Status</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {metrics.recentRequests && metrics.recentRequests.length > 0 ? (
+                metrics.recentRequests.slice(0, 8).map((req) => (
+                  <tr key={req.id} className="hover:bg-muted/40 transition-colors">
+                    <td className="py-3 px-3 font-bold text-foreground whitespace-nowrap">
+                      {req.beneficiary_name || 'N/A'}
+                    </td>
+                    <td className="py-3 px-3 font-mono font-semibold text-primary whitespace-nowrap">
+                      {req.hh_id}
+                    </td>
+                    <td className="py-3 px-3 whitespace-nowrap">
+                      <span className="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                        {req.request_label || req.request_name}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-muted-foreground whitespace-nowrap">
+                      {req.created_by || 'System Officer'}
+                    </td>
+                    <td className="py-3 px-3 text-muted-foreground whitespace-nowrap">
+                      {req.created_at ? new Date(req.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
+                    </td>
+                    <td className="py-3 px-3 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        {req.status || 'Pending'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs font-semibold gap-1 text-primary hover:text-primary"
+                        onClick={() => onOpenInquiry?.(req.hh_id)}
+                      >
+                        Inquire
+                        <ArrowRight className="h-3 w-3" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground">
+                    No recent service requests found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

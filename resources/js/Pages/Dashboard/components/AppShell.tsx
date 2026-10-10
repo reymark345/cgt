@@ -55,6 +55,7 @@ type AppShellProps = PropsWithChildren<{
   granteeCount?: number;
   payrollCount?: number;
   incomingCount: number;
+  moduleCounts?: Record<string, number>;
   sidebarOpen: boolean;
   title: string;
   onOpenView: (view: CurrentView) => void;
@@ -171,6 +172,7 @@ export function AppShell({
   granteeCount,
   payrollCount,
   incomingCount,
+  moduleCounts,
   sidebarOpen,
   title,
   onOpenView,
@@ -261,7 +263,7 @@ export function AppShell({
             <span className="rounded bg-primary/20 px-1 py-0.2 text-[9px] font-bold text-primary dark:text-cyan-300">CGT</span>
           </div>
           <div className="truncate text-[10px] font-medium text-muted-foreground">
-            DSWD Caraga Portal
+            DSWD Caraga Cash Grants 
           </div>
         </div>
 
@@ -397,6 +399,8 @@ export function AppShell({
             <div className="space-y-1">
               <NavItem
                 active={currentView === 'opening'}
+                badge={moduleCounts?.opening ? moduleCounts.opening.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={FolderOpen}
                 onClick={() => onOpenView('opening')}
               >
@@ -404,6 +408,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'distribution'}
+                badge={moduleCounts?.distribution ? moduleCounts.distribution.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Truck}
                 onClick={() => onOpenView('distribution')}
               >
@@ -411,6 +417,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'otc-withdrawal'}
+                badge={moduleCounts?.['otc-withdrawal'] ? moduleCounts['otc-withdrawal'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Banknote}
                 onClick={() => onOpenView('otc-withdrawal')}
               >
@@ -418,6 +426,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'replacement'}
+                badge={moduleCounts?.replacement ? moduleCounts.replacement.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={RefreshCw}
                 onClick={() => onOpenView('replacement')}
               >
@@ -425,6 +435,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'transfer-of-fund'}
+                badge={moduleCounts?.['transfer-of-fund'] ? moduleCounts['transfer-of-fund'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={ArrowRightLeft}
                 onClick={() => onOpenView('transfer-of-fund')}
               >
@@ -432,6 +444,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'force-pin'}
+                badge={moduleCounts?.['force-pin'] ? moduleCounts['force-pin'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={KeyRound}
                 onClick={() => onOpenView('force-pin')}
               >
@@ -439,6 +453,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'locking'}
+                badge={moduleCounts?.locking ? moduleCounts.locking.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Lock}
                 onClick={() => onOpenView('locking')}
               >
@@ -446,6 +462,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'lifting'}
+                badge={moduleCounts?.lifting ? moduleCounts.lifting.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Unlock}
                 onClick={() => onOpenView('lifting')}
               >
