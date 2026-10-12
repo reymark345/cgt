@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartNoAxesCombined, CheckCircle2, CircleHelp, FileText, PackageCheck, UserCog, X, XCircle } from 'lucide-react';
 
 import { AppShell } from './Dashboard/components/AppShell';
@@ -129,6 +129,65 @@ export default function Home({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inquirySearchHhId, setInquirySearchHhId] = useState<string>('');
 
+  const [liveModuleCounts, setLiveModuleCounts] = useState<Record<string, number>>(() => {
+    return moduleCounts || dashboardMetrics?.moduleCounts || {};
+  });
+
+  useEffect(() => {
+    if (moduleCounts) {
+      setLiveModuleCounts(moduleCounts);
+    } else if (dashboardMetrics?.moduleCounts) {
+      setLiveModuleCounts(dashboardMetrics.moduleCounts);
+    }
+  }, [moduleCounts, dashboardMetrics?.moduleCounts]);
+
+  const refreshModuleCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/module-counts', {
+        headers: {
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.counts) {
+          setLiveModuleCounts(data.counts);
+        }
+      }
+    } catch {
+      // Background count fetch - ignore network error
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleModuleCountsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ counts?: Record<string, number> }>;
+      if (customEvent.detail?.counts) {
+        setLiveModuleCounts(customEvent.detail.counts);
+      } else {
+        refreshModuleCounts();
+      }
+    };
+
+    const handleRefresh = () => {
+      refreshModuleCounts();
+    };
+
+    window.addEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+    window.addEventListener('cgt:refresh-module-counts', handleRefresh);
+    window.addEventListener('focus', handleRefresh);
+
+    const interval = window.setInterval(refreshModuleCounts, 20000);
+
+    return () => {
+      window.removeEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+      window.removeEventListener('cgt:refresh-module-counts', handleRefresh);
+      window.removeEventListener('focus', handleRefresh);
+      window.clearInterval(interval);
+    };
+  }, [refreshModuleCounts]);
+
   const availableOffices = useMemo(() => {
     const list = Array.from(new Set(records.map((record) => record.office).filter(Boolean)));
     return list.length ? list : officeTabs;
@@ -213,6 +272,7 @@ export default function Home({
   function openView(view: CurrentView) {
     setCurrentView(view);
     setSidebarOpen(false);
+    refreshModuleCounts();
     const notices: Record<CurrentView, string> = {
       aging: 'Aging opened',
       dashboard: 'Dashboard opened',
@@ -263,7 +323,7 @@ export default function Home({
         granteeCount={granteeTotalCount}
         payrollCount={payrollTotalCount}
         incomingCount={records.length}
-        moduleCounts={moduleCounts || dashboardMetrics?.moduleCounts}
+        moduleCounts={liveModuleCounts}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
         onOpenView={openView}
@@ -276,7 +336,19 @@ export default function Home({
       >
         <div className={currentView === 'dashboard' ? 'block' : 'hidden'}>
           <DashboardView
-            dashboardMetrics={dashboardMetrics}
+            dashboardMetrics={
+              dashboardMetrics
+                ? {
+                    ...dashboardMetrics,
+                    moduleCounts: liveModuleCounts,
+                    requests: {
+                      ...dashboardMetrics.requests,
+                      total: Object.values(liveModuleCounts).reduce((acc, curr) => acc + (curr || 0), 0),
+                      pending: Object.values(liveModuleCounts).reduce((acc, curr) => acc + (curr || 0), 0),
+                    },
+                  }
+                : undefined
+            }
             emvRecords={emvRecords}
             dashboardStats={dashboardStats}
             notice={notice}

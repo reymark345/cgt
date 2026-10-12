@@ -259,11 +259,11 @@ export function AppShell({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-extrabold tracking-tight text-foreground">iGrants</span>
+            <span className="text-sm font-extrabold tracking-tight text-foreground">GRANTS</span>
             <span className="rounded bg-primary/20 px-1 py-0.2 text-[9px] font-bold text-primary dark:text-cyan-300">CGT</span>
           </div>
-          <div className="truncate text-[10px] font-medium text-muted-foreground">
-            DSWD Caraga Cash Grants 
+          <div className="truncate text-[10px] font-medium text-muted-foreground" title="Grants Registry And Navigation Tracking System">
+            Grants Registry & Navigation
           </div>
         </div>
 
@@ -644,7 +644,7 @@ export function AppShell({
                   className="font-semibold text-muted-foreground transition hover:text-foreground cursor-pointer"
                   onClick={() => onOpenView('dashboard')}
                 >
-                  iGrants
+                  GRANTS
                 </span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
                 <span className="text-muted-foreground hidden sm:inline">{currentMeta.section}</span>

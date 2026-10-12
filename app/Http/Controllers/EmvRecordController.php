@@ -99,26 +99,7 @@ class EmvRecordController extends Controller
         ];
 
         // Query live record counts across the 8 standard service request modules
-        $moduleTableMap = [
-            'opening' => 'opening',
-            'distribution' => 'distribution',
-            'otc-withdrawal' => 'otc_withdrawal',
-            'replacement' => 'replacement',
-            'transfer-of-fund' => 'transfer_of_fund',
-            'force-pin' => 'force_pin',
-            'locking' => 'locking',
-            'lifting' => 'lifting',
-        ];
-        $moduleCounts = [];
-        foreach ($moduleTableMap as $slug => $tbl) {
-            if (Schema::hasTable($tbl)) {
-                $moduleCounts[$slug] = DB::table($tbl)->count();
-            } elseif (Schema::hasTable('household_requests')) {
-                $moduleCounts[$slug] = DB::table('household_requests')->where('request_name', $slug)->count();
-            } else {
-                $moduleCounts[$slug] = 0;
-            }
-        }
+        $moduleCounts = InquiryController::getModuleCounts();
         $dashboardMetrics['moduleCounts'] = $moduleCounts;
 
         // Query recent requests from household_requests
@@ -160,6 +141,7 @@ class EmvRecordController extends Controller
 
         return Inertia::render('Home', [
             'dashboardMetrics' => $dashboardMetrics,
+            'moduleCounts' => $moduleCounts,
             'emvRecords' => $initialEmvRecords,
             'emvTotalCount' => $dashboardMetrics['emv']['total'],
             'emvClaimedCount' => $dashboardMetrics['emv']['claimed'],

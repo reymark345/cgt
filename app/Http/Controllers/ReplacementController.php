@@ -194,6 +194,7 @@ class ReplacementController extends Controller
                 ? "Replacement record for Household {$hhId} has been undone and removed successfully."
                 : 'Replacement record has been undone and removed successfully.',
             'id' => $id,
+            'module_counts' => \App\Http\Controllers\InquiryController::getModuleCounts(),
         ]);
     }
 

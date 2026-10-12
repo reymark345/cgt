@@ -425,7 +425,7 @@ export default function OpeningPrint({
             box-shadow: none !important;
             border: none !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0 0 22mm 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             background: #ffffff !important;
@@ -435,10 +435,15 @@ export default function OpeningPrint({
             break-after: page !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            min-height: 268mm !important;
+            position: relative !important;
+            height: 272mm !important;
+            min-height: 272mm !important;
+            max-height: 272mm !important;
+            box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+            overflow: hidden !important;
             zoom: 1 !important;
             transform: none !important;
           }
@@ -447,8 +452,16 @@ export default function OpeningPrint({
             break-after: avoid !important;
           }
           .paper-footer {
-            margin-top: auto !important;
-            padding-top: 8px !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border: none !important;
+            border-top: none !important;
           }
           table {
             border-collapse: collapse !important;
@@ -807,7 +820,7 @@ export default function OpeningPrint({
               return (
                 <div
                   key={pageItem.pageIndex}
-                  className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:m-0 print:min-h-[268mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:shadow-none"
+                  className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
                 >
                   <div className="flex-1">
                     {pageItem.isFirstPage ? (
@@ -818,7 +831,7 @@ export default function OpeningPrint({
                           <div className="flex items-center">
                             <SmartImage
                               alt="DSWD Field Office - Caraga Region"
-                              className="h-14 w-auto max-w-[240px] object-contain"
+                              className="h-14 w-auto max-w-[240px] object-contain print:h-12"
                               fallback={
                                 <div className="flex items-center gap-2">
                                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-700 font-black text-white shadow-xs">
@@ -844,11 +857,11 @@ export default function OpeningPrint({
                             />
                           </div>
 
-                          {/* Bagong Pilipinas Logo - Moved up with -mt-2 to align with top of DSWD banner */}
-                          <div className="flex items-center -mt-2 print:-mt-2">
+                          {/* Bagong Pilipinas Logo - Moved up to align bottom with DSWD Caraga logo */}
+                          <div className="flex items-center -mt-2 print:-mt-[7px]">
                             <SmartImage
                               alt="Bagong Pilipinas"
-                              className="h-14 w-auto max-w-[100px] object-contain"
+                              className="h-14 w-auto max-w-[100px] object-contain print:h-12"
                               fallback={
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-red-600 bg-blue-900 text-[8px] font-black tracking-tighter text-yellow-300">
                                   PILIPINAS
@@ -1005,7 +1018,7 @@ export default function OpeningPrint({
                   </div>
 
                   {/* Dynamic Footer with Page & DSWD Contact Info */}
-                  <footer className="paper-footer mt-auto border-t border-slate-300 pt-3 text-center text-[10px] text-slate-700 print:mt-auto print:border-black print:pt-2 print:text-black">
+                  <footer className="paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="font-bold tracking-wider">
                       {getPageInfo(currentPageNum, totalPages)}
                     </div>

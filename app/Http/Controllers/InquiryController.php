@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Distribution;
 use App\Models\EmvRecord;
+use App\Models\ForcePin;
 use App\Models\GranteeList;
 use App\Models\HouseholdRequest;
+use App\Models\Lifting;
+use App\Models\Locking;
 use App\Models\Opening;
 use App\Models\OtcWithdrawal;
 use App\Models\PayrollRecord;
 use App\Models\Replacement;
 use App\Models\RequestType;
+use App\Models\TransferOfFund;
 use App\Models\User;
 use App\Support\EmvSpreadsheetImporter;
 use App\Support\GranteeSpreadsheetImporter;
@@ -252,8 +256,12 @@ class InquiryController extends Controller
             ];
         });
 
+        $totalMatches = $grantees->count() + $emvRecords->count() + $payrollRecords->count();
+        $exists = ($totalMatches > 0 || $requests->count() > 0);
+
         return response()->json([
             'success' => true,
+            'exists' => $exists,
             'query' => $raw,
             'display_hhid' => $displayHhid,
             'total_matches' => $totalMatches,
@@ -329,6 +337,38 @@ class InquiryController extends Controller
         // Get creator info from session / auth / input
         $creator = $this->resolveCurrentUserName($request);
 
+        // Resolve candidate HH_IDs to handle any prefixes (e.g., HHID)
+        $strippedHhId = preg_replace('/^hhid[-\s]*/i', '', $hhId);
+        $hhCandidates = array_values(array_unique(array_filter([
+            $hhId,
+            $strippedHhId,
+            'HHID' . $strippedHhId,
+            'HHID ' . $strippedHhId,
+            'HHID-' . $strippedHhId,
+        ])));
+
+        $grantee = GranteeList::whereIn('hh_id', $hhCandidates)->first();
+        if (! $grantee && strlen($strippedHhId) >= 6) {
+            $grantee = GranteeList::where('hh_id', 'like', "%{$strippedHhId}%")->first();
+        }
+
+        $emv = EmvRecord::whereIn('hh_id', $hhCandidates)->latest('id')->first();
+        if (! $emv && strlen($strippedHhId) >= 6) {
+            $emv = EmvRecord::where('hh_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+        }
+
+        $payroll = PayrollRecord::whereIn('household_id', $hhCandidates)->latest('id')->first();
+        if (! $payroll && strlen($strippedHhId) >= 6) {
+            $payroll = PayrollRecord::where('household_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+        }
+
+        if (! $grantee && ! $emv && ! $payroll) {
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot create request. Household ID '{$hhId}' does not exist in any database.",
+            ], 422);
+        }
+
         $createdRecords = [];
         foreach ($requestNames as $reqName) {
             $typeRow = $typeRows->get($reqName);
@@ -343,31 +383,6 @@ class InquiryController extends Controller
                 'status' => 'Pending',
                 'created_by' => $creator,
             ]);
-
-            // Resolve candidate HH_IDs to handle any prefixes (e.g., HHID)
-            $strippedHhId = preg_replace('/^hhid[-\s]*/i', '', $hhId);
-            $hhCandidates = array_values(array_unique(array_filter([
-                $hhId,
-                $strippedHhId,
-                'HHID' . $strippedHhId,
-                'HHID ' . $strippedHhId,
-                'HHID-' . $strippedHhId,
-            ])));
-
-            $grantee = GranteeList::whereIn('hh_id', $hhCandidates)->first();
-            if (! $grantee && strlen($strippedHhId) >= 6) {
-                $grantee = GranteeList::where('hh_id', 'like', "%{$strippedHhId}%")->first();
-            }
-
-            $emv = EmvRecord::whereIn('hh_id', $hhCandidates)->latest('id')->first();
-            if (! $emv && strlen($strippedHhId) >= 6) {
-                $emv = EmvRecord::where('hh_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
-            }
-
-            $payroll = PayrollRecord::whereIn('household_id', $hhCandidates)->latest('id')->first();
-            if (! $payroll && strlen($strippedHhId) >= 6) {
-                $payroll = PayrollRecord::where('household_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
-            }
 
             // Resolve Address Parts
             $addressParts = [];
@@ -494,6 +509,77 @@ class InquiryController extends Controller
                 ]);
             }
 
+            if (in_array(strtolower($reqName), ['transfer-of-fund', 'transfer_of_fund', 'tof', 'tof-branch'])) {
+                TransferOfFund::ensureTableExists();
+
+                $nextItemNo = (TransferOfFund::max('id') ?? 0) + 1;
+                $newCardNumber = $payroll->new_account_number ?? null;
+
+                TransferOfFund::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'old_card_number' => $resolvedCardNumber,
+                    'old_cardholder_name' => $resolvedName,
+                    'new_card_number' => $newCardNumber,
+                    'new_cardholder_name' => $resolvedName,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['force-pin', 'force_pin', 'force pin', 'forcepin'])) {
+                ForcePin::ensureTableExists();
+
+                $nextItemNo = (ForcePin::max('id') ?? 0) + 1;
+
+                ForcePin::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['locking', 'lock', 'card-locking', 'card_locking', 'card locking'])) {
+                Locking::ensureTableExists();
+
+                $nextItemNo = (Locking::max('id') ?? 0) + 1;
+
+                Locking::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['lifting', 'lift', 'card-lifting', 'card_lifting', 'card lifting', 'unfreeze'])) {
+                Lifting::ensureTableExists();
+
+                $nextItemNo = (Lifting::max('id') ?? 0) + 1;
+
+                Lifting::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
             $createdRecords[] = [
                 'id' => $record->id,
                 'hh_id' => $record->hh_id,
@@ -517,6 +603,7 @@ class InquiryController extends Controller
             'message' => $message,
             'requests' => $createdRecords,
             'request' => $createdRecords[0] ?? null,
+            'module_counts' => self::getModuleCounts(),
         ]);
     }
 
@@ -574,20 +661,22 @@ class InquiryController extends Controller
             return $passed;
         }
 
-        $ssoUserId = $request->session()->get('sso_user_id');
-        if ($ssoUserId) {
-            $user = User::find($ssoUserId);
-            if ($user && ! empty($user->name)) {
-                return $user->name;
+        if ($request->hasSession()) {
+            $ssoUserId = $request->session()->get('sso_user_id');
+            if ($ssoUserId) {
+                $user = User::find($ssoUserId);
+                if ($user && ! empty($user->name)) {
+                    return $user->name;
+                }
             }
-        }
 
-        $sessionUser = session('user');
-        if (is_object($sessionUser) && ! empty($sessionUser->name)) {
-            return $sessionUser->name;
-        }
-        if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
-            return $sessionUser['name'];
+            $sessionUser = session('user');
+            if (is_object($sessionUser) && ! empty($sessionUser->name)) {
+                return $sessionUser->name;
+            }
+            if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
+                return $sessionUser['name'];
+            }
         }
 
         $authUser = auth()->user();
@@ -655,6 +744,47 @@ class InquiryController extends Controller
         return response()->json([
             'success' => true,
             'samples' => $samples,
+        ]);
+    }
+
+    /**
+     * Return live record counts across the 8 standard service request modules.
+     */
+    public static function getModuleCounts(): array
+    {
+        $moduleTableMap = [
+            'opening' => 'opening',
+            'distribution' => 'distribution',
+            'otc-withdrawal' => 'otc_withdrawal',
+            'replacement' => 'replacement',
+            'transfer-of-fund' => 'transfer_of_fund',
+            'force-pin' => 'force_pin',
+            'locking' => 'locking',
+            'lifting' => 'lifting',
+        ];
+
+        $counts = [];
+        foreach ($moduleTableMap as $slug => $tbl) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($tbl)) {
+                $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table($tbl)->count();
+            } elseif (\Illuminate\Support\Facades\Schema::hasTable('household_requests')) {
+                $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table('household_requests')->where('request_name', $slug)->count();
+            } else {
+                $counts[$slug] = 0;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Endpoint to fetch live module counts.
+     */
+    public function moduleCounts(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'counts' => self::getModuleCounts(),
         ]);
     }
 }

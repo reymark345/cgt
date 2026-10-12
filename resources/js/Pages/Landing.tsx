@@ -66,7 +66,7 @@ const workflowSteps = [
 const stats = [
   { value: '12+', label: 'Operational Modules' },
   { value: '100%', label: 'Record Coverage' },
-  { value: 'iGrants', label: 'Tracking Aligned' },
+  { value: 'GRANTS', label: 'Tracking Aligned' },
   { value: '24/7', label: 'Portal Access' },
 ];
 
@@ -82,7 +82,7 @@ const processSteps = [
 export default function Landing() {
   return (
     <>
-      <Head title="iGrants Portal" />
+      <Head title="GRANTS Portal" />
 
       <main className="min-h-screen bg-slate-50 text-slate-950">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/92 backdrop-blur">
@@ -92,9 +92,9 @@ export default function Landing() {
                 <PackageCheck className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-lg font-extrabold leading-5 tracking-normal text-slate-900">iGrants</div>
+                <div className="text-lg font-extrabold leading-5 tracking-normal text-slate-900">GRANTS</div>
                 <div className="text-xs font-semibold uppercase tracking-normal text-slate-500">
-                  Integrated grants tracking system
+                  Grants Registry And Navigation Tracking System
                 </div>
               </div>
             </Link>
@@ -133,14 +133,14 @@ export default function Landing() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-md border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold shadow-sm backdrop-blur">
                 <ShieldCheck className="h-4 w-4 text-cyan-200" />
-                DSWD iGrants Records Monitoring Platform
+                DSWD GRANTS Records Monitoring Platform
               </div>
 
               <h1 className="mt-7 text-4xl font-bold leading-[1.15] tracking-normal text-white sm:text-5xl lg:text-[3.35rem]">
-                Integrated Grant Tracking for DSWD Caraga
+                Grants Registry And Navigation Tracking System
               </h1>
               <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-blue-50/86">
-                Integrated Grants, Records, Account and Notification Tracking System for incoming inventory, EMV database
+                GRANTS (Grants Registry And Navigation Tracking System) for incoming inventory, EMV database
                 monitoring, payroll references, grantee records, and operational reporting.
               </p>
 
@@ -174,7 +174,7 @@ export default function Landing() {
                       <span className="h-2 w-2 rounded-full bg-cyan-300 animate-live-dot" />
                       Live Record
                     </div>
-                    <div className="mt-3 font-mono text-xl font-bold text-white">IGRANTS-2026-00047</div>
+                    <div className="mt-3 font-mono text-xl font-bold text-white">GRANTS-2026-00047</div>
                     <div className="mt-1 text-sm font-semibold text-blue-100/68">Incoming Inventory - Caraga Office</div>
                   </div>
                   <div className="animate-processing-pill rounded-md border border-emerald-300/25 bg-emerald-400/10 px-4 py-2 text-sm font-bold text-emerald-200">
@@ -203,7 +203,7 @@ export default function Landing() {
                 <div className="animate-status-strip mt-8 rounded-md border border-white/8 bg-slate-950/52 p-4">
                   <div className="flex items-center gap-3 text-sm font-bold text-pink-100">
                     <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                    Record IGRANTS-2026-00047 tagged for validation
+                    Record GRANTS-2026-00047 tagged for validation
                   </div>
                 </div>
 
@@ -237,7 +237,7 @@ export default function Landing() {
 
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8" id="features">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="text-xs font-extrabold uppercase tracking-normal text-primary">iGrants Capabilities</div>
+            <div className="text-xs font-extrabold uppercase tracking-normal text-primary">GRANTS Capabilities</div>
             <h2 className="mt-3 text-3xl font-extrabold tracking-normal text-slate-950 sm:text-4xl">Built for Your Current Process</h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
               The landing page reflects the system already in place: dashboard monitoring, reference records, Excel imports,
@@ -270,7 +270,7 @@ export default function Landing() {
                 <div className="text-xs font-extrabold uppercase tracking-normal text-primary">System Workflow</div>
                 <h2 className="mt-3 text-3xl font-extrabold tracking-normal text-slate-950 sm:text-4xl">From Intake to Dashboard</h2>
                 <p className="mt-4 text-base leading-7 text-slate-600">
-              A clean path for offices to record, review, monitor, and report on iGrants data without leaving the portal.
+              A clean path for offices to record, review, monitor, and report on GRANTS data without leaving the portal.
                 </p>
               </div>
 
@@ -296,11 +296,11 @@ export default function Landing() {
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 text-sm font-bold text-cyan-200">
                 <Layers3 className="h-4 w-4" />
-                DSWD iGrants Portal
+                DSWD GRANTS Portal
               </div>
               <h2 className="mt-4 text-3xl font-extrabold tracking-normal">Ready to continue to the secure workspace?</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                Sign in to open the existing login page and continue to the iGrants dashboard, references, and record tools.
+                Sign in to open the existing login page and continue to the GRANTS dashboard, references, and record tools.
               </p>
             </div>
             <Button asChild className="mt-8 h-12 bg-white px-6 text-slate-950 hover:bg-slate-100 lg:mt-0" size="lg">

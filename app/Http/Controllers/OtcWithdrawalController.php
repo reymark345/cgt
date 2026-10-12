@@ -199,6 +199,7 @@ class OtcWithdrawalController extends Controller
                 ? "OTC Withdrawal record for Household {$hhId} has been undone and removed successfully."
                 : 'OTC Withdrawal record has been undone and removed successfully.',
             'id' => $id,
+            'module_counts' => \App\Http\Controllers\InquiryController::getModuleCounts(),
         ]);
     }
 

@@ -27,6 +27,7 @@ import {
   Send,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Tag,
   User,
@@ -69,6 +70,215 @@ const defaultRequestOptions: RequestOptionItem[] = [
   { id: 7, name: 'locking', label: 'Locking' },
   { id: 8, name: 'lifting', label: 'Lifting' },
 ];
+
+export type FieldCategory = {
+  id: string;
+  label: string;
+  icon: typeof User;
+  iconColor: string;
+  fields: {
+    key: string;
+    label: string;
+  }[];
+};
+
+export type GranteeFieldCategory = FieldCategory;
+
+export const GRANTEE_FIELD_CATEGORIES: FieldCategory[] = [
+  {
+    id: 'personal',
+    label: 'Personal & Demographics',
+    icon: User,
+    iconColor: 'text-primary',
+    fields: [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'middle_name', label: 'Middle Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'ext_name', label: 'Extension Name' },
+      { key: 'maiden_name', label: 'Maiden Name' },
+      { key: 'sex', label: 'Sex' },
+      { key: 'birthday', label: 'Birthday' },
+      { key: 'current_age', label: 'Current Age' },
+      { key: 'age', label: 'Age at Registration' },
+      { key: 'contact_number', label: 'Contact Number' },
+      { key: 'relation_to_hh', label: 'Relation to HH Head' },
+      { key: 'hh_grantee', label: 'HH Grantee' },
+    ],
+  },
+  {
+    id: 'geographic',
+    label: 'Geographic & Address Information',
+    icon: MapPin,
+    iconColor: 'text-rose-500',
+    fields: [
+      { key: 'region', label: 'Region' },
+      { key: 'province', label: 'Province' },
+      { key: 'municipality', label: 'Municipality' },
+      { key: 'barangay', label: 'Barangay' },
+      { key: 'purok', label: 'Purok' },
+      { key: 'district', label: 'District' },
+    ],
+  },
+  {
+    id: 'program',
+    label: 'Program Classification & Status',
+    icon: ShieldCheck,
+    iconColor: 'text-emerald-500',
+    fields: [
+      { key: 'client_status', label: 'Client Status' },
+      { key: 'old_client_status', label: 'Old Client Status' },
+      { key: 'registration_status', label: 'Registration Status' },
+      { key: 'member_status', label: 'Member Status' },
+      { key: 'date_tagged', label: 'Date Tagged' },
+      { key: 'tagged_by', label: 'Tagged By' },
+      { key: 'cs_category', label: 'CS Category' },
+      { key: 'ip_label', label: 'IP Label / Status' },
+    ],
+  },
+  {
+    id: 'banking',
+    label: 'Banking & Enrollment Metadata',
+    icon: CreditCard,
+    iconColor: 'text-cyan-500',
+    fields: [
+      { key: 'payment_mode', label: 'Payment Mode' },
+      { key: 'lbp_account', label: 'LBP Account (Grantee Profile)' },
+      { key: 'date_of_enumeration', label: 'Date Enumerated' },
+      { key: 'date_registered', label: 'Date Registered' },
+      { key: 'family_id', label: 'Family ID' },
+      { key: 'final_l3_result', label: 'Final L3 Result' },
+    ],
+  },
+];
+
+export const ALL_GRANTEE_FIELD_KEYS: string[] = GRANTEE_FIELD_CATEGORIES.flatMap((c) =>
+  c.fields.map((f) => f.key)
+);
+export const STORAGE_KEY_GRANTEE_FIELDS = 'cgt_grantee_visible_fields';
+
+// ----------------------------------------------------------------------
+// EMV Database Field Customization Constants
+// ----------------------------------------------------------------------
+export const EMV_FIELD_CATEGORIES: FieldCategory[] = [
+  {
+    id: 'account',
+    label: 'Card & Account Information',
+    icon: CreditCard,
+    iconColor: 'text-emerald-500',
+    fields: [
+      { key: 'lbp_account', label: 'LandBank Account Number' },
+      { key: 'acct_description', label: 'Account Description' },
+      { key: 'cct_type', label: 'CCT Type' },
+      { key: 'item_no', label: 'Item Number' },
+      { key: 'distribution_status', label: 'Distribution Status' },
+    ],
+  },
+  {
+    id: 'distribution',
+    label: 'Distribution & Servicing',
+    icon: Building2,
+    iconColor: 'text-blue-500',
+    fields: [
+      { key: 'lbp_servicing_branch', label: 'Servicing Branch' },
+      { key: 'run_date', label: 'Run Date' },
+      { key: 'agreed_distribution_date', label: 'Agreed Distribution Date' },
+      { key: 'date_claimed', label: 'Date Claimed' },
+    ],
+  },
+  {
+    id: 'location',
+    label: 'Beneficiary & Location',
+    icon: MapPin,
+    iconColor: 'text-rose-500',
+    fields: [
+      { key: 'beneficiary_name', label: 'Beneficiary (EMV)' },
+      { key: 'province', label: 'Province' },
+      { key: 'municipality', label: 'Municipality' },
+      { key: 'barangay', label: 'Barangay' },
+    ],
+  },
+  {
+    id: 'remarks',
+    label: 'Remarks & Action Taken',
+    icon: ShieldAlert,
+    iconColor: 'text-amber-500',
+    fields: [
+      { key: 'reason_why_unclaimed', label: 'Reason Unclaimed' },
+      { key: 'recommended_action', label: 'Recommended Action' },
+      { key: 'action_taken', label: 'Action Taken & Date' },
+    ],
+  },
+];
+
+export const ALL_EMV_FIELD_KEYS: string[] = EMV_FIELD_CATEGORIES.flatMap((c) =>
+  c.fields.map((f) => f.key)
+);
+export const STORAGE_KEY_EMV_FIELDS = 'cgt_emv_visible_fields';
+
+// ----------------------------------------------------------------------
+// Payroll Disbursal Field Customization Constants
+// ----------------------------------------------------------------------
+export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
+  {
+    id: 'overview',
+    label: 'Cycle Overview & Status',
+    icon: Calendar,
+    iconColor: 'text-indigo-500',
+    fields: [
+      { key: 'period_year', label: 'Period & Year' },
+      { key: 'payroll_description', label: 'Payroll Description' },
+      { key: 'hh_set', label: 'Household Set & Group' },
+      { key: 'status', label: 'Disbursement Status' },
+    ],
+  },
+  {
+    id: 'financial',
+    label: 'Financial Summary (KPIs)',
+    icon: DollarSign,
+    iconColor: 'text-emerald-500',
+    fields: [
+      { key: 'gross_amount', label: 'Gross Amount' },
+      { key: 'adjustment_amount', label: 'Adjustments' },
+      { key: 'net_amount', label: 'Net Disbursed' },
+      { key: 'total_educ', label: 'Total Education Grant' },
+    ],
+  },
+  {
+    id: 'grants',
+    label: 'Grant Component Breakdown',
+    icon: Layers,
+    iconColor: 'text-amber-500',
+    fields: [
+      { key: 'educ_dc_elem', label: 'Educ DC Elem' },
+      { key: 'educ_jr_hs', label: 'Educ Jr High' },
+      { key: 'educ_sr_hs', label: 'Educ Sr High' },
+      { key: 'health', label: 'Health Grant' },
+      { key: 'rice_amount', label: 'Rice Subsidy' },
+      { key: 'f1kd_amount', label: 'F1KD Amount' },
+    ],
+  },
+  {
+    id: 'disbursal',
+    label: 'Banking & Disbursal Metadata',
+    icon: CreditCard,
+    iconColor: 'text-cyan-500',
+    fields: [
+      { key: 'payment_mode_classification', label: 'Payment Classification' },
+      { key: 'mode_of_payment', label: 'Mode of Payment' },
+      { key: 'account_number', label: 'Account Number' },
+      { key: 'new_account_number', label: 'New Account Number' },
+      { key: 'payroll_date', label: 'Payroll Date' },
+      { key: 'finance_approval', label: 'Finance Approval' },
+      { key: 'address_psgc', label: 'Address PSGC' },
+      { key: 'reason', label: 'Rejection Reason / Remarks' },
+    ],
+  },
+];
+
+export const ALL_PAYROLL_FIELD_KEYS: string[] = PAYROLL_FIELD_CATEGORIES.flatMap((c) =>
+  c.fields.map((f) => f.key)
+);
+export const STORAGE_KEY_PAYROLL_FIELDS = 'cgt_payroll_visible_fields';
 
 export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const page = usePage<{
@@ -138,6 +348,210 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
     setSelectedRequests([]);
   };
 
+  // 1. Grantee Master Details Field Customization
+  const [selectedGranteeFields, setSelectedGranteeFields] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_GRANTEE_FIELDS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const valid = parsed.filter((key: string) => ALL_GRANTEE_FIELD_KEYS.includes(key));
+            if (valid.length > 0) return valid;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return ALL_GRANTEE_FIELD_KEYS;
+  });
+  const [granteeFieldDropdownOpen, setGranteeFieldDropdownOpen] = useState(false);
+  const [granteeFieldSearch, setGranteeFieldSearch] = useState('');
+  const granteeFieldDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_GRANTEE_FIELDS, JSON.stringify(selectedGranteeFields));
+      } catch {
+        // ignore
+      }
+    }
+  }, [selectedGranteeFields]);
+
+  const toggleGranteeField = (key: string) => {
+    setSelectedGranteeFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const toggleGranteeCategory = (categoryFields: { key: string }[]) => {
+    const categoryKeys = categoryFields.map((f) => f.key);
+    const allSelected = categoryKeys.every((k) => selectedGranteeFields.includes(k));
+
+    if (allSelected) {
+      setSelectedGranteeFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
+    } else {
+      setSelectedGranteeFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
+    }
+  };
+
+  const selectAllGranteeFields = () => {
+    setSelectedGranteeFields(ALL_GRANTEE_FIELD_KEYS);
+  };
+
+  const clearAllGranteeFields = () => {
+    setSelectedGranteeFields([]);
+  };
+
+  const isGranteeFieldVisible = (key: string) => selectedGranteeFields.includes(key);
+
+  // 2. EMV Database Field Customization
+  const [selectedEmvFields, setSelectedEmvFields] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_EMV_FIELDS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const valid = parsed.filter((key: string) => ALL_EMV_FIELD_KEYS.includes(key));
+            if (valid.length > 0) return valid;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return ALL_EMV_FIELD_KEYS;
+  });
+  const [emvFieldDropdownOpen, setEmvFieldDropdownOpen] = useState(false);
+  const [emvFieldSearch, setEmvFieldSearch] = useState('');
+  const emvFieldDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_EMV_FIELDS, JSON.stringify(selectedEmvFields));
+      } catch {
+        // ignore
+      }
+    }
+  }, [selectedEmvFields]);
+
+  const toggleEmvField = (key: string) => {
+    setSelectedEmvFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const toggleEmvCategory = (categoryFields: { key: string }[]) => {
+    const categoryKeys = categoryFields.map((f) => f.key);
+    const allSelected = categoryKeys.every((k) => selectedEmvFields.includes(k));
+
+    if (allSelected) {
+      setSelectedEmvFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
+    } else {
+      setSelectedEmvFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
+    }
+  };
+
+  const selectAllEmvFields = () => {
+    setSelectedEmvFields(ALL_EMV_FIELD_KEYS);
+  };
+
+  const clearAllEmvFields = () => {
+    setSelectedEmvFields([]);
+  };
+
+  // 3. Payroll Disbursals Field Customization
+  const [selectedPayrollFields, setSelectedPayrollFields] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_PAYROLL_FIELDS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const valid = parsed.filter((key: string) => ALL_PAYROLL_FIELD_KEYS.includes(key));
+            if (valid.length > 0) return valid;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return ALL_PAYROLL_FIELD_KEYS;
+  });
+  const [payrollFieldDropdownOpen, setPayrollFieldDropdownOpen] = useState(false);
+  const [payrollFieldSearch, setPayrollFieldSearch] = useState('');
+  const payrollFieldDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PAYROLL_FIELDS, JSON.stringify(selectedPayrollFields));
+      } catch {
+        // ignore
+      }
+    }
+  }, [selectedPayrollFields]);
+
+  const togglePayrollField = (key: string) => {
+    setSelectedPayrollFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const togglePayrollCategory = (categoryFields: { key: string }[]) => {
+    const categoryKeys = categoryFields.map((f) => f.key);
+    const allSelected = categoryKeys.every((k) => selectedPayrollFields.includes(k));
+
+    if (allSelected) {
+      setSelectedPayrollFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
+    } else {
+      setSelectedPayrollFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
+    }
+  };
+
+  const selectAllPayrollFields = () => {
+    setSelectedPayrollFields(ALL_PAYROLL_FIELD_KEYS);
+  };
+
+  const clearAllPayrollFields = () => {
+    setSelectedPayrollFields([]);
+  };
+
+  // Unified click-outside listener for all field customization dropdowns
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        granteeFieldDropdownRef.current &&
+        !granteeFieldDropdownRef.current.contains(target)
+      ) {
+        setGranteeFieldDropdownOpen(false);
+      }
+      if (
+        emvFieldDropdownRef.current &&
+        !emvFieldDropdownRef.current.contains(target)
+      ) {
+        setEmvFieldDropdownOpen(false);
+      }
+      if (
+        payrollFieldDropdownRef.current &&
+        !payrollFieldDropdownRef.current.contains(target)
+      ) {
+        setPayrollFieldDropdownOpen(false);
+      }
+    }
+    if (granteeFieldDropdownOpen || emvFieldDropdownOpen || payrollFieldDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [granteeFieldDropdownOpen, emvFieldDropdownOpen, payrollFieldDropdownOpen]);
+
   // Fetch quick samples on mount
   useEffect(() => {
     fetch('/inquiry/samples')
@@ -204,8 +618,8 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
             setRequestsExpanded(false);
             setSelectedRequests([]);
           });
-          if (json.total_matches === 0) {
-            onSetNotice?.(`No records found matching Household ID "${term}".`);
+          if (json.total_matches === 0 && (!json.requests || json.requests.length === 0)) {
+            onSetNotice?.(`Household ID "${term}" does not exist in any database.`);
           } else {
             onSetNotice?.(
               `Found ${json.total_matches} record${json.total_matches > 1 ? 's' : ''} across ${
@@ -306,6 +720,17 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         });
         onSetNotice?.(successMsg);
         setTimeout(() => setRequestFeedback(null), 6000);
+
+        // Live update sidebar badges and dashboard metrics immediately
+        if (data.module_counts) {
+          window.dispatchEvent(
+            new CustomEvent('cgt:module-counts-updated', {
+              detail: { counts: data.module_counts },
+            })
+          );
+        } else {
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+        }
       } else {
         setRequestFeedback({
           type: 'error',
@@ -390,6 +815,17 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         });
         onSetNotice?.(successMsg);
         setTimeout(() => setRequestFeedback(null), 6000);
+
+        // Live update sidebar badges and dashboard metrics immediately
+        if (data.module_counts) {
+          window.dispatchEvent(
+            new CustomEvent('cgt:module-counts-updated', {
+              detail: { counts: data.module_counts },
+            })
+          );
+        } else {
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+        }
       } else {
         setRequestFeedback({
           type: 'error',
@@ -406,6 +842,13 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       setAutomatingRequest(false);
     }
   };
+
+  const isHouseholdExisting = Boolean(
+    result &&
+      (result.exists !== undefined
+        ? result.exists
+        : result.total_matches > 0 || (householdRequestsList && householdRequestsList.length > 0))
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-12">
@@ -505,8 +948,118 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         </div>
       </div>
 
+      {/* Household ID Not Existed State */}
+      {result && !isHouseholdExisting && (
+        <div className="rounded-2xl border border-rose-500/30 bg-card p-8 sm:p-12 text-center shadow-xs dark:border-rose-500/20">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+            <AlertCircle className="h-8 w-8" />
+          </div>
+
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-600 dark:border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-400">
+            <XCircle className="h-3.5 w-3.5" />
+            <span>Not Existed in Any Database</span>
+          </div>
+
+          <h3 className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Household ID Does Not Exist
+          </h3>
+
+          <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground leading-relaxed">
+            The Household ID{' '}
+            <span className="font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded border border-border/80">
+              {result.display_hhid}
+            </span>{' '}
+            was not found in any database across the system.
+          </p>
+
+          {/* Cross-check Summary across Databases */}
+          <div className="mx-auto mt-6 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3 text-left">
+            <div className="rounded-xl border border-border/80 bg-background/60 p-3.5 dark:bg-card/60">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Grantee List</span>
+                <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                  0 Found
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">Not in master beneficiaries</p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-background/60 p-3.5 dark:bg-card/60">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">EMV Database</span>
+                <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                  0 Found
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">No cash cards registered</p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-background/60 p-3.5 dark:bg-card/60">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Payroll Records</span>
+                <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                  0 Found
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">No payout disbursals</p>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearSearch}
+              className="text-xs"
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Clear Search
+            </Button>
+
+            {samples.length > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSearchInput(samples[0].hh_id);
+                  handleSearch(samples[0].hh_id);
+                }}
+                className="text-xs font-mono"
+              >
+                <Search className="mr-1.5 h-3.5 w-3.5" />
+                Try Sample: {samples[0].hh_id}
+              </Button>
+            )}
+          </div>
+
+          {/* Quick Samples List */}
+          {samples.length > 1 && (
+            <div className="mt-6 border-t border-border/60 pt-5">
+              <p className="text-xs font-medium text-muted-foreground">Or test with a known valid Household ID:</p>
+              <div className="mt-2.5 flex flex-wrap justify-center gap-2">
+                {samples.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSearchInput(item.hh_id);
+                      handleSearch(item.hh_id);
+                    }}
+                    className="group inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-background/60 px-2.5 py-1 text-xs font-mono text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary dark:bg-card/60"
+                  >
+                    <span className="font-semibold text-primary group-hover:underline">{item.hh_id}</span>
+                    <span className="text-[11px] text-muted-foreground">({item.label})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Content Area */}
-      {result && (
+      {result && isHouseholdExisting && (
         <div className="space-y-6">
           {/* Household Master Summary Banner */}
           <div className="relative z-20 rounded-2xl border border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 p-6 shadow-sm dark:border-primary/30">
@@ -901,108 +1454,226 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 </div>
               </div>
 
-              {result.grantee && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">HH Set:</span>
-                  <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs font-semibold text-foreground">
-                    {result.grantee.hh_set || 'N/A'}
-                  </span>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Dynamic Dropdown Menu to customize fields */}
+                <FieldCustomizerDropdown
+                  title="Customize Grantee Fields"
+                  subtitle="Select fields to show on this card"
+                  categories={GRANTEE_FIELD_CATEGORIES}
+                  allFieldKeys={ALL_GRANTEE_FIELD_KEYS}
+                  selectedFields={selectedGranteeFields}
+                  isOpen={granteeFieldDropdownOpen}
+                  onOpenChange={setGranteeFieldDropdownOpen}
+                  onToggleField={toggleGranteeField}
+                  onToggleCategory={toggleGranteeCategory}
+                  onSelectAll={selectAllGranteeFields}
+                  onClearAll={clearAllGranteeFields}
+                  search={granteeFieldSearch}
+                  onSearchChange={setGranteeFieldSearch}
+                  dropdownRef={granteeFieldDropdownRef}
+                />
+
+                {result.grantee && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">HH Set:</span>
+                    <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs font-semibold text-foreground">
+                      {result.grantee.hh_set || 'N/A'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="p-6">
               {result.grantee ? (
-                <div className="space-y-6">
-                  {/* Category 1: Personal & Demographics */}
-                  <div>
-                    <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <User className="h-3.5 w-3.5 text-primary" />
-                      Personal & Demographics
-                    </h4>
-                    <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                      <DetailField label="First Name" value={result.grantee.first_name} />
-                      <DetailField label="Middle Name" value={result.grantee.middle_name} />
-                      <DetailField label="Last Name" value={result.grantee.last_name} />
-                      <DetailField label="Extension Name" value={result.grantee.ext_name} />
-                      <DetailField label="Maiden Name" value={result.grantee.maiden_name} />
-                      <DetailField label="Sex" value={result.grantee.sex} />
-                      <DetailField label="Birthday" value={formatDisplayDate(result.grantee.birthday)} />
-                      <DetailField label="Current Age" value={result.grantee.current_age ? `${result.grantee.current_age} yrs` : '-'} />
-                      <DetailField label="Age at Registration" value={result.grantee.age} />
-                      <DetailField label="Contact Number" value={result.grantee.contact_number} />
-                      <DetailField label="Relation to HH Head" value={result.grantee.relation_to_hh} />
-                      <DetailField label="HH Grantee" value={result.grantee.hh_grantee} />
+                (() => {
+                  const isVisible = (k: string) => selectedGranteeFields.includes(k);
+
+                  const personalFields = GRANTEE_FIELD_CATEGORIES[0].fields;
+                  const geoFields = GRANTEE_FIELD_CATEGORIES[1].fields;
+                  const programFields = GRANTEE_FIELD_CATEGORIES[2].fields;
+                  const bankingFields = GRANTEE_FIELD_CATEGORIES[3].fields;
+
+                  const visiblePersonal = personalFields.filter((f) => isVisible(f.key));
+                  const visibleGeo = geoFields.filter((f) => isVisible(f.key));
+                  const visibleProgram = programFields.filter((f) => isVisible(f.key));
+                  const visibleBanking = bankingFields.filter((f) => isVisible(f.key));
+
+                  const totalVisible =
+                    visiblePersonal.length + visibleGeo.length + visibleProgram.length + visibleBanking.length;
+
+                  if (totalVisible === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                          <SlidersHorizontal className="h-6 w-6" />
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
+                        <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                          All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 gap-1.5 text-xs"
+                          onClick={selectAllGranteeFields}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          Show All Fields
+                        </Button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Category 1: Personal & Demographics */}
+                      {visiblePersonal.length > 0 && (
+                        <div>
+                          <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <User className="h-3.5 w-3.5 text-primary" />
+                            Personal & Demographics
+                            <span className="text-[10px] font-normal text-muted-foreground/70">
+                              ({visiblePersonal.length})
+                            </span>
+                          </h4>
+                          <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                            {isVisible('first_name') && <DetailField label="First Name" value={result.grantee.first_name} />}
+                            {isVisible('middle_name') && <DetailField label="Middle Name" value={result.grantee.middle_name} />}
+                            {isVisible('last_name') && <DetailField label="Last Name" value={result.grantee.last_name} />}
+                            {isVisible('ext_name') && <DetailField label="Extension Name" value={result.grantee.ext_name} />}
+                            {isVisible('maiden_name') && <DetailField label="Maiden Name" value={result.grantee.maiden_name} />}
+                            {isVisible('sex') && <DetailField label="Sex" value={result.grantee.sex} />}
+                            {isVisible('birthday') && <DetailField label="Birthday" value={formatDisplayDate(result.grantee.birthday)} />}
+                            {isVisible('current_age') && (
+                              <DetailField
+                                label="Current Age"
+                                value={result.grantee.current_age ? `${result.grantee.current_age} yrs` : '-'}
+                              />
+                            )}
+                            {isVisible('age') && <DetailField label="Age at Registration" value={result.grantee.age} />}
+                            {isVisible('contact_number') && <DetailField label="Contact Number" value={result.grantee.contact_number} />}
+                            {isVisible('relation_to_hh') && <DetailField label="Relation to HH Head" value={result.grantee.relation_to_hh} />}
+                            {isVisible('hh_grantee') && <DetailField label="HH Grantee" value={result.grantee.hh_grantee} />}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Divider between Personal and subsequent visible categories */}
+                      {visiblePersonal.length > 0 &&
+                        (visibleGeo.length > 0 || visibleProgram.length > 0 || visibleBanking.length > 0) && (
+                          <hr className="border-border/60" />
+                        )}
+
+                      {/* Category 2: Geographic & Location */}
+                      {visibleGeo.length > 0 && (
+                        <div>
+                          <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5 text-rose-500" />
+                            Geographic & Address Information
+                            <span className="text-[10px] font-normal text-muted-foreground/70">
+                              ({visibleGeo.length})
+                            </span>
+                          </h4>
+                          <div
+                            className={cn(
+                              'mt-3 grid gap-4 grid-cols-2',
+                              visibleGeo.length >= 6
+                                ? 'sm:grid-cols-3 lg:grid-cols-6'
+                                : visibleGeo.length >= 4
+                                ? 'sm:grid-cols-2 lg:grid-cols-4'
+                                : visibleGeo.length === 3
+                                ? 'sm:grid-cols-3'
+                                : 'sm:grid-cols-2'
+                            )}
+                          >
+                            {isVisible('region') && <DetailField label="Region" value={result.grantee.region} />}
+                            {isVisible('province') && <DetailField label="Province" value={result.grantee.province} />}
+                            {isVisible('municipality') && <DetailField label="Municipality" value={result.grantee.municipality} />}
+                            {isVisible('barangay') && <DetailField label="Barangay" value={result.grantee.barangay} />}
+                            {isVisible('purok') && <DetailField label="Purok" value={result.grantee.purok} />}
+                            {isVisible('district') && <DetailField label="District" value={result.grantee.district} />}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Divider between Geographic and subsequent visible categories */}
+                      {visibleGeo.length > 0 && (visibleProgram.length > 0 || visibleBanking.length > 0) && (
+                        <hr className="border-border/60" />
+                      )}
+
+                      {/* Category 3: Program & Status Tagging */}
+                      {visibleProgram.length > 0 && (
+                        <div>
+                          <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                            Program Classification & Status
+                            <span className="text-[10px] font-normal text-muted-foreground/70">
+                              ({visibleProgram.length})
+                            </span>
+                          </h4>
+                          <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                            {isVisible('client_status') && (
+                              <DetailField
+                                label="Client Status"
+                                value={result.grantee.client_status}
+                                highlight={result.grantee.client_status?.toLowerCase().includes('active') ? 'emerald' : 'amber'}
+                              />
+                            )}
+                            {isVisible('old_client_status') && <DetailField label="Old Client Status" value={result.grantee.old_client_status} />}
+                            {isVisible('registration_status') && <DetailField label="Registration Status" value={result.grantee.registration_status} />}
+                            {isVisible('member_status') && <DetailField label="Member Status" value={result.grantee.member_status} />}
+                            {isVisible('date_tagged') && <DetailField label="Date Tagged" value={formatDisplayDate(result.grantee.date_tagged)} />}
+                            {isVisible('tagged_by') && <DetailField label="Tagged By" value={result.grantee.tagged_by} />}
+                            {isVisible('cs_category') && <DetailField label="CS Category" value={result.grantee.cs_category} />}
+                            {isVisible('ip_label') && <DetailField label="IP Label / Status" value={result.grantee.ip_label || result.grantee.ip_status} />}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Divider between Program and Banking */}
+                      {visibleProgram.length > 0 && visibleBanking.length > 0 && (
+                        <hr className="border-border/60" />
+                      )}
+
+                      {/* Category 4: Banking & Enrollment */}
+                      {visibleBanking.length > 0 && (
+                        <div>
+                          <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <CreditCard className="h-3.5 w-3.5 text-cyan-500" />
+                            Banking & Enrollment Metadata
+                            <span className="text-[10px] font-normal text-muted-foreground/70">
+                              ({visibleBanking.length})
+                            </span>
+                          </h4>
+                          <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                            {isVisible('payment_mode') && <DetailField label="Payment Mode" value={result.grantee.payment_mode} />}
+                            {isVisible('lbp_account') && (
+                              <DetailField
+                                label="LBP Account (Grantee Profile)"
+                                value={result.grantee.lbp_account}
+                                isMono
+                                isCopyable
+                                onCopy={(val) => handleCopy(val, 'grantee_lbp')}
+                                isCopied={copiedHhid === 'grantee_lbp'}
+                              />
+                            )}
+                            {isVisible('date_of_enumeration') && <DetailField label="Date Enumerated" value={formatDisplayDate(result.grantee.date_of_enumeration)} />}
+                            {isVisible('date_registered') && (
+                              <DetailField
+                                label="Date Registered"
+                                value={formatDisplayDate(result.grantee.date_registered || result.grantee.date_registered_v2)}
+                              />
+                            )}
+                            {isVisible('family_id') && <DetailField label="Family ID" value={result.grantee.family_id} />}
+                            {isVisible('final_l3_result') && <DetailField label="Final L3 Result" value={result.grantee.final_l3_result} />}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  <hr className="border-border/60" />
-
-                  {/* Category 2: Geographic & Location */}
-                  <div>
-                    <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5 text-rose-500" />
-                      Geographic & Address Information
-                    </h4>
-                    <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                      <DetailField label="Region" value={result.grantee.region} />
-                      <DetailField label="Province" value={result.grantee.province} />
-                      <DetailField label="Municipality" value={result.grantee.municipality} />
-                      <DetailField label="Barangay" value={result.grantee.barangay} />
-                      <DetailField label="Purok" value={result.grantee.purok} />
-                      <DetailField label="District" value={result.grantee.district} />
-                    </div>
-                  </div>
-
-                  <hr className="border-border/60" />
-
-                  {/* Category 3: Program & Status Tagging */}
-                  <div>
-                    <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                      Program Classification & Status
-                    </h4>
-                    <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                      <DetailField
-                        label="Client Status"
-                        value={result.grantee.client_status}
-                        highlight={result.grantee.client_status?.toLowerCase().includes('active') ? 'emerald' : 'amber'}
-                      />
-                      <DetailField label="Old Client Status" value={result.grantee.old_client_status} />
-                      <DetailField label="Registration Status" value={result.grantee.registration_status} />
-                      <DetailField label="Member Status" value={result.grantee.member_status} />
-                      <DetailField label="Date Tagged" value={formatDisplayDate(result.grantee.date_tagged)} />
-                      <DetailField label="Tagged By" value={result.grantee.tagged_by} />
-                      <DetailField label="CS Category" value={result.grantee.cs_category} />
-                      <DetailField label="IP Label / Status" value={result.grantee.ip_label || result.grantee.ip_status} />
-                    </div>
-                  </div>
-
-                  <hr className="border-border/60" />
-
-                  {/* Category 4: Banking & Enrollment */}
-                  <div>
-                    <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <CreditCard className="h-3.5 w-3.5 text-cyan-500" />
-                      Banking & Enrollment Metadata
-                    </h4>
-                    <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                      <DetailField label="Payment Mode" value={result.grantee.payment_mode} />
-                      <DetailField
-                        label="LBP Account (Grantee Profile)"
-                        value={result.grantee.lbp_account}
-                        isMono
-                        isCopyable
-                        onCopy={(val) => handleCopy(val, 'grantee_lbp')}
-                        isCopied={copiedHhid === 'grantee_lbp'}
-                      />
-                      <DetailField label="Date Enumerated" value={formatDisplayDate(result.grantee.date_of_enumeration)} />
-                      <DetailField label="Date Registered" value={formatDisplayDate(result.grantee.date_registered || result.grantee.date_registered_v2)} />
-                      <DetailField label="Family ID" value={result.grantee.family_id} />
-                      <DetailField label="Final L3 Result" value={result.grantee.final_l3_result} />
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -1044,100 +1715,144 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 </div>
               </div>
 
-              {/* View Mode Toggle when multiple cards are present */}
-              {result.emv_records.length > 1 && (
-                <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setEmvViewMode('all')}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium transition',
-                      emvViewMode === 'all'
-                        ? 'bg-card font-bold text-foreground shadow-xs dark:bg-card'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    All Cards ({result.emv_records.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEmvViewMode('tabbed')}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium transition',
-                      emvViewMode === 'tabbed'
-                        ? 'bg-card font-bold text-foreground shadow-xs dark:bg-card'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Card Selector
-                  </button>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* View Mode Toggle when multiple cards are present */}
+                {result.emv_records.length > 1 && (
+                  <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setEmvViewMode('all')}
+                      className={cn(
+                        'rounded-md px-2.5 py-1 text-xs font-medium transition',
+                        emvViewMode === 'all'
+                          ? 'bg-card font-bold text-foreground shadow-xs dark:bg-card'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      All Cards ({result.emv_records.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEmvViewMode('tabbed')}
+                      className={cn(
+                        'rounded-md px-2.5 py-1 text-xs font-medium transition',
+                        emvViewMode === 'tabbed'
+                          ? 'bg-card font-bold text-foreground shadow-xs dark:bg-card'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      Card Selector
+                    </button>
+                  </div>
+                )}
+
+                {/* Dynamic Dropdown Menu to customize EMV fields */}
+                <FieldCustomizerDropdown
+                  title="Customize EMV Fields"
+                  subtitle="Select fields to show across cash card records"
+                  categories={EMV_FIELD_CATEGORIES}
+                  allFieldKeys={ALL_EMV_FIELD_KEYS}
+                  selectedFields={selectedEmvFields}
+                  isOpen={emvFieldDropdownOpen}
+                  onOpenChange={setEmvFieldDropdownOpen}
+                  onToggleField={toggleEmvField}
+                  onToggleCategory={toggleEmvCategory}
+                  onSelectAll={selectAllEmvFields}
+                  onClearAll={clearAllEmvFields}
+                  search={emvFieldSearch}
+                  onSearchChange={setEmvFieldSearch}
+                  dropdownRef={emvFieldDropdownRef}
+                />
+              </div>
             </div>
 
             <div className="p-6">
               {result.emv_records.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Tab Selector when tabbed mode active */}
-                  {emvViewMode === 'tabbed' && result.emv_records.length > 1 && (
-                    <div className="flex flex-wrap gap-2 border-b border-border/60 pb-4">
-                      {result.emv_records.map((emv, idx) => (
-                        <button
-                          key={emv.id || idx}
-                          type="button"
-                          onClick={() => setActiveEmvIndex(idx)}
-                          className={cn(
-                            'group flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs transition',
-                            activeEmvIndex === idx
-                              ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/30 dark:bg-primary/20 dark:text-cyan-300'
-                              : 'border-border/80 bg-background/50 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
-                          )}
-                        >
-                          <CreditCard className="h-4 w-4" />
-                          <span>Card #{idx + 1}</span>
-                          <span className="font-mono text-[11px] opacity-80">({emv.lbp_account || 'No Acct'})</span>
-                          {emv.distribution_status && (
-                            <span
-                              className={cn(
-                                'rounded px-1.5 py-0.5 text-[10px] font-semibold',
-                                emv.distribution_status.toLowerCase().includes('claimed') &&
-                                  !emv.distribution_status.toLowerCase().includes('unclaimed')
-                                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                  : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                              )}
-                            >
-                              {emv.distribution_status.replace(/\/\d+$/, '')}
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                selectedEmvFields.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <SlidersHorizontal className="h-6 w-6" />
                     </div>
-                  )}
+                    <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
+                    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                      All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 gap-1.5 text-xs"
+                      onClick={selectAllEmvFields}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Show All Fields
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Tab Selector when tabbed mode active */}
+                    {emvViewMode === 'tabbed' && result.emv_records.length > 1 && (
+                      <div className="flex flex-wrap gap-2 border-b border-border/60 pb-4">
+                        {result.emv_records.map((emv, idx) => (
+                          <button
+                            key={emv.id || idx}
+                            type="button"
+                            onClick={() => setActiveEmvIndex(idx)}
+                            className={cn(
+                              'group flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs transition',
+                              activeEmvIndex === idx
+                                ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/30 dark:bg-primary/20 dark:text-cyan-300'
+                                : 'border-border/80 bg-background/50 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
+                            )}
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            <span>Card #{idx + 1}</span>
+                            <span className="font-mono text-[11px] opacity-80">({emv.lbp_account || 'No Acct'})</span>
+                            {emv.distribution_status && (
+                              <span
+                                className={cn(
+                                  'rounded px-1.5 py-0.5 text-[10px] font-semibold',
+                                  emv.distribution_status.toLowerCase().includes('claimed') &&
+                                    !emv.distribution_status.toLowerCase().includes('unclaimed')
+                                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                                )}
+                              >
+                                {emv.distribution_status.replace(/\/\d+$/, '')}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-                  {/* Render Cards according to view mode */}
-                  {emvViewMode === 'tabbed' && result.emv_records.length > 1 ? (
-                    <EmvCardDetail
-                      record={result.emv_records[activeEmvIndex]}
-                      index={activeEmvIndex}
-                      totalCount={result.emv_records.length}
-                      copiedHhid={copiedHhid}
-                      onCopy={handleCopy}
-                    />
-                  ) : (
-                    <div className="space-y-5">
-                      {result.emv_records.map((record, index) => (
-                        <EmvCardDetail
-                          key={record.id || index}
-                          record={record}
-                          index={index}
-                          totalCount={result.emv_records.length}
-                          copiedHhid={copiedHhid}
-                          onCopy={handleCopy}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    {/* Render Cards according to view mode */}
+                    {emvViewMode === 'tabbed' && result.emv_records.length > 1 ? (
+                      <EmvCardDetail
+                        record={result.emv_records[activeEmvIndex]}
+                        index={activeEmvIndex}
+                        totalCount={result.emv_records.length}
+                        copiedHhid={copiedHhid}
+                        onCopy={handleCopy}
+                        selectedFields={selectedEmvFields}
+                      />
+                    ) : (
+                      <div className="space-y-5">
+                        {result.emv_records.map((record, index) => (
+                          <EmvCardDetail
+                            key={record.id || index}
+                            record={record}
+                            index={index}
+                            totalCount={result.emv_records.length}
+                            copiedHhid={copiedHhid}
+                            onCopy={handleCopy}
+                            selectedFields={selectedEmvFields}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -1177,33 +1892,74 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 </div>
               </div>
 
-              {/* Cumulative Financial Totals Pill */}
-              {result.payroll_records.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Cumulative Financial Totals Pill */}
+                {result.payroll_records.length > 0 && (
                   <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5">
                     <span className="text-[11px] text-muted-foreground">Total Disbursed:</span>
                     <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
                       {formatAmount(result.summary.total_net)}
                     </span>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Dynamic Dropdown Menu to customize Payroll fields */}
+                <FieldCustomizerDropdown
+                  title="Customize Payroll Fields"
+                  subtitle="Select fields to show across disbursal cycles"
+                  categories={PAYROLL_FIELD_CATEGORIES}
+                  allFieldKeys={ALL_PAYROLL_FIELD_KEYS}
+                  selectedFields={selectedPayrollFields}
+                  isOpen={payrollFieldDropdownOpen}
+                  onOpenChange={setPayrollFieldDropdownOpen}
+                  onToggleField={togglePayrollField}
+                  onToggleCategory={togglePayrollCategory}
+                  onSelectAll={selectAllPayrollFields}
+                  onClearAll={clearAllPayrollFields}
+                  search={payrollFieldSearch}
+                  onSearchChange={setPayrollFieldSearch}
+                  dropdownRef={payrollFieldDropdownRef}
+                />
+              </div>
             </div>
 
             <div className="p-6">
               {result.payroll_records.length > 0 ? (
-                <div className="space-y-6">
-                  {result.payroll_records.map((payroll, idx) => (
-                    <PayrollCycleDetail
-                      key={payroll.id || idx}
-                      record={payroll}
-                      index={idx}
-                      totalCount={result.payroll_records.length}
-                      copiedHhid={copiedHhid}
-                      onCopy={handleCopy}
-                    />
-                  ))}
-                </div>
+                selectedPayrollFields.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <SlidersHorizontal className="h-6 w-6" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
+                    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                      All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 gap-1.5 text-xs"
+                      onClick={selectAllPayrollFields}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Show All Fields
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {result.payroll_records.map((payroll, idx) => (
+                      <PayrollCycleDetail
+                        key={payroll.id || idx}
+                        record={payroll}
+                        index={idx}
+                        totalCount={result.payroll_records.length}
+                        copiedHhid={copiedHhid}
+                        onCopy={handleCopy}
+                        selectedFields={selectedPayrollFields}
+                      />
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -1580,6 +2336,193 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 }
 
 // ----------------------------------------------------------------------
+// Subcomponent: Reusable Field Customizer Dropdown
+// ----------------------------------------------------------------------
+interface FieldCustomizerDropdownProps {
+  title?: string;
+  subtitle?: string;
+  categories: FieldCategory[];
+  allFieldKeys: string[];
+  selectedFields: string[];
+  isOpen: boolean;
+  onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
+  onToggleField: (key: string) => void;
+  onToggleCategory: (categoryFields: { key: string }[]) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
+  search: string;
+  onSearchChange: (search: string) => void;
+  dropdownRef: React.RefObject<HTMLDivElement | null>;
+  buttonLabel?: string;
+}
+
+function FieldCustomizerDropdown({
+  title = 'Customize Display Fields',
+  subtitle = 'Select fields to show on this card',
+  categories,
+  allFieldKeys,
+  selectedFields,
+  isOpen,
+  onOpenChange,
+  onToggleField,
+  onToggleCategory,
+  onSelectAll,
+  onClearAll,
+  search,
+  onSearchChange,
+  dropdownRef,
+  buttonLabel = 'Display Fields',
+}: FieldCustomizerDropdownProps) {
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => onOpenChange((prev) => !prev)}
+        className={cn(
+          'h-8 gap-1.5 rounded-lg border-border/80 bg-background/50 px-2.5 text-xs font-medium hover:bg-muted/80 transition-colors shadow-2xs',
+          isOpen && 'bg-muted border-primary/50 text-foreground'
+        )}
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+        <span>{buttonLabel}</span>
+        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary dark:bg-primary/20">
+          {selectedFields.length}/{allFieldKeys.length}
+        </span>
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 text-muted-foreground transition-transform duration-200',
+            isOpen && 'rotate-180'
+          )}
+        />
+      </Button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-80 sm:w-96 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-xl">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2">
+            <div>
+              <h4 className="text-xs font-semibold text-foreground">{title}</h4>
+              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onSelectAll}
+                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 transition-colors"
+              >
+                Select All
+              </button>
+              <span className="text-muted-foreground/40">•</span>
+              <button
+                type="button"
+                onClick={onClearAll}
+                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Search Input */}
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search fields..."
+              className="h-8 pl-8 pr-7 text-xs rounded-lg bg-background/60"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Category & Field List */}
+          <div className="mt-2.5 max-h-72 overflow-y-auto space-y-3 pr-1 text-xs divide-y divide-border/40">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              const filteredFields = category.fields.filter(
+                (f) =>
+                  !search.trim() ||
+                  f.label.toLowerCase().includes(search.toLowerCase()) ||
+                  f.key.toLowerCase().includes(search.toLowerCase())
+              );
+
+              if (filteredFields.length === 0) return null;
+
+              const categoryFieldKeys = category.fields.map((f) => f.key);
+              const selectedCount = categoryFieldKeys.filter((k) =>
+                selectedFields.includes(k)
+              ).length;
+              const allSelected = selectedCount === categoryFieldKeys.length;
+
+              return (
+                <div key={category.id} className="pt-2.5 first:pt-0 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => onToggleCategory(category.fields)}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground hover:text-primary transition-colors text-left"
+                    >
+                      <Icon className={cn('h-3.5 w-3.5', category.iconColor)} />
+                      <span>{category.label}</span>
+                      <span className="font-normal text-muted-foreground">
+                        ({selectedCount}/{categoryFieldKeys.length})
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onToggleCategory(category.fields)}
+                      className="text-[10px] text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
+                    >
+                      {allSelected ? 'Uncheck All' : 'Check All'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1 pt-0.5">
+                    {filteredFields.map((field) => {
+                      const isChecked = selectedFields.includes(field.key);
+                      return (
+                        <label
+                          key={field.key}
+                          className={cn(
+                            'flex items-center gap-2 rounded-md px-2 py-1 text-xs cursor-pointer select-none transition-colors',
+                            isChecked
+                              ? 'bg-primary/10 text-foreground font-medium'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => onToggleField(field.key)}
+                            className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                          />
+                          <span className="truncate" title={field.label}>
+                            {field.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
 // Subcomponent: EMV Card Item
 // ----------------------------------------------------------------------
 function EmvCardDetail({
@@ -1588,17 +2531,45 @@ function EmvCardDetail({
   totalCount,
   copiedHhid,
   onCopy,
+  selectedFields,
 }: {
   record: EmvDatabaseRecord;
   index: number;
   totalCount: number;
   copiedHhid: string | null;
   onCopy: (val: string, id: string) => void;
+  selectedFields: string[];
 }) {
+  const isVisible = (k: string) => selectedFields.includes(k);
+
   const isClaimed =
     record.distribution_status?.toLowerCase().includes('claimed') &&
     !record.distribution_status?.toLowerCase().includes('unclaimed');
   const isUnclaimed = record.distribution_status?.toLowerCase().includes('unclaimed');
+
+  const showHero = isVisible('lbp_account') || isVisible('acct_description') || isVisible('cct_type');
+
+  const attributeFields = [
+    { key: 'lbp_servicing_branch', label: 'Servicing Branch', value: record.lbp_servicing_branch },
+    { key: 'run_date', label: 'Run Date', value: formatDisplayDate(record.run_date) },
+    { key: 'date_claimed', label: 'Date Claimed', value: formatDisplayDate(record.date_claimed), highlight: (record.date_claimed ? 'emerald' : undefined) as 'emerald' | undefined },
+    { key: 'agreed_distribution_date', label: 'Agreed Distribution Date', value: formatDisplayDate(record.agreed_distribution_date) },
+    { key: 'beneficiary_name', label: 'Beneficiary (EMV)', value: `${record.first_name || ''} ${record.mid_name || ''} ${record.last_name || ''}`.trim() },
+    { key: 'municipality', label: 'Municipality', value: record.municipality },
+    { key: 'barangay', label: 'Barangay', value: record.barangay },
+    { key: 'province', label: 'Province', value: record.province },
+  ].filter((attr) => isVisible(attr.key));
+
+  const showRemarks =
+    (isVisible('reason_why_unclaimed') && !!record.reason_why_unclaimed) ||
+    (isVisible('recommended_action') && !!record.recommended_action) ||
+    (isVisible('action_taken') && !!record.action_taken);
+
+  const remarksCount = [
+    isVisible('reason_why_unclaimed') && !!record.reason_why_unclaimed,
+    isVisible('recommended_action') && !!record.recommended_action,
+    isVisible('action_taken') && !!record.action_taken,
+  ].filter(Boolean).length;
 
   return (
     <div className="rounded-xl border border-border/80 bg-background/50 p-5 shadow-xs transition hover:border-primary/30 dark:bg-card/40">
@@ -1609,14 +2580,20 @@ function EmvCardDetail({
             {index + 1}
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Card #{index + 1} of {totalCount}</span>
-            <span className="text-xs text-border">•</span>
-            <span className="font-mono text-xs text-muted-foreground">Item #{record.item_no || '-'}</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Card #{index + 1} of {totalCount}
+            </span>
+            {isVisible('item_no') && (
+              <>
+                <span className="text-xs text-border">•</span>
+                <span className="font-mono text-xs text-muted-foreground">Item #{record.item_no || '-'}</span>
+              </>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {record.distribution_status && (
+          {isVisible('distribution_status') && record.distribution_status && (
             <span
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
@@ -1639,79 +2616,108 @@ function EmvCardDetail({
       </div>
 
       {/* Account Number Hero */}
-      <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">LandBank Account Number</p>
-          <div className="flex items-center gap-2">
-            <p className="font-mono text-base font-bold text-foreground sm:text-lg">
-              {record.lbp_account || 'No Account Recorded'}
-            </p>
-            {record.lbp_account && (
-              <button
-                type="button"
-                onClick={() => onCopy(record.lbp_account, `emv_acct_${index}`)}
-                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                title="Copy account number"
-              >
-                {copiedHhid === `emv_acct_${index}` ? (
-                  <Check className="h-4 w-4 text-emerald-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
+      {showHero && (
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+          {isVisible('lbp_account') ? (
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                LandBank Account Number
+              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-base font-bold text-foreground sm:text-lg">
+                  {record.lbp_account || 'No Account Recorded'}
+                </p>
+                {record.lbp_account && (
+                  <button
+                    type="button"
+                    onClick={() => onCopy(record.lbp_account, `emv_acct_${index}`)}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    title="Copy account number"
+                  >
+                    {copiedHhid === `emv_acct_${index}` ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
-          </div>
-        </div>
+              </div>
+            </div>
+          ) : (
+            <div />
+          )}
 
-        <div className="flex flex-wrap gap-2 text-xs">
-          {record.acct_description && (
-            <div className="rounded-md bg-background/80 px-2.5 py-1 text-xs border border-border/80">
-              <span className="text-muted-foreground">Acct Desc: </span>
-              <span className="font-semibold text-foreground">{record.acct_description}</span>
-            </div>
-          )}
-          {record.cct_type && (
-            <div className="rounded-md bg-background/80 px-2.5 py-1 text-xs border border-border/80">
-              <span className="text-muted-foreground">CCT Type: </span>
-              <span className="font-semibold text-foreground">{record.cct_type}</span>
+          {(isVisible('acct_description') || isVisible('cct_type')) && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              {isVisible('acct_description') && record.acct_description && (
+                <div className="rounded-md bg-background/80 px-2.5 py-1 text-xs border border-border/80">
+                  <span className="text-muted-foreground">Acct Desc: </span>
+                  <span className="font-semibold text-foreground">{record.acct_description}</span>
+                </div>
+              )}
+              {isVisible('cct_type') && record.cct_type && (
+                <div className="rounded-md bg-background/80 px-2.5 py-1 text-xs border border-border/80">
+                  <span className="text-muted-foreground">CCT Type: </span>
+                  <span className="font-semibold text-foreground">{record.cct_type}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Grid of EMV attributes */}
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <DetailField label="Servicing Branch" value={record.lbp_servicing_branch} />
-        <DetailField label="Run Date" value={formatDisplayDate(record.run_date)} />
-        <DetailField label="Date Claimed" value={formatDisplayDate(record.date_claimed)} highlight={record.date_claimed ? 'emerald' : undefined} />
-        <DetailField label="Agreed Distribution Date" value={formatDisplayDate(record.agreed_distribution_date)} />
-        <DetailField label="Beneficiary (EMV)" value={`${record.first_name || ''} ${record.mid_name || ''} ${record.last_name || ''}`.trim()} />
-        <DetailField label="Municipality" value={record.municipality} />
-        <DetailField label="Barangay" value={record.barangay} />
-        <DetailField label="Province" value={record.province} />
-      </div>
+      {attributeFields.length > 0 && (
+        <div
+          className={cn(
+            'mt-4 grid gap-4',
+            attributeFields.length === 1 && 'grid-cols-1 sm:grid-cols-2',
+            attributeFields.length === 2 && 'grid-cols-2',
+            attributeFields.length === 3 && 'grid-cols-2 sm:grid-cols-3',
+            attributeFields.length >= 4 && 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+          )}
+        >
+          {attributeFields.map((attr) => (
+            <DetailField
+              key={attr.key}
+              label={attr.label}
+              value={attr.value}
+              highlight={attr.highlight}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Unclaimed & Action Alert Box (if present) */}
-      {(record.reason_why_unclaimed || record.recommended_action || record.action_taken) && (
+      {showRemarks && (
         <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 dark:bg-amber-500/15">
           <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400">
             <ShieldAlert className="h-4 w-4 shrink-0" />
             <span>Unclaimed / Action Taken Remarks</span>
           </div>
-          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs">
-            {record.reason_why_unclaimed && (
+          <div
+            className={cn(
+              'mt-2 grid gap-3 text-xs',
+              remarksCount === 1
+                ? 'grid-cols-1'
+                : remarksCount === 2
+                ? 'grid-cols-1 sm:grid-cols-2'
+                : 'grid-cols-1 sm:grid-cols-3'
+            )}
+          >
+            {isVisible('reason_why_unclaimed') && record.reason_why_unclaimed && (
               <div>
                 <span className="font-medium text-amber-800 dark:text-amber-300">Reason Unclaimed:</span>
                 <p className="mt-0.5 text-foreground">{record.reason_why_unclaimed}</p>
               </div>
             )}
-            {record.recommended_action && (
+            {isVisible('recommended_action') && record.recommended_action && (
               <div>
                 <span className="font-medium text-amber-800 dark:text-amber-300">Recommended Action:</span>
                 <p className="mt-0.5 text-foreground">{record.recommended_action}</p>
               </div>
             )}
-            {record.action_taken && (
+            {isVisible('action_taken') && record.action_taken && (
               <div>
                 <span className="font-medium text-amber-800 dark:text-amber-300">
                   Action Taken {record.date_acted ? `(${formatDisplayDate(record.date_acted)})` : ''}:
@@ -1735,28 +2741,113 @@ function PayrollCycleDetail({
   totalCount,
   copiedHhid,
   onCopy,
+  selectedFields,
 }: {
   record: PayrollRecord;
   index: number;
   totalCount: number;
   copiedHhid: string | null;
   onCopy: (val: string, id: string) => void;
+  selectedFields: string[];
 }) {
+  const isVisible = (k: string) => selectedFields.includes(k);
+
   const isReject = record.status?.toLowerCase() === 'reject';
   const isSuccess = record.status?.toLowerCase() === 'successful';
+
+  // 1. Overview header
+  const showPeriodYear = isVisible('period_year');
+  const showDescription = isVisible('payroll_description');
+  const showHhSet = isVisible('hh_set');
+  const showStatus = isVisible('status');
+
+  // 2. Financial KPIs
+  const kpiItems = [
+    isVisible('gross_amount') && {
+      label: 'Gross Amount',
+      value: formatAmount(record.gross_amount || 0),
+      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
+      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
+      valClass: 'mt-1 font-mono text-base font-bold text-foreground',
+    },
+    isVisible('adjustment_amount') && {
+      label: 'Adjustments',
+      value: formatAmount(record.adjustment_amount || 0),
+      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
+      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
+      valClass: 'mt-1 font-mono text-base font-bold text-amber-600 dark:text-amber-400',
+    },
+    isVisible('net_amount') && {
+      label: 'Net Disbursed',
+      value: formatAmount(record.net_amount || 0),
+      className: 'rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 dark:bg-emerald-500/10',
+      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-400',
+      valClass: 'mt-1 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400',
+    },
+    isVisible('total_educ') && {
+      label: 'Total Education',
+      value: formatAmount(record.total_educ || 0),
+      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
+      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
+      valClass: 'mt-1 font-mono text-base font-bold text-foreground',
+    },
+  ].filter(Boolean) as {
+    label: string;
+    value: string;
+    className: string;
+    labelClass: string;
+    valClass: string;
+  }[];
+
+  // 3. Grant Breakdown
+  const grantItems = [
+    isVisible('educ_dc_elem') && { label: 'Educ DC Elem', value: formatAmount(record.educ_dc_elem || 0) },
+    isVisible('educ_jr_hs') && { label: 'Educ Jr High', value: formatAmount(record.educ_jr_hs || 0) },
+    isVisible('educ_sr_hs') && { label: 'Educ Sr High', value: formatAmount(record.educ_sr_hs || 0) },
+    isVisible('health') && { label: 'Health Grant', value: formatAmount(record.health || 0) },
+    isVisible('rice_amount') && { label: 'Rice Subsidy', value: formatAmount(record.rice_amount || 0) },
+    isVisible('f1kd_amount') && { label: 'F1KD Amount', value: formatAmount(record.f1kd_amount || 0) },
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  // 4. Banking & Disbursal details
+  const disbursalFieldKeys = [
+    'payment_mode_classification',
+    'mode_of_payment',
+    'account_number',
+    'new_account_number',
+    'payroll_date',
+    'finance_approval',
+    'address_psgc',
+  ];
+  const hasDisbursalFields = disbursalFieldKeys.some((k) => isVisible(k));
+
+  // 5. Remarks / Reason
+  const showReason = isVisible('reason') && isReject;
 
   return (
     <div className="rounded-xl border border-border/80 bg-background/50 p-5 shadow-xs transition hover:border-indigo-500/30 dark:bg-card/40">
       {/* Header of Cycle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="rounded-md bg-indigo-500/10 px-2.5 py-1 font-mono text-xs font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-            {record.period} - {record.year}
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500/10 text-xs font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+            {index + 1}
           </span>
-          <span className="text-sm font-semibold text-foreground">
-            {record.payroll_description || 'Payroll Cycle'}
-          </span>
-          {record.hh_set && (
+          {showPeriodYear && (
+            <span className="rounded-md bg-indigo-500/10 px-2.5 py-1 font-mono text-xs font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+              {record.period} - {record.year}
+            </span>
+          )}
+          {showDescription && (
+            <span className="text-sm font-semibold text-foreground">
+              {record.payroll_description || 'Payroll Cycle'}
+            </span>
+          )}
+          {!showPeriodYear && !showDescription && (
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Cycle #{index + 1} of {totalCount}
+            </span>
+          )}
+          {showHhSet && record.hh_set && (
             <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               Set {record.hh_set} {record.set_group ? `• Group ${record.set_group}` : ''}
             </span>
@@ -1764,105 +2855,118 @@ function PayrollCycleDetail({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Status Badge */}
-          {record.status ? (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                isSuccess
-                  ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
-                  : isReject
-                  ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
-                  : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-              )}
-            >
-              {isSuccess ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : isReject ? (
-                <XCircle className="h-3.5 w-3.5" />
-              ) : null}
-              {record.status}
-            </span>
-          ) : (
-            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-              Unprocessed
-            </span>
+          {showStatus && (
+            record.status ? (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                  isSuccess
+                    ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
+                    : isReject
+                    ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
+                    : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
+                )}
+              >
+                {isSuccess ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : isReject ? (
+                  <XCircle className="h-3.5 w-3.5" />
+                ) : null}
+                {record.status}
+              </span>
+            ) : (
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                Unprocessed
+              </span>
+            )
           )}
         </div>
       </div>
 
       {/* Financial Summary KPI Strip */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Gross Amount</p>
-          <p className="mt-1 font-mono text-base font-bold text-foreground">
-            {formatAmount(record.gross_amount || 0)}
-          </p>
+      {kpiItems.length > 0 && (
+        <div
+          className={cn(
+            'mt-4 grid gap-3',
+            kpiItems.length === 1 && 'grid-cols-1 sm:grid-cols-2',
+            kpiItems.length === 2 && 'grid-cols-2',
+            kpiItems.length === 3 && 'grid-cols-1 sm:grid-cols-3',
+            kpiItems.length >= 4 && 'grid-cols-2 sm:grid-cols-4'
+          )}
+        >
+          {kpiItems.map((item, i) => (
+            <div key={i} className={item.className}>
+              <p className={item.labelClass}>{item.label}</p>
+              <p className={item.valClass}>{item.value}</p>
+            </div>
+          ))}
         </div>
-
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Adjustments</p>
-          <p className="mt-1 font-mono text-base font-bold text-amber-600 dark:text-amber-400">
-            {formatAmount(record.adjustment_amount || 0)}
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 dark:bg-emerald-500/10">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Net Disbursed</p>
-          <p className="mt-1 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
-            {formatAmount(record.net_amount || 0)}
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Total Education</p>
-          <p className="mt-1 font-mono text-base font-bold text-foreground">
-            {formatAmount(record.total_educ || 0)}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Grants Breakdown Accordion/Grid */}
-      <div className="mt-4 rounded-lg border border-border/60 bg-background/60 p-3.5 dark:bg-card/60">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Grant Component Breakdown</p>
-        <div className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 text-xs">
-          <DetailField label="Educ DC Elem" value={formatAmount(record.educ_dc_elem || 0)} isMono />
-          <DetailField label="Educ Jr High" value={formatAmount(record.educ_jr_hs || 0)} isMono />
-          <DetailField label="Educ Sr High" value={formatAmount(record.educ_sr_hs || 0)} isMono />
-          <DetailField label="Health Grant" value={formatAmount(record.health || 0)} isMono />
-          <DetailField label="Rice Subsidy" value={formatAmount(record.rice_amount || 0)} isMono />
-          <DetailField label="F1KD Amount" value={formatAmount(record.f1kd_amount || 0)} isMono />
+      {grantItems.length > 0 && (
+        <div className="mt-4 rounded-lg border border-border/60 bg-background/60 p-3.5 dark:bg-card/60">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Grant Component Breakdown</p>
+          <div
+            className={cn(
+              'mt-2.5 grid gap-3 text-xs',
+              grantItems.length <= 2 && 'grid-cols-2',
+              grantItems.length === 3 && 'grid-cols-2 sm:grid-cols-3',
+              grantItems.length === 4 && 'grid-cols-2 sm:grid-cols-4',
+              grantItems.length >= 5 && 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
+            )}
+          >
+            {grantItems.map((grant, i) => (
+              <DetailField key={i} label={grant.label} value={grant.value} isMono />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Banking & Disbursal Details */}
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <DetailField label="Payment Classification" value={record.payment_mode_classification} />
-        <DetailField label="Mode of Payment" value={record.mode_of_payment} />
-        <DetailField
-          label="Account Number"
-          value={record.account_number}
-          isMono
-          isCopyable
-          onCopy={(val) => onCopy(val, `pr_acct_${index}`)}
-          isCopied={copiedHhid === `pr_acct_${index}`}
-        />
-        <DetailField
-          label="New Account Number"
-          value={record.new_account_number || '-'}
-          isMono
-          highlight={record.new_account_number ? 'emerald' : undefined}
-          isCopyable={!!record.new_account_number}
-          onCopy={(val) => onCopy(val, `pr_new_acct_${index}`)}
-          isCopied={copiedHhid === `pr_new_acct_${index}`}
-        />
-        <DetailField label="Payroll Date" value={record.payroll_date} />
-        <DetailField label="Finance Approval" value={record.finance_approval} />
-        <DetailField label="Address PSGC" value={record.address_psgc} />
-      </div>
+      {hasDisbursalFields && (
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {isVisible('payment_mode_classification') && (
+            <DetailField label="Payment Classification" value={record.payment_mode_classification} />
+          )}
+          {isVisible('mode_of_payment') && (
+            <DetailField label="Mode of Payment" value={record.mode_of_payment} />
+          )}
+          {isVisible('account_number') && (
+            <DetailField
+              label="Account Number"
+              value={record.account_number}
+              isMono
+              isCopyable
+              onCopy={(val) => onCopy(val, `pr_acct_${index}`)}
+              isCopied={copiedHhid === `pr_acct_${index}`}
+            />
+          )}
+          {isVisible('new_account_number') && (
+            <DetailField
+              label="New Account Number"
+              value={record.new_account_number || '-'}
+              isMono
+              highlight={record.new_account_number ? 'emerald' : undefined}
+              isCopyable={!!record.new_account_number}
+              onCopy={(val) => onCopy(val, `pr_new_acct_${index}`)}
+              isCopied={copiedHhid === `pr_new_acct_${index}`}
+            />
+          )}
+          {isVisible('payroll_date') && (
+            <DetailField label="Payroll Date" value={record.payroll_date} />
+          )}
+          {isVisible('finance_approval') && (
+            <DetailField label="Finance Approval" value={record.finance_approval} />
+          )}
+          {isVisible('address_psgc') && (
+            <DetailField label="Address PSGC" value={record.address_psgc} />
+          )}
+        </div>
+      )}
 
       {/* Rejection / Remarks Box */}
-      {isReject && (
+      {showReason && (
         <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">
           <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <div>

@@ -377,7 +377,7 @@ export default function ReplacementPrint({
             box-shadow: none !important;
             border: none !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0 0 22mm 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             background: #ffffff !important;
@@ -387,10 +387,15 @@ export default function ReplacementPrint({
             break-after: page !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            min-height: 268mm !important;
+            position: relative !important;
+            height: 272mm !important;
+            min-height: 272mm !important;
+            max-height: 272mm !important;
+            box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+            overflow: hidden !important;
             zoom: 1 !important;
             transform: none !important;
           }
@@ -399,8 +404,16 @@ export default function ReplacementPrint({
             break-after: avoid !important;
           }
           .paper-footer {
-            margin-top: auto !important;
-            padding-top: 8px !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border: none !important;
+            border-top: none !important;
           }
           table {
             border-collapse: collapse !important;
@@ -764,7 +777,7 @@ export default function ReplacementPrint({
               return (
                 <div
                   key={pageItem.pageIndex}
-                  className="printable-page relative mb-8 flex min-h-[297mm] w-[210mm] flex-col justify-between rounded-lg bg-white p-[15mm] text-black shadow-xl ring-1 ring-slate-200/80 print:m-0 print:mb-0 print:min-h-[268mm] print:w-full print:rounded-none print:p-0 print:shadow-none print:ring-0"
+                  className="printable-page relative mb-8 flex min-h-[297mm] w-[210mm] flex-col justify-between rounded-lg bg-white p-[15mm] text-black shadow-xl ring-1 ring-slate-200/80 print:relative print:m-0 print:mb-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:w-full print:rounded-none print:p-0 print:pb-[22mm] print:shadow-none print:ring-0 print:overflow-hidden"
                 >
                   <div className="flex-1">
                     {/* Header Logos & Agency Branding (Page 1 only) */}
@@ -788,20 +801,23 @@ export default function ReplacementPrint({
                               ].filter(Boolean)}
                             />
 
-                            <SmartImage
-                              alt="Bagong Pilipinas"
-                              className="h-14 w-auto object-contain print:h-12"
-                              fallback={
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-center text-[10px] font-bold text-amber-600">
-                                  BP
-                                </div>
-                              }
-                              sources={[
-                                bagongPilipinasLogoUrl || '',
-                                '/images/bagong_pilipinas_logo.png',
-                                '/bagong_pilipinas_logo.png',
-                              ].filter(Boolean)}
-                            />
+                            {/* Bagong Pilipinas Logo - Moved up to align bottom with DSWD Caraga logo */}
+                            <div className="flex items-center -mt-2 print:-mt-[7px]">
+                              <SmartImage
+                                alt="Bagong Pilipinas"
+                                className="h-14 w-auto object-contain print:h-12"
+                                fallback={
+                                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-center text-[10px] font-bold text-amber-600">
+                                    BP
+                                  </div>
+                                }
+                                sources={[
+                                  bagongPilipinasLogoUrl || '',
+                                  '/images/bagong_pilipinas_logo.png',
+                                  '/bagong_pilipinas_logo.png',
+                                ].filter(Boolean)}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -939,7 +955,7 @@ export default function ReplacementPrint({
                   </div>
 
                   {/* Clean Official Footer (No JSP/reference code as requested) */}
-                  <footer className="paper-footer mt-auto pt-4 text-center text-[10px] text-slate-800 print:mt-auto print:pt-2">
+                  <footer className="paper-footer mt-auto pt-4 text-center text-[10px] text-slate-800 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="text-xs font-semibold text-black">
                       PAGE {currentPageNum} of {totalPages}
                     </div>

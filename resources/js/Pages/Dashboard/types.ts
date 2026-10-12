@@ -233,6 +233,7 @@ export type InquirySummary = {
 
 export type InquiryResult = {
   success: boolean;
+  exists?: boolean;
   query: string;
   display_hhid: string;
   total_matches: number;

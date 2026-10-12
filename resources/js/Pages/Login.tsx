@@ -92,13 +92,13 @@ export default function Login() {
                   <ShieldCheck className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <div className="text-xs font-extrabold uppercase tracking-[0.28em] text-blue-500">iGrants</div>
+                  <div className="text-xs font-extrabold uppercase tracking-[0.28em] text-blue-500">GRANTS</div>
                   <h1 className="mt-1 text-xl font-extrabold leading-7">
-                    Integrated Grants,
+                    Grants Registry And
                     <br />
-                    Records, Account and Notification Tracking System
+                    Navigation Tracking System
                   </h1>
-                  <p className="mt-2 text-sm text-muted-foreground">DSWD grants and records tracking system</p>
+                  <p className="mt-2 text-sm text-muted-foreground">DSWD Grants Registry And Navigation Tracking System</p>
                 </div>
               </div>
 
@@ -245,7 +245,7 @@ export default function Login() {
               <div className="relative flex h-full min-h-[620px] flex-col justify-between px-10 py-9">
                 <div className="inline-flex w-fit items-center gap-2 rounded-md border border-white/70 bg-white/55 px-4 py-2 text-xs font-extrabold text-primary shadow-sm backdrop-blur">
                   <ShieldCheck className="h-4 w-4" />
-                  iGrants secure workspace
+                  GRANTS secure workspace
                 </div>
 
                 <div className="relative mx-auto h-[390px] w-full max-w-[390px]">

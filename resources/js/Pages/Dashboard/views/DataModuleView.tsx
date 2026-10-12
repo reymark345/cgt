@@ -86,13 +86,63 @@ type ReplacementRecord = {
   created_at: string | null;
 };
 
+type TransferOfFundRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  old_card_number: string | null;
+  old_cardholder_name: string | null;
+  new_card_number: string | null;
+  new_cardholder_name: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type ForcePinRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type LockingRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type LiftingRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
 type UndoTarget = {
   id: number;
   household_id_number: string | null;
   name: string | null;
   address?: string | null;
   card_number?: string | null;
-  moduleType: 'opening' | 'distribution' | 'otc-withdrawal' | 'replacement';
+  moduleType: 'opening' | 'distribution' | 'otc-withdrawal' | 'replacement' | 'transfer-of-fund' | 'force-pin' | 'locking' | 'lifting';
 };
 
 type DataModuleConfig = {
@@ -174,11 +224,20 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
   },
   'transfer-of-fund': {
     title: 'Transfer of Fund',
-    subtitle: 'Track fund transfer batches, depository crediting orders, transmittal numbers, and settlement reconciliation.',
+    subtitle: 'Manage and monitor fund transfer endorsements, depository crediting requests, and unwithdrawn grant reconciliations.',
     icon: ArrowRightLeft,
     badge: 'Fund Transfers',
     accentColor: 'text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20',
-    columns: ['TOF Batch No.', 'Funding Source', 'Total Accounts', 'Total Amount', 'Endorsement Date', 'Settlement Reference', 'TOF Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Old Card Number',
+      'Old Cardholder Name',
+      'New Card Number',
+      'New Cardholder Name',
+      'Action',
+    ],
   },
   'force-pin': {
     title: 'Force PIN',
@@ -186,23 +245,44 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
     icon: KeyRound,
     badge: 'Security & PIN',
     accentColor: 'text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20',
-    columns: ['Request ID', 'Household ID', 'Cardholder Name', 'Account Number', 'Branch Assigned', 'Date Requested', 'PIN Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   locking: {
     title: 'Locking',
-    subtitle: 'Manage card locking requests, restriction flags, lost/stolen reports, and frozen transaction batches.',
+    subtitle: 'Manage and monitor card locking requests, depository restriction flags, and security endorsement status.',
     icon: Lock,
     badge: 'Security',
     accentColor: 'text-rose-600 bg-rose-500/10 dark:text-rose-400 dark:bg-rose-500/20',
-    columns: ['Reference No.', 'Household ID', 'Cardholder Name', 'Account Number', 'Lock Reason', 'Date Locked', 'Lock Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   lifting: {
     title: 'Lifting',
-    subtitle: 'Process card restriction liftings, unfreeze requests, compliance validations, and clearance tracking.',
+    subtitle: 'Manage and monitor card unfreezing requests, lifting restriction flags, and security endorsement status.',
     icon: Unlock,
     badge: 'Resolution',
     accentColor: 'text-teal-600 bg-teal-500/10 dark:text-teal-400 dark:bg-teal-500/20',
-    columns: ['Clearance No.', 'Household ID', 'Grantee Name', 'Account Number', 'Lift Reason', 'Authorized By', 'Lifting Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   matching: {
     title: 'Matching',
@@ -301,6 +381,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
   const [otcTotal, setOtcTotal] = useState(0);
   const [replacementRecords, setReplacementRecords] = useState<ReplacementRecord[]>([]);
   const [replacementTotal, setReplacementTotal] = useState(0);
+  const [transferOfFundRecords, setTransferOfFundRecords] = useState<TransferOfFundRecord[]>([]);
+  const [transferOfFundTotal, setTransferOfFundTotal] = useState(0);
+  const [forcePinRecords, setForcePinRecords] = useState<ForcePinRecord[]>([]);
+  const [forcePinTotal, setForcePinTotal] = useState(0);
+  const [lockingRecords, setLockingRecords] = useState<LockingRecord[]>([]);
+  const [lockingTotal, setLockingTotal] = useState(0);
+  const [liftingRecords, setLiftingRecords] = useState<LiftingRecord[]>([]);
+  const [liftingTotal, setLiftingTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -420,8 +508,112 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     }
   }, [view]);
 
+  const fetchTransferOfFundData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'transfer-of-fund') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/transfer-of-fund/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setTransferOfFundRecords(json.data || []);
+          setTransferOfFundTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load transfer of fund records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchForcePinData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'force-pin') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/force-pin/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setForcePinRecords(json.data || []);
+          setForcePinTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load force pin records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchLockingData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'locking') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/locking/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setLockingRecords(json.data || []);
+          setLockingTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load locking records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchLiftingData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'lifting') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/lifting/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setLiftingRecords(json.data || []);
+          setLiftingTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load lifting records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
   useEffect(() => {
-    if (!['opening', 'distribution', 'otc-withdrawal', 'replacement'].includes(view)) return;
+    if (!['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view)) return;
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
@@ -438,8 +630,16 @@ export function DataModuleView({ view }: DataModuleViewProps) {
       fetchOtcData(currentPage, debouncedSearch);
     } else if (view === 'replacement') {
       fetchReplacementData(currentPage, debouncedSearch);
+    } else if (view === 'transfer-of-fund') {
+      fetchTransferOfFundData(currentPage, debouncedSearch);
+    } else if (view === 'force-pin') {
+      fetchForcePinData(currentPage, debouncedSearch);
+    } else if (view === 'locking') {
+      fetchLockingData(currentPage, debouncedSearch);
+    } else if (view === 'lifting') {
+      fetchLiftingData(currentPage, debouncedSearch);
     }
-  }, [view, currentPage, debouncedSearch, fetchOpeningData, fetchDistributionData, fetchOtcData, fetchReplacementData]);
+  }, [view, currentPage, debouncedSearch, fetchOpeningData, fetchDistributionData, fetchOtcData, fetchReplacementData, fetchTransferOfFundData, fetchForcePinData, fetchLockingData, fetchLiftingData]);
 
   const [recordToUndo, setRecordToUndo] = useState<UndoTarget | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
@@ -453,12 +653,24 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     const isDist = recordToUndo.moduleType === 'distribution';
     const isOtc = recordToUndo.moduleType === 'otc-withdrawal';
     const isRep = recordToUndo.moduleType === 'replacement';
+    const isTof = recordToUndo.moduleType === 'transfer-of-fund';
+    const isFp = recordToUndo.moduleType === 'force-pin';
+    const isLock = recordToUndo.moduleType === 'locking';
+    const isLift = recordToUndo.moduleType === 'lifting';
     const endpoint = isDist
       ? `/distribution/${recordToUndo.id}`
       : isOtc
       ? `/otc-withdrawal/${recordToUndo.id}`
       : isRep
       ? `/replacement/${recordToUndo.id}`
+      : isTof
+      ? `/transfer-of-fund/${recordToUndo.id}`
+      : isFp
+      ? `/force-pin/${recordToUndo.id}`
+      : isLock
+      ? `/locking/${recordToUndo.id}`
+      : isLift
+      ? `/lifting/${recordToUndo.id}`
       : `/opening/${recordToUndo.id}`;
 
     const moduleLabel = isDist
@@ -467,6 +679,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
       ? 'OTC Withdrawal'
       : isRep
       ? 'Replacement'
+      : isTof
+      ? 'Transfer of Fund'
+      : isFp
+      ? 'Force PIN'
+      : isLock
+      ? 'Locking'
+      : isLift
+      ? 'Lifting'
       : 'Opening';
 
     try {
@@ -496,6 +716,18 @@ export function DataModuleView({ view }: DataModuleViewProps) {
         } else if (isRep) {
           setReplacementRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
           setReplacementTotal((prev) => Math.max(0, prev - 1));
+        } else if (isTof) {
+          setTransferOfFundRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setTransferOfFundTotal((prev) => Math.max(0, prev - 1));
+        } else if (isFp) {
+          setForcePinRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setForcePinTotal((prev) => Math.max(0, prev - 1));
+        } else if (isLock) {
+          setLockingRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setLockingTotal((prev) => Math.max(0, prev - 1));
+        } else if (isLift) {
+          setLiftingRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setLiftingTotal((prev) => Math.max(0, prev - 1));
         } else {
           setOpeningRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
           setOpeningTotal((prev) => Math.max(0, prev - 1));
@@ -507,6 +739,17 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             `${moduleLabel} record for Household ${recordToUndo.household_id_number} was successfully undone and removed.`,
         });
         setRecordToUndo(null);
+
+        // Live update sidebar badges and dashboard metrics immediately
+        if (data.module_counts) {
+          window.dispatchEvent(
+            new CustomEvent('cgt:module-counts-updated', {
+              detail: { counts: data.module_counts },
+            })
+          );
+        } else {
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+        }
       } else {
         setFeedback({
           type: 'error',
@@ -556,7 +799,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
-            {['opening', 'distribution', 'otc-withdrawal', 'replacement'].includes(view) ? (
+            {['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view) ? (
               <>
                 <a
                   href={
@@ -573,6 +816,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300 dark:hover:bg-emerald-400/25'
                       : view === 'replacement'
                       ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-400/30 dark:bg-purple-400/15 dark:text-purple-300 dark:hover:bg-purple-400/25'
+                      : view === 'transfer-of-fund'
+                      ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-400/15 dark:text-indigo-300 dark:hover:bg-indigo-400/25'
+                      : view === 'force-pin'
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300 dark:hover:bg-amber-400/25'
+                      : view === 'locking'
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-300 dark:hover:bg-rose-400/25'
+                      : view === 'lifting'
+                      ? 'border-teal-500/30 bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300 dark:hover:bg-teal-400/25'
                       : 'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25'
                   }`}
                   title={`Open printable ${config.title} Form in new tab`}
@@ -623,6 +874,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                 ? otcTotal.toLocaleString()
                 : view === 'replacement'
                 ? replacementTotal.toLocaleString()
+                : view === 'transfer-of-fund'
+                ? transferOfFundTotal.toLocaleString()
+                : view === 'force-pin'
+                ? forcePinTotal.toLocaleString()
+                : view === 'locking'
+                ? lockingTotal.toLocaleString()
+                : view === 'lifting'
+                ? liftingTotal.toLocaleString()
                 : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Current system entries</div>
@@ -638,6 +897,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                 ? otcRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'claimed').length
                 : view === 'replacement'
                 ? replacementRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'replaced').length
+                : view === 'transfer-of-fund'
+                ? transferOfFundRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'transferred').length
+                : view === 'force-pin'
+                ? forcePinRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
+                : view === 'locking'
+                ? lockingRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
+                : view === 'lifting'
+                ? liftingRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
                 : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Processed & validated</div>
@@ -653,6 +920,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                 ? otcRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'scheduled').length
                 : view === 'replacement'
                 ? replacementRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'transfer-of-fund'
+                ? transferOfFundRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'force-pin'
+                ? forcePinRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'locking'
+                ? lockingRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'lifting'
+                ? liftingRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
                 : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Awaiting review or dispatch</div>
@@ -706,6 +981,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   fetchOtcData(currentPage, debouncedSearch);
                 } else if (view === 'replacement') {
                   fetchReplacementData(currentPage, debouncedSearch);
+                } else if (view === 'transfer-of-fund') {
+                  fetchTransferOfFundData(currentPage, debouncedSearch);
+                } else if (view === 'force-pin') {
+                  fetchForcePinData(currentPage, debouncedSearch);
+                } else if (view === 'locking') {
+                  fetchLockingData(currentPage, debouncedSearch);
+                } else if (view === 'lifting') {
+                  fetchLiftingData(currentPage, debouncedSearch);
                 }
               }}
               type="button"
@@ -1102,6 +1385,348 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                     </td>
                   </tr>
                 )
+              ) : view === 'transfer-of-fund' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Transfer of Fund records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : transferOfFundRecords.length > 0 ? (
+                  transferOfFundRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.old_card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.old_cardholder_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.new_card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.new_cardholder_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/transfer-of-fund/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            title="Print Transfer of Fund Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.new_cardholder_name || item.old_cardholder_name || null,
+                                address: item.address,
+                                card_number: item.old_card_number || item.new_card_number,
+                                moduleType: 'transfer-of-fund',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Transfer of Fund list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No transfer of fund records found matching "${debouncedSearch}".`
+                            : 'There are no transfer of fund records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'force-pin' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Force PIN records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : forcePinRecords.length > 0 ? (
+                  forcePinRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/force-pin/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+                            title="Print Force PIN Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'force-pin',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Force PIN list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No force pin records found matching "${debouncedSearch}".`
+                            : 'There are no force pin records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'locking' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-rose-600 dark:text-rose-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Locking records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : lockingRecords.length > 0 ? (
+                  lockingRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/locking/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+                            title="Print Locking Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'locking',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Locking list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No locking records found matching "${debouncedSearch}".`
+                            : 'There are no locking records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'lifting' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Lifting records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : liftingRecords.length > 0 ? (
+                  liftingRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/lifting/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400"
+                            title="Print Lifting Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'lifting',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Lifting list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No lifting records found matching "${debouncedSearch}".`
+                            : 'There are no lifting records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
               ) : (
                 <tr>
                   <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
@@ -1125,7 +1750,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
         {/* Footer / Pagination Placeholder */}
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          {['opening', 'distribution', 'otc-withdrawal', 'replacement'].includes(view) ? (
+          {['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view) ? (
             <>
               {(() => {
                 const totalEntries =
@@ -1135,7 +1760,15 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                     ? distributionTotal
                     : view === 'otc-withdrawal'
                     ? otcTotal
-                    : replacementTotal;
+                    : view === 'replacement'
+                    ? replacementTotal
+                    : view === 'transfer-of-fund'
+                    ? transferOfFundTotal
+                    : view === 'force-pin'
+                    ? forcePinTotal
+                    : view === 'locking'
+                    ? lockingTotal
+                    : liftingTotal;
                 return (
                   <span>
                     Showing {totalEntries === 0 ? 0 : (currentPage - 1) * 15 + 1} to{' '}
@@ -1198,6 +1831,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             ? 'OTC Withdrawal'
             : recordToUndo.moduleType === 'replacement'
             ? 'Replacement'
+            : recordToUndo.moduleType === 'transfer-of-fund'
+            ? 'Transfer of Fund'
+            : recordToUndo.moduleType === 'force-pin'
+            ? 'Force PIN'
+            : recordToUndo.moduleType === 'locking'
+            ? 'Locking'
+            : recordToUndo.moduleType === 'lifting'
+            ? 'Lifting'
             : 'Opening';
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">

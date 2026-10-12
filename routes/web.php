@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\EmvRecordController;
+use App\Http\Controllers\ForcePinController;
 use App\Http\Controllers\GranteeListController;
 use App\Http\Controllers\InquiryController;
+use App\Http\Controllers\LiftingController;
+use App\Http\Controllers\LockingController;
 use App\Http\Controllers\OpeningController;
 use App\Http\Controllers\OtcWithdrawalController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReplacementController;
 use App\Http\Controllers\SSOController;
+use App\Http\Controllers\TransferOfFundController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -54,6 +58,7 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/inquiry/request-options', [InquiryController::class, 'requestOptions'])->name('inquiry.request-options');
     Route::post('/inquiry/add-request', [InquiryController::class, 'addRequest'])->name('inquiry.add-request');
     Route::get('/inquiry/household-requests', [InquiryController::class, 'householdRequests'])->name('inquiry.household-requests');
+    Route::get('/module-counts', [InquiryController::class, 'moduleCounts'])->name('module-counts');
 
     Route::get('/opening/search', [OpeningController::class, 'search'])->name('opening.search');
     Route::get('/opening/export', [OpeningController::class, 'export'])->name('opening.export');
@@ -82,5 +87,33 @@ Route::middleware('sso.auth')->group(function () {
     Route::post('/replacement/store', [ReplacementController::class, 'store'])->name('replacement.store');
     Route::delete('/replacement/{id}', [ReplacementController::class, 'destroy'])->name('replacement.destroy');
     Route::post('/replacement/{id}/destroy', [ReplacementController::class, 'destroy']);
+
+    Route::get('/transfer-of-fund/search', [TransferOfFundController::class, 'search'])->name('transfer-of-fund.search');
+    Route::get('/transfer-of-fund/export', [TransferOfFundController::class, 'export'])->name('transfer-of-fund.export');
+    Route::get('/transfer-of-fund/print', [TransferOfFundController::class, 'print'])->name('transfer-of-fund.print');
+    Route::post('/transfer-of-fund/store', [TransferOfFundController::class, 'store'])->name('transfer-of-fund.store');
+    Route::delete('/transfer-of-fund/{id}', [TransferOfFundController::class, 'destroy'])->name('transfer-of-fund.destroy');
+    Route::post('/transfer-of-fund/{id}/destroy', [TransferOfFundController::class, 'destroy']);
+
+    Route::get('/force-pin/search', [ForcePinController::class, 'search'])->name('force-pin.search');
+    Route::get('/force-pin/export', [ForcePinController::class, 'export'])->name('force-pin.export');
+    Route::get('/force-pin/print', [ForcePinController::class, 'print'])->name('force-pin.print');
+    Route::post('/force-pin/store', [ForcePinController::class, 'store'])->name('force-pin.store');
+    Route::delete('/force-pin/{id}', [ForcePinController::class, 'destroy'])->name('force-pin.destroy');
+    Route::post('/force-pin/{id}/destroy', [ForcePinController::class, 'destroy']);
+
+    Route::get('/locking/search', [LockingController::class, 'search'])->name('locking.search');
+    Route::get('/locking/export', [LockingController::class, 'export'])->name('locking.export');
+    Route::get('/locking/print', [LockingController::class, 'print'])->name('locking.print');
+    Route::post('/locking/store', [LockingController::class, 'store'])->name('locking.store');
+    Route::delete('/locking/{id}', [LockingController::class, 'destroy'])->name('locking.destroy');
+    Route::post('/locking/{id}/destroy', [LockingController::class, 'destroy']);
+
+    Route::get('/lifting/search', [LiftingController::class, 'search'])->name('lifting.search');
+    Route::get('/lifting/export', [LiftingController::class, 'export'])->name('lifting.export');
+    Route::get('/lifting/print', [LiftingController::class, 'print'])->name('lifting.print');
+    Route::post('/lifting/store', [LiftingController::class, 'store'])->name('lifting.store');
+    Route::delete('/lifting/{id}', [LiftingController::class, 'destroy'])->name('lifting.destroy');
+    Route::post('/lifting/{id}/destroy', [LiftingController::class, 'destroy']);
 });
 

@@ -11,7 +11,7 @@ createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />);
   },
-  title: (title) => (title ? `${title} - iGrants` : 'iGrants'),
+  title: (title) => (title ? `${title} - GRANTS` : 'GRANTS'),
 });
 
 

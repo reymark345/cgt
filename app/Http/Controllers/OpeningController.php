@@ -198,6 +198,7 @@ class OpeningController extends Controller
                 ? "Opening record for Household {$hhId} has been undone and removed successfully."
                 : 'Opening record has been undone and removed successfully.',
             'id' => $id,
+            'module_counts' => \App\Http\Controllers\InquiryController::getModuleCounts(),
         ]);
     }
 

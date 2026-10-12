@@ -248,7 +248,7 @@ export function DashboardView({
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-primary dark:text-cyan-300">
                   <Sparkles className="h-3 w-3" />
-                  DSWD iGrants Caraga Region XIII
+                  DSWD GRANTS Caraga Region XIII
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1 text-muted-foreground">
