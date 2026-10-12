@@ -320,17 +320,15 @@ export function EmvPayrollView({
 
   // Sync if payrollRecords or meta props update
   useEffect(() => {
-    if (payrollRecords.length > 0) {
-      setData(payrollRecords);
-    }
-    if (payrollTotalCount > 0) {
+    setData(payrollRecords);
+    if (payrollTotalCount !== undefined) {
       setDbTotal(payrollTotalCount);
       setTotalCount(payrollTotalCount);
     }
-    if (payrollGrossTotal > 0) {
+    if (payrollGrossTotal !== undefined) {
       setGrossTotal(payrollGrossTotal);
     }
-    if (payrollNetTotal > 0) {
+    if (payrollNetTotal !== undefined) {
       setNetTotal(payrollNetTotal);
     }
   }, [payrollRecords, payrollTotalCount, payrollGrossTotal, payrollNetTotal]);
@@ -415,6 +413,11 @@ export function EmvPayrollView({
         }
         if (typeof json.total_in_database === 'number') {
           setDbTotal(json.total_in_database);
+          window.dispatchEvent(
+            new CustomEvent('cgt:reference-counts-updated', {
+              detail: { payroll: json.total_in_database },
+            })
+          );
         }
         if (typeof json.gross_total === 'number') {
           setGrossTotal(json.gross_total);
@@ -701,8 +704,21 @@ export function EmvPayrollView({
             `Import complete! ${statusData.imported_count.toLocaleString()} added, ${statusData.updated_count.toLocaleString()} updated.`
           );
           fetchRecentRecords();
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+          fetch('/reference-counts')
+            .then((r) => r.json())
+            .then((res) => {
+              if (res.success && res.references) {
+                window.dispatchEvent(
+                  new CustomEvent('cgt:reference-counts-updated', {
+                    detail: res.references,
+                  })
+                );
+              }
+            })
+            .catch(() => {});
           try {
-            router.reload({ preserveScroll: true, preserveState: true });
+            router.reload({ preserveScroll: true, preserveState: false });
           } catch {
             // ignore
           }
@@ -751,8 +767,21 @@ export function EmvPayrollView({
                 `Import complete! ${pumpData.imported_count.toLocaleString()} added, ${pumpData.updated_count.toLocaleString()} updated.`
               );
               fetchRecentRecords();
+              window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+              fetch('/reference-counts')
+                .then((r) => r.json())
+                .then((res) => {
+                  if (res.success && res.references) {
+                    window.dispatchEvent(
+                      new CustomEvent('cgt:reference-counts-updated', {
+                        detail: res.references,
+                      })
+                    );
+                  }
+                })
+                .catch(() => {});
               try {
-                router.reload({ preserveScroll: true, preserveState: true });
+                router.reload({ preserveScroll: true, preserveState: false });
               } catch {
                 // ignore
               }

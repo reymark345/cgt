@@ -182,14 +182,12 @@ export function EmvDatabaseView({
 
   // Sync if emvRecords or meta props update
   useEffect(() => {
-    if (emvRecords.length > 0) {
-      setData(emvRecords);
-    }
-    if (emvTotalCount > 0) {
+    setData(emvRecords);
+    if (emvTotalCount !== undefined) {
       setDbTotal(emvTotalCount);
       setTotalCount(emvTotalCount);
     }
-    if (emvClaimedCount > 0) {
+    if (emvClaimedCount !== undefined) {
       setClaimedCount(emvClaimedCount);
     }
   }, [emvRecords, emvTotalCount, emvClaimedCount]);
@@ -256,6 +254,11 @@ export function EmvDatabaseView({
         }
         if (typeof json.total_in_database === 'number') {
           setDbTotal(json.total_in_database);
+          window.dispatchEvent(
+            new CustomEvent('cgt:reference-counts-updated', {
+              detail: { emv: json.total_in_database },
+            })
+          );
         }
         if (typeof json.claimed_count === 'number') {
           setClaimedCount(json.claimed_count);
@@ -467,8 +470,21 @@ export function EmvDatabaseView({
             `Import complete! ${statusData.imported_count.toLocaleString()} added, ${statusData.updated_count.toLocaleString()} updated.`
           );
           fetchRecentRecords();
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+          fetch('/reference-counts')
+            .then((r) => r.json())
+            .then((res) => {
+              if (res.success && res.references) {
+                window.dispatchEvent(
+                  new CustomEvent('cgt:reference-counts-updated', {
+                    detail: res.references,
+                  })
+                );
+              }
+            })
+            .catch(() => {});
           try {
-            router.reload({ preserveScroll: true, preserveState: true });
+            router.reload({ preserveScroll: true, preserveState: false });
           } catch {
             // ignore
           }
@@ -517,8 +533,21 @@ export function EmvDatabaseView({
                 `Import complete! ${pumpData.imported_count.toLocaleString()} added, ${pumpData.updated_count.toLocaleString()} updated.`
               );
               fetchRecentRecords();
+              window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+              fetch('/reference-counts')
+                .then((r) => r.json())
+                .then((res) => {
+                  if (res.success && res.references) {
+                    window.dispatchEvent(
+                      new CustomEvent('cgt:reference-counts-updated', {
+                        detail: res.references,
+                      })
+                    );
+                  }
+                })
+                .catch(() => {});
               try {
-                router.reload({ preserveScroll: true, preserveState: true });
+                router.reload({ preserveScroll: true, preserveState: false });
               } catch {
                 // ignore
               }

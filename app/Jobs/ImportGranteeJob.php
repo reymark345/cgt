@@ -123,6 +123,7 @@ class ImportGranteeJob implements ShouldQueue
                 @unlink($filePath);
             }
             $importer->cleanExtractDir($filePath);
+            \App\Http\Controllers\EmvRecordController::clearMetricsCache();
         } catch (\Throwable $e) {
             Log::error('ImportGranteeJob failed for import #' . $import->id . ': ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),

@@ -202,14 +202,12 @@ export function GranteeView({
 
   // Sync if grantees or meta props update
   useEffect(() => {
-    if (grantees.length > 0) {
-      setData(grantees);
-    }
-    if (granteeTotalCount > 0) {
+    setData(grantees);
+    if (granteeTotalCount !== undefined) {
       setDbTotal(granteeTotalCount);
       setTotalCount(granteeTotalCount);
     }
-    if (granteeActiveCount > 0) {
+    if (granteeActiveCount !== undefined) {
       setActiveCount(granteeActiveCount);
     }
   }, [grantees, granteeTotalCount, granteeActiveCount]);
@@ -276,6 +274,11 @@ export function GranteeView({
         }
         if (typeof json.total_in_database === 'number') {
           setDbTotal(json.total_in_database);
+          window.dispatchEvent(
+            new CustomEvent('cgt:reference-counts-updated', {
+              detail: { grantee: json.total_in_database },
+            })
+          );
         }
       }
     } catch (err) {
@@ -484,8 +487,21 @@ export function GranteeView({
             `Import complete! ${statusData.imported_count.toLocaleString()} added, ${statusData.updated_count.toLocaleString()} updated.`
           );
           fetchRecentGrantees();
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+          fetch('/reference-counts')
+            .then((r) => r.json())
+            .then((res) => {
+              if (res.success && res.references) {
+                window.dispatchEvent(
+                  new CustomEvent('cgt:reference-counts-updated', {
+                    detail: res.references,
+                  })
+                );
+              }
+            })
+            .catch(() => {});
           try {
-            router.reload({ preserveScroll: true, preserveState: true });
+            router.reload({ preserveScroll: true, preserveState: false });
           } catch {
             // ignore
           }
@@ -534,8 +550,21 @@ export function GranteeView({
                 `Import complete! ${pumpData.imported_count.toLocaleString()} added, ${pumpData.updated_count.toLocaleString()} updated.`
               );
               fetchRecentGrantees();
+              window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+              fetch('/reference-counts')
+                .then((r) => r.json())
+                .then((res) => {
+                  if (res.success && res.references) {
+                    window.dispatchEvent(
+                      new CustomEvent('cgt:reference-counts-updated', {
+                        detail: res.references,
+                      })
+                    );
+                  }
+                })
+                .catch(() => {});
               try {
-                router.reload({ preserveScroll: true, preserveState: true });
+                router.reload({ preserveScroll: true, preserveState: false });
               } catch {
                 // ignore
               }

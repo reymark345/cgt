@@ -133,6 +133,28 @@ export default function Home({
     return moduleCounts || dashboardMetrics?.moduleCounts || {};
   });
 
+  const [liveEmvCount, setLiveEmvCount] = useState<number>(emvTotalCount ?? 0);
+  const [liveGranteeCount, setLiveGranteeCount] = useState<number>(granteeTotalCount ?? 0);
+  const [livePayrollCount, setLivePayrollCount] = useState<number>(payrollTotalCount ?? 0);
+
+  useEffect(() => {
+    if (typeof emvTotalCount === 'number') {
+      setLiveEmvCount(emvTotalCount);
+    }
+  }, [emvTotalCount]);
+
+  useEffect(() => {
+    if (typeof granteeTotalCount === 'number') {
+      setLiveGranteeCount(granteeTotalCount);
+    }
+  }, [granteeTotalCount]);
+
+  useEffect(() => {
+    if (typeof payrollTotalCount === 'number') {
+      setLivePayrollCount(payrollTotalCount);
+    }
+  }, [payrollTotalCount]);
+
   useEffect(() => {
     if (moduleCounts) {
       setLiveModuleCounts(moduleCounts);
@@ -151,8 +173,21 @@ export default function Home({
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.counts) {
-          setLiveModuleCounts(data.counts);
+        if (data.success) {
+          if (data.counts) {
+            setLiveModuleCounts(data.counts);
+          }
+          if (data.references) {
+            if (typeof data.references.emv === 'number') {
+              setLiveEmvCount(data.references.emv);
+            }
+            if (typeof data.references.grantee === 'number') {
+              setLiveGranteeCount(data.references.grantee);
+            }
+            if (typeof data.references.payroll === 'number') {
+              setLivePayrollCount(data.references.payroll);
+            }
+          }
         }
       }
     } catch {
@@ -170,11 +205,32 @@ export default function Home({
       }
     };
 
+    const handleReferenceCountsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        emv?: number;
+        grantee?: number;
+        payroll?: number;
+      }>;
+      if (customEvent.detail) {
+        if (typeof customEvent.detail.emv === 'number') {
+          setLiveEmvCount(customEvent.detail.emv);
+        }
+        if (typeof customEvent.detail.grantee === 'number') {
+          setLiveGranteeCount(customEvent.detail.grantee);
+        }
+        if (typeof customEvent.detail.payroll === 'number') {
+          setLivePayrollCount(customEvent.detail.payroll);
+        }
+      }
+      refreshModuleCounts();
+    };
+
     const handleRefresh = () => {
       refreshModuleCounts();
     };
 
     window.addEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+    window.addEventListener('cgt:reference-counts-updated', handleReferenceCountsUpdated);
     window.addEventListener('cgt:refresh-module-counts', handleRefresh);
     window.addEventListener('focus', handleRefresh);
 
@@ -182,6 +238,7 @@ export default function Home({
 
     return () => {
       window.removeEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+      window.removeEventListener('cgt:reference-counts-updated', handleReferenceCountsUpdated);
       window.removeEventListener('cgt:refresh-module-counts', handleRefresh);
       window.removeEventListener('focus', handleRefresh);
       window.clearInterval(interval);
@@ -319,9 +376,9 @@ export default function Home({
       <AppShell
         currentView={currentView}
         darkMode={darkMode}
-        emvCount={emvTotalCount}
-        granteeCount={granteeTotalCount}
-        payrollCount={payrollTotalCount}
+        emvCount={liveEmvCount}
+        granteeCount={liveGranteeCount}
+        payrollCount={livePayrollCount}
         incomingCount={records.length}
         moduleCounts={liveModuleCounts}
         usersCount={users.length}
@@ -342,6 +399,21 @@ export default function Home({
                 ? {
                     ...dashboardMetrics,
                     moduleCounts: liveModuleCounts,
+                    payroll: {
+                      ...dashboardMetrics.payroll,
+                      total: livePayrollCount,
+                      gross: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.gross,
+                      net: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.net,
+                      withholdings: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.withholdings,
+                    },
+                    grantee: {
+                      ...dashboardMetrics.grantee,
+                      total: liveGranteeCount,
+                    },
+                    emv: {
+                      ...dashboardMetrics.emv,
+                      total: liveEmvCount,
+                    },
                     requests: {
                       ...dashboardMetrics.requests,
                       total: Object.values(liveModuleCounts).reduce((acc, curr) => acc + (curr || 0), 0),
@@ -394,7 +466,7 @@ export default function Home({
             granteeMunicipalities={granteeMunicipalities}
             granteePaymentModesCount={granteePaymentModesCount}
             grantees={grantees}
-            granteeTotalCount={granteeTotalCount}
+            granteeTotalCount={liveGranteeCount}
             isImporting={importingGrantee}
             onImportExcel={importGranteeExcel}
             onSetNotice={setNotice}
@@ -408,7 +480,7 @@ export default function Home({
             emvClaimedCount={emvClaimedCount}
             emvMunicipalities={emvMunicipalities}
             emvRecords={emvRecords}
-            emvTotalCount={emvTotalCount}
+            emvTotalCount={liveEmvCount}
             onSetNotice={setNotice}
           />
         </div>
@@ -422,7 +494,7 @@ export default function Home({
             payrollNetTotal={payrollNetTotal}
             payrollPeriods={payrollPeriods}
             payrollRecords={payrollRecords}
-            payrollTotalCount={payrollTotalCount}
+            payrollTotalCount={livePayrollCount}
             payrollYears={payrollYears}
           />
         </div>

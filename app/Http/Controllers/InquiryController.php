@@ -778,13 +778,37 @@ class InquiryController extends Controller
     }
 
     /**
-     * Endpoint to fetch live module counts.
+     * Return live record counts across reference tables (EMV, Grantee, Payroll).
+     */
+    public static function getReferenceCounts(): array
+    {
+        return [
+            'emv' => \Illuminate\Support\Facades\Schema::hasTable('emv_database') ? (int) \Illuminate\Support\Facades\DB::table('emv_database')->count() : 0,
+            'grantee' => \Illuminate\Support\Facades\Schema::hasTable('grantee_list') ? (int) \Illuminate\Support\Facades\DB::table('grantee_list')->count() : 0,
+            'payroll' => \Illuminate\Support\Facades\Schema::hasTable('payroll') ? (int) \Illuminate\Support\Facades\DB::table('payroll')->count() : 0,
+        ];
+    }
+
+    /**
+     * Endpoint to fetch live module and reference counts.
      */
     public function moduleCounts(): JsonResponse
     {
         return response()->json([
             'success' => true,
             'counts' => self::getModuleCounts(),
+            'references' => self::getReferenceCounts(),
+        ]);
+    }
+
+    /**
+     * Dedicated endpoint to fetch live reference counts.
+     */
+    public function referenceCounts(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'references' => self::getReferenceCounts(),
         ]);
     }
 }

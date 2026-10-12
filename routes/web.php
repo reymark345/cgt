@@ -59,6 +59,7 @@ Route::middleware('sso.auth')->group(function () {
     Route::post('/inquiry/add-request', [InquiryController::class, 'addRequest'])->name('inquiry.add-request');
     Route::get('/inquiry/household-requests', [InquiryController::class, 'householdRequests'])->name('inquiry.household-requests');
     Route::get('/module-counts', [InquiryController::class, 'moduleCounts'])->name('module-counts');
+    Route::get('/reference-counts', [InquiryController::class, 'referenceCounts'])->name('reference-counts');
 
     Route::get('/opening/search', [OpeningController::class, 'search'])->name('opening.search');
     Route::get('/opening/export', [OpeningController::class, 'export'])->name('opening.export');

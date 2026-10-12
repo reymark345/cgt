@@ -25,6 +25,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class EmvRecordController extends Controller
 {
     /**
+     * Clear cached dashboard metrics and filters.
+     */
+    public static function clearMetricsCache(): void
+    {
+        Cache::forget('dashboard_system_metrics_v3');
+        Cache::forget('dashboard_filter_lists_v1');
+    }
+
+    /**
      * Dashboard view with initial data for EMV Database and Grantees.
      */
     public function dashboard(): Response
@@ -35,31 +44,45 @@ class EmvRecordController extends Controller
         GranteeList::ensureTableExists();
         PayrollRecord::ensureTableExists();
 
-        // Cached summary statistics (refreshed every 10 minutes for sub-1ms response)
-        $dashboardMetrics = Cache::remember('dashboard_system_metrics_v3', 600, function () {
-            $emvTotal = EmvRecord::count();
-            $emvClaimed = EmvRecord::where('distribution_status', 'like', 'Claimed%')->count();
-            $emvUnclaimed = max(0, $emvTotal - $emvClaimed);
-            $emvRcct = EmvRecord::where('cct_type', 'like', '%RCCT%')->count();
-            $emvMcct = EmvRecord::where('cct_type', 'like', '%MCCT%')->count();
+        // 1. Check live database counts
+        $emvTotal = EmvRecord::count();
+        $granteeTotal = GranteeList::count();
+        $payrollTotal = PayrollRecord::count();
 
-            $granteeTotal = GranteeList::count();
-            $granteeActive = GranteeList::where('client_status', 'like', '%Active%')->count();
-            $granteeGraduated = GranteeList::where('client_status', 'like', '%Graduated%')->count();
+        // 2. Validate cache against live counts - if database changed (e.g. truncated or imported), purge stale cache immediately
+        $cachedMetrics = Cache::get('dashboard_system_metrics_v3');
+        if (
+            ! $cachedMetrics
+            || ($cachedMetrics['emv']['total'] ?? null) !== $emvTotal
+            || ($cachedMetrics['grantee']['total'] ?? null) !== $granteeTotal
+            || ($cachedMetrics['payroll']['total'] ?? null) !== $payrollTotal
+        ) {
+            self::clearMetricsCache();
+            $cachedMetrics = null;
+        }
+
+        // Cached summary statistics (refreshed when counts change or after 10 minutes)
+        $dashboardMetrics = $cachedMetrics ?: Cache::remember('dashboard_system_metrics_v3', 600, function () use ($emvTotal, $granteeTotal, $payrollTotal) {
+            $emvClaimed = $emvTotal > 0 ? EmvRecord::where('distribution_status', 'like', 'Claimed%')->count() : 0;
+            $emvUnclaimed = max(0, $emvTotal - $emvClaimed);
+            $emvRcct = $emvTotal > 0 ? EmvRecord::where('cct_type', 'like', '%RCCT%')->count() : 0;
+            $emvMcct = $emvTotal > 0 ? EmvRecord::where('cct_type', 'like', '%MCCT%')->count() : 0;
+
+            $granteeActive = $granteeTotal > 0 ? GranteeList::where('client_status', 'like', '%Active%')->count() : 0;
+            $granteeGraduated = $granteeTotal > 0 ? GranteeList::where('client_status', 'like', '%Graduated%')->count() : 0;
             $granteeOther = max(0, $granteeTotal - $granteeActive - $granteeGraduated);
 
-            $payrollTotal = PayrollRecord::count();
-            $payrollGross = (float) PayrollRecord::sum('gross_amount');
-            $payrollNet = (float) PayrollRecord::sum('net_amount');
+            $payrollGross = $payrollTotal > 0 ? (float) PayrollRecord::sum('gross_amount') : 0.0;
+            $payrollNet = $payrollTotal > 0 ? (float) PayrollRecord::sum('net_amount') : 0.0;
 
-            $topMunicipalities = DB::table('emv_database')
+            $topMunicipalities = $emvTotal > 0 ? DB::table('emv_database')
                 ->select('municipality', DB::raw('count(*) as count'))
                 ->whereNotNull('municipality')
                 ->where('municipality', '!=', '')
                 ->groupBy('municipality')
                 ->orderByDesc('count')
                 ->limit(8)
-                ->get();
+                ->get() : collect();
 
             return [
                 'emv' => [
@@ -479,6 +502,7 @@ class EmvRecordController extends Controller
                         @unlink($import->file_path);
                     }
                     $importer->cleanExtractDir($import->file_path);
+                    self::clearMetricsCache();
                 }
             } else {
                 $import->update([
@@ -492,6 +516,7 @@ class EmvRecordController extends Controller
                     @unlink($import->file_path);
                 }
                 $importer->cleanExtractDir($import->file_path);
+                self::clearMetricsCache();
             }
 
             $fresh = $import->fresh();

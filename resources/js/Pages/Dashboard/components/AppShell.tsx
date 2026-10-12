@@ -352,8 +352,14 @@ export function AppShell({
             <div className="space-y-1">
               <NavItem
                 active={currentView === 'grantee'}
-                badge={granteeCount && granteeCount > 0 ? (granteeCount > 9999 ? `${Math.round(granteeCount / 1000)}k` : granteeCount.toLocaleString()) : undefined}
-                badgeColor="primary"
+                badge={
+                  granteeCount !== undefined
+                    ? granteeCount > 9999
+                      ? `${Math.round(granteeCount / 1000)}k`
+                      : granteeCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={granteeCount && granteeCount > 0 ? 'primary' : 'default'}
                 icon={UsersRound}
                 onClick={() => onOpenView('grantee')}
               >
@@ -361,8 +367,16 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'emv-database'}
-                badge={emvCount !== undefined ? (emvCount > 0 ? (emvCount > 9999 ? `${Math.round(emvCount / 1000)}k` : emvCount.toLocaleString()) : undefined) : (incomingCount > 0 ? incomingCount : undefined)}
-                badgeColor="primary"
+                badge={
+                  emvCount !== undefined
+                    ? emvCount > 9999
+                      ? `${Math.round(emvCount / 1000)}k`
+                      : emvCount.toLocaleString()
+                    : incomingCount > 0
+                    ? incomingCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={emvCount && emvCount > 0 ? 'primary' : 'default'}
                 icon={Database}
                 onClick={() => onOpenView('emv-database')}
               >
@@ -370,8 +384,14 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'emv-payroll'}
-                badge={payrollCount !== undefined ? (payrollCount > 0 ? (payrollCount > 9999 ? `${Math.round(payrollCount / 1000)}k` : payrollCount.toLocaleString()) : undefined) : undefined}
-                badgeColor="primary"
+                badge={
+                  payrollCount !== undefined
+                    ? payrollCount > 9999
+                      ? `${Math.round(payrollCount / 1000)}k`
+                      : payrollCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={payrollCount && payrollCount > 0 ? 'primary' : 'default'}
                 icon={HandCoins}
                 onClick={() => onOpenView('emv-payroll')}
               >

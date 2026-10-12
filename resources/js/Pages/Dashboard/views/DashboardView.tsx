@@ -264,8 +264,8 @@ export function DashboardView({
               <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
                 Live convergence tracking across{' '}
                 <strong className="text-foreground">{metrics.grantee.total.toLocaleString()} Grantees</strong>,{' '}
-                <strong className="text-foreground">{metrics.emv.total.toLocaleString()} EMV Cards</strong> ({metrics.emv.claimedPercentage}% Claimed), and{' '}
-                <strong className="text-foreground">{formatAmount(metrics.payroll.gross)}</strong> in Payroll Disbursements.
+                <strong className="text-foreground">{metrics.emv.total.toLocaleString()} EMV Cards</strong> ({metrics.emv.total === 0 ? 0 : metrics.emv.claimedPercentage}% Claimed), and{' '}
+                <strong className="text-foreground">{metrics.payroll.total === 0 ? '₱0' : formatAmount(metrics.payroll.gross)}</strong> in Payroll Disbursements.
               </p>
             </div>
 
@@ -356,18 +356,18 @@ export function DashboardView({
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {metrics.grantee.active.toLocaleString()} Active
+                {metrics.grantee.total === 0 ? 0 : metrics.grantee.active.toLocaleString()} Active
               </span>
-              <span>{metrics.grantee.graduated.toLocaleString()} Graduated</span>
+              <span>{metrics.grantee.total === 0 ? 0 : metrics.grantee.graduated.toLocaleString()} Graduated</span>
             </div>
             <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-sky-500 transition-all duration-500"
-                style={{ width: `${metrics.grantee.activePercentage}%` }}
+                style={{ width: `${metrics.grantee.total === 0 ? 0 : metrics.grantee.activePercentage}%` }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>{metrics.grantee.activePercentage}% Active Rate</span>
+              <span>{metrics.grantee.total === 0 ? 0 : metrics.grantee.activePercentage}% Active Rate</span>
               <span className="font-semibold text-sky-600 dark:text-sky-400 group-hover:underline flex items-center gap-0.5">
                 View Grantees <ArrowRight className="h-3 w-3" />
               </span>
@@ -392,20 +392,20 @@ export function DashboardView({
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {metrics.emv.claimed.toLocaleString()} Claimed
+                {metrics.emv.total === 0 ? 0 : metrics.emv.claimed.toLocaleString()} Claimed
               </span>
               <span className="text-amber-600 dark:text-amber-400">
-                {metrics.emv.unclaimed.toLocaleString()} Unclaimed
+                {metrics.emv.total === 0 ? 0 : metrics.emv.unclaimed.toLocaleString()} Unclaimed
               </span>
             </div>
             <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${metrics.emv.claimedPercentage}%` }}
+                style={{ width: `${metrics.emv.total === 0 ? 0 : metrics.emv.claimedPercentage}%` }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>{metrics.emv.claimedPercentage}% Claimed Rate</span>
+              <span>{metrics.emv.total === 0 ? 0 : metrics.emv.claimedPercentage}% Claimed Rate</span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400 group-hover:underline flex items-center gap-0.5">
                 Open Database <ArrowRight className="h-3 w-3" />
               </span>
@@ -426,20 +426,22 @@ export function DashboardView({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-black tracking-tight text-foreground truncate">
-              {formatAmount(metrics.payroll.gross)}
+              {metrics.payroll.total === 0 ? '₱0' : formatAmount(metrics.payroll.gross)}
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
               <span>{metrics.payroll.total.toLocaleString()} Beneficiaries</span>
-              <span className="font-semibold text-violet-600 dark:text-violet-400">{metrics.payroll.period}</span>
+              <span className="font-semibold text-violet-600 dark:text-violet-400">
+                {metrics.payroll.total === 0 ? 'No active records' : metrics.payroll.period}
+              </span>
             </div>
             <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-violet-500 transition-all duration-500"
-                style={{ width: '99.9%' }}
+                style={{ width: metrics.payroll.total === 0 ? '0%' : '99.9%' }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Net: {formatAmount(metrics.payroll.net)}</span>
+              <span>Net: {metrics.payroll.total === 0 ? '₱0' : formatAmount(metrics.payroll.net)}</span>
               <span className="font-semibold text-violet-600 dark:text-violet-400 group-hover:underline flex items-center gap-0.5">
                 Open Payroll <ArrowRight className="h-3 w-3" />
               </span>
