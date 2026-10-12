@@ -56,6 +56,7 @@ type AppShellProps = PropsWithChildren<{
   payrollCount?: number;
   incomingCount: number;
   moduleCounts?: Record<string, number>;
+  usersCount?: number;
   sidebarOpen: boolean;
   title: string;
   onOpenView: (view: CurrentView) => void;
@@ -173,6 +174,7 @@ export function AppShell({
   payrollCount,
   incomingCount,
   moduleCounts,
+  usersCount,
   sidebarOpen,
   title,
   onOpenView,
@@ -480,6 +482,8 @@ export function AppShell({
           <div className="space-y-1">
             <NavItem
               active={currentView === 'users'}
+              badge={usersCount}
+              badgeColor="default"
               icon={UserCog}
               onClick={() => onOpenView('users')}
             >

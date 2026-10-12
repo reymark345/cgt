@@ -324,6 +324,7 @@ export default function Home({
         payrollCount={payrollTotalCount}
         incomingCount={records.length}
         moduleCounts={liveModuleCounts}
+        usersCount={users.length}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
         onOpenView={openView}
