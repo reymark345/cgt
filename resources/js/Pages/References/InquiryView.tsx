@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
+import { useState, useEffect, useCallback, useTransition, useRef, useMemo, Fragment } from 'react';
 import { usePage } from '@inertiajs/react';
 import {
   AlertCircle,
@@ -7,7 +7,14 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronUp,
+  ChevronsUpDown,
+  Download,
+  Expand,
   ClipboardList,
   Clock,
   Copy,
@@ -21,12 +28,15 @@ import {
   Layers,
   Loader2,
   MapPin,
+  Maximize2,
+  Minimize2,
   Plus,
   RefreshCw,
   Search,
   Send,
   ShieldAlert,
   ShieldCheck,
+  Shrink,
   SlidersHorizontal,
   Sparkles,
   Tag,
@@ -220,57 +230,39 @@ export const STORAGE_KEY_EMV_FIELDS = 'cgt_emv_visible_fields';
 // ----------------------------------------------------------------------
 export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
   {
-    id: 'overview',
-    label: 'Cycle Overview & Status',
+    id: 'cycle_period',
+    label: 'Program & Cycle Info',
     icon: Calendar,
     iconColor: 'text-indigo-500',
     fields: [
-      { key: 'period_year', label: 'Period & Year' },
-      { key: 'payroll_description', label: 'Payroll Description' },
-      { key: 'hh_set', label: 'Household Set & Group' },
-      { key: 'status', label: 'Disbursement Status' },
+      { key: 'payroll_type', label: 'Payroll Type' },
+      { key: 'year', label: 'Year' },
+      { key: 'month', label: 'Month' },
     ],
   },
   {
-    id: 'financial',
-    label: 'Financial Summary (KPIs)',
-    icon: DollarSign,
-    iconColor: 'text-emerald-500',
-    fields: [
-      { key: 'gross_amount', label: 'Gross Amount' },
-      { key: 'adjustment_amount', label: 'Adjustments' },
-      { key: 'net_amount', label: 'Net Disbursed' },
-      { key: 'total_educ', label: 'Total Education Grant' },
-    ],
-  },
-  {
-    id: 'grants',
-    label: 'Grant Component Breakdown',
-    icon: Layers,
-    iconColor: 'text-amber-500',
-    fields: [
-      { key: 'educ_dc_elem', label: 'Educ DC Elem' },
-      { key: 'educ_jr_hs', label: 'Educ Jr High' },
-      { key: 'educ_sr_hs', label: 'Educ Sr High' },
-      { key: 'health', label: 'Health Grant' },
-      { key: 'rice_amount', label: 'Rice Subsidy' },
-      { key: 'f1kd_amount', label: 'F1KD Amount' },
-    ],
-  },
-  {
-    id: 'disbursal',
-    label: 'Banking & Disbursal Metadata',
+    id: 'payment_account',
+    label: 'Account & Disbursement',
     icon: CreditCard,
     iconColor: 'text-cyan-500',
     fields: [
-      { key: 'payment_mode_classification', label: 'Payment Classification' },
-      { key: 'mode_of_payment', label: 'Mode of Payment' },
-      { key: 'account_number', label: 'Account Number' },
-      { key: 'new_account_number', label: 'New Account Number' },
-      { key: 'payroll_date', label: 'Payroll Date' },
-      { key: 'finance_approval', label: 'Finance Approval' },
-      { key: 'address_psgc', label: 'Address PSGC' },
-      { key: 'reason', label: 'Rejection Reason / Remarks' },
+      { key: 'payment_mode', label: 'Payment Mode' },
+      { key: 'account_number', label: 'Account' },
+      { key: 'credited', label: 'Credited into Account?' },
+    ],
+  },
+  {
+    id: 'grants_financial',
+    label: 'Grants Breakdown & Totals',
+    icon: DollarSign,
+    iconColor: 'text-emerald-500',
+    fields: [
+      { key: 'educ_amount', label: 'Educ Amount' },
+      { key: 'health_amount', label: 'Health Amount' },
+      { key: 'rice_amount', label: 'Rice Amount' },
+      { key: 'f1kd_amount', label: 'F1KD Amount' },
+      { key: 'adjustment_amount', label: 'Adjustment Amount' },
+      { key: 'total_amount', label: 'Total Amount' },
     ],
   },
 ];
@@ -278,7 +270,7 @@ export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
 export const ALL_PAYROLL_FIELD_KEYS: string[] = PAYROLL_FIELD_CATEGORIES.flatMap((c) =>
   c.fields.map((f) => f.key)
 );
-export const STORAGE_KEY_PAYROLL_FIELDS = 'cgt_payroll_visible_fields';
+export const STORAGE_KEY_PAYROLL_FIELDS = 'cgt_payroll_visible_fields_v2';
 
 export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const page = usePage<{
@@ -520,6 +512,42 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const clearAllPayrollFields = () => {
     setSelectedPayrollFields([]);
   };
+
+  // 4. Payroll Card Width Expansion & Fullscreen State
+  const [payrollCardExpanded, setPayrollCardExpanded] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_inquiry_payroll_expanded');
+      return saved === 'true';
+    }
+    return false;
+  });
+  const [payrollFullscreen, setPayrollFullscreen] = useState(false);
+
+  const togglePayrollCardExpanded = () => {
+    setPayrollCardExpanded((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cgt_inquiry_payroll_expanded', String(next));
+      }
+      onSetNotice?.(
+        next
+          ? 'Payroll card stretched to full width'
+          : 'Payroll card restored to standard width'
+      );
+      return next;
+    });
+  };
+
+  // Keyboard shortcut listener for Fullscreen modal (Esc to exit)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && payrollFullscreen) {
+        setPayrollFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [payrollFullscreen]);
 
   // Unified click-outside listener for all field customization dropdowns
   useEffect(() => {
@@ -851,9 +879,19 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 pb-12">
+    <div
+      className={cn(
+        'mx-auto w-full space-y-6 pb-12 transition-all duration-300',
+        payrollCardExpanded ? 'max-w-none' : 'max-w-7xl'
+      )}
+    >
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 shadow-xs transition-colors dark:border-border dark:bg-card">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+          payrollCardExpanded && 'max-w-7xl mx-auto'
+        )}
+      >
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 dark:bg-primary/20 dark:text-cyan-300">
@@ -950,7 +988,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
       {/* Household ID Not Existed State */}
       {result && !isHouseholdExisting && (
-        <div className="rounded-2xl border border-rose-500/30 bg-card p-8 sm:p-12 text-center shadow-xs dark:border-rose-500/20">
+        <div
+          className={cn(
+            'rounded-2xl border border-rose-500/30 bg-card p-8 sm:p-12 text-center shadow-xs transition-all duration-300 dark:border-rose-500/20',
+            payrollCardExpanded && 'max-w-7xl mx-auto'
+          )}
+        >
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
             <AlertCircle className="h-8 w-8" />
           </div>
@@ -1062,7 +1105,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       {result && isHouseholdExisting && (
         <div className="space-y-6">
           {/* Household Master Summary Banner */}
-          <div className="relative z-20 rounded-2xl border border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 p-6 shadow-sm dark:border-primary/30">
+          <div
+            className={cn(
+              'relative z-20 rounded-2xl border border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 p-6 shadow-sm transition-all duration-300 dark:border-primary/30',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
@@ -1319,7 +1367,8 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 'flex items-center justify-between rounded-xl p-4 text-sm font-medium shadow-xs transition-all animate-in fade-in',
                 requestFeedback.type === 'success'
                   ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                  : 'border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                  : 'border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                payrollCardExpanded && 'max-w-7xl mx-auto'
               )}
             >
               <div className="flex items-center gap-2.5">
@@ -1342,7 +1391,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
           {/* Household Requests History Card */}
           {householdRequestsList.length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-all dark:border-border dark:bg-card">
+            <div
+              className={cn(
+                'overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+                payrollCardExpanded && 'max-w-7xl mx-auto'
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setRequestsExpanded((prev) => !prev)}
@@ -1437,7 +1491,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           )}
 
           {/* CARD 1: Grantee List Record */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400">
@@ -1689,7 +1748,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           </div>
 
           {/* CARD 2: EMV Database & Multiple Cash Cards */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400">
@@ -1868,14 +1932,19 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           </div>
 
           {/* CARD 3: Payroll Disbursements Record */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded ? 'w-full' : 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-bold text-foreground">Payroll & Disbursal History</h3>
                     <span
                       className={cn(
@@ -1887,6 +1956,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     >
                       {result.payroll_records.length} {result.payroll_records.length === 1 ? 'Cycle' : 'Cycles'}
                     </span>
+                    {payrollCardExpanded && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                        <Maximize2 className="h-3 w-3" />
+                        Full Width
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">Disbursement periods, breakdown of grants, payment modes, and approvals.</p>
                 </div>
@@ -1895,44 +1970,99 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
               <div className="flex flex-wrap items-center gap-2">
                 {/* Cumulative Financial Totals Pill */}
                 {result.payroll_records.length > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5">
-                    <span className="text-[11px] text-muted-foreground">Total Disbursed:</span>
-                    <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      {formatAmount(result.summary.total_net)}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5">
+                      <span className="text-[11px] text-muted-foreground">Total Disbursed:</span>
+                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatAmount(result.summary.total_net)}
+                      </span>
+                    </div>
+
+                    {/* Dynamic Dropdown Menu to customize Payroll table columns */}
+                    <FieldCustomizerDropdown
+                      title="Customize Table Columns"
+                      subtitle="Select columns to show in the disbursal table"
+                      categories={PAYROLL_FIELD_CATEGORIES}
+                      allFieldKeys={ALL_PAYROLL_FIELD_KEYS}
+                      selectedFields={selectedPayrollFields}
+                      isOpen={payrollFieldDropdownOpen}
+                      onOpenChange={setPayrollFieldDropdownOpen}
+                      onToggleField={togglePayrollField}
+                      onToggleCategory={togglePayrollCategory}
+                      onSelectAll={selectAllPayrollFields}
+                      onClearAll={clearAllPayrollFields}
+                      search={payrollFieldSearch}
+                      onSearchChange={setPayrollFieldSearch}
+                      dropdownRef={payrollFieldDropdownRef}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => handleExportPayrollCsv(result.payroll_records, result.display_hhid)}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Export CSV
+                    </Button>
+                  </>
                 )}
 
-                {/* Dynamic Dropdown Menu to customize Payroll fields */}
-                <FieldCustomizerDropdown
-                  title="Customize Payroll Fields"
-                  subtitle="Select fields to show across disbursal cycles"
-                  categories={PAYROLL_FIELD_CATEGORIES}
-                  allFieldKeys={ALL_PAYROLL_FIELD_KEYS}
-                  selectedFields={selectedPayrollFields}
-                  isOpen={payrollFieldDropdownOpen}
-                  onOpenChange={setPayrollFieldDropdownOpen}
-                  onToggleField={togglePayrollField}
-                  onToggleCategory={togglePayrollCategory}
-                  onSelectAll={selectAllPayrollFields}
-                  onClearAll={clearAllPayrollFields}
-                  search={payrollFieldSearch}
-                  onSearchChange={setPayrollFieldSearch}
-                  dropdownRef={payrollFieldDropdownRef}
-                />
+                {/* Stretch Card / Standard Width Toggle */}
+                <Button
+                  type="button"
+                  variant={payrollCardExpanded ? 'secondary' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    'h-8 gap-1.5 text-xs transition-colors',
+                    payrollCardExpanded
+                      ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-300'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  onClick={togglePayrollCardExpanded}
+                  title={payrollCardExpanded ? 'Compress back to standard layout' : 'Stretch card horizontally to fill screen width'}
+                >
+                  {payrollCardExpanded ? (
+                    <>
+                      <Minimize2 className="h-3.5 w-3.5" />
+                      Standard Width
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      Stretch to Full
+                    </>
+                  )}
+                </Button>
+
+                {/* Fullscreen Modal View Button */}
+                {result.payroll_records.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setPayrollFullscreen(true)}
+                    title="Open Payroll table in full-screen modal view"
+                  >
+                    <Expand className="h-3.5 w-3.5" />
+                    Fullscreen
+                  </Button>
+                )}
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="overflow-hidden">
               {result.payroll_records.length > 0 ? (
                 selectedPayrollFields.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                       <SlidersHorizontal className="h-6 w-6" />
                     </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
+                    <p className="mt-3 text-sm font-semibold text-foreground">No Columns Selected</p>
                     <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                      All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                      All columns are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which columns to show.
                     </p>
                     <Button
                       type="button"
@@ -1942,26 +2072,18 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                       onClick={selectAllPayrollFields}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      Show All Fields
+                      Show All Columns
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {result.payroll_records.map((payroll, idx) => (
-                      <PayrollCycleDetail
-                        key={payroll.id || idx}
-                        record={payroll}
-                        index={idx}
-                        totalCount={result.payroll_records.length}
-                        copiedHhid={copiedHhid}
-                        onCopy={handleCopy}
-                        selectedFields={selectedPayrollFields}
-                      />
-                    ))}
-                  </div>
+                  <PayrollRecordsTable
+                    records={result.payroll_records}
+                    displayHhid={result.display_hhid}
+                    selectedFields={selectedPayrollFields}
+                  />
                 )
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <FileSpreadsheet className="h-6 w-6" />
                   </div>
@@ -1978,7 +2100,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
       {/* Initial Empty State (before searching) */}
       {!result && !loading && (
-        <div className="rounded-2xl border border-dashed border-border/80 bg-card/40 p-12 text-center">
+        <div
+          className={cn(
+            'rounded-2xl border border-dashed border-border/80 bg-card/40 p-12 text-center transition-all duration-300',
+            payrollCardExpanded && 'max-w-7xl mx-auto'
+          )}
+        >
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-cyan-300">
             <Search className="h-8 w-8" />
           </div>
@@ -2327,6 +2454,94 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Payroll Records Modal */}
+      {payrollFullscreen && result && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md p-4 sm:p-6 animate-in fade-in">
+          {/* Top header of fullscreen modal */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-md sm:flex-row sm:items-center sm:justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground">Payroll & Disbursal History (Fullscreen)</h3>
+                  <span className="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                    {result.payroll_records.length} {result.payroll_records.length === 1 ? 'Cycle' : 'Cycles'}
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-muted-foreground">
+                    HHID: {result.display_hhid}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Beneficiary: <span className="font-semibold text-foreground">{result.summary.full_name || 'Household Beneficiary'}</span> • Fullscreen disbursal inspection
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5">
+                <span className="text-[11px] text-muted-foreground">Total Disbursed:</span>
+                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  {formatAmount(result.summary.total_net)}
+                </span>
+              </div>
+
+              <FieldCustomizerDropdown
+                title="Customize Table Columns"
+                subtitle="Select columns to show in the disbursal table"
+                categories={PAYROLL_FIELD_CATEGORIES}
+                allFieldKeys={ALL_PAYROLL_FIELD_KEYS}
+                selectedFields={selectedPayrollFields}
+                isOpen={payrollFieldDropdownOpen}
+                onOpenChange={setPayrollFieldDropdownOpen}
+                onToggleField={togglePayrollField}
+                onToggleCategory={togglePayrollCategory}
+                onSelectAll={selectAllPayrollFields}
+                onClearAll={clearAllPayrollFields}
+                search={payrollFieldSearch}
+                onSearchChange={setPayrollFieldSearch}
+                dropdownRef={payrollFieldDropdownRef}
+              />
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => handleExportPayrollCsv(result.payroll_records, result.display_hhid)}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={() => setPayrollFullscreen(false)}
+                title="Exit fullscreen modal view (Esc)"
+              >
+                <Shrink className="h-3.5 w-3.5" />
+                Exit Fullscreen (Esc)
+              </Button>
+            </div>
+          </div>
+
+          {/* Modal Body with full table */}
+          <div className="mt-3 flex-1 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-lg flex flex-col">
+            <div className="flex-1 overflow-auto">
+              <PayrollRecordsTable
+                records={result.payroll_records}
+                displayHhid={result.display_hhid}
+                selectedFields={selectedPayrollFields}
+              />
             </div>
           </div>
         </div>
@@ -2733,250 +2948,1005 @@ function EmvCardDetail({
 }
 
 // ----------------------------------------------------------------------
-// Subcomponent: Payroll Cycle Item
+// Subcomponent: Payroll Records Table & Disbursal Helpers
 // ----------------------------------------------------------------------
-function PayrollCycleDetail({
-  record,
-  index,
-  totalCount,
-  copiedHhid,
-  onCopy,
-  selectedFields,
-}: {
-  record: PayrollRecord;
-  index: number;
-  totalCount: number;
-  copiedHhid: string | null;
-  onCopy: (val: string, id: string) => void;
-  selectedFields: string[];
-}) {
-  const isVisible = (k: string) => selectedFields.includes(k);
+function getMonthNumber(period?: string | null, payrollDate?: string | null): string {
+  if (period) {
+    const stripped = period.replace(/^[pP](eriod)?\s*/i, '').trim();
+    if (stripped) return stripped;
+    return period;
+  }
+  if (payrollDate) {
+    const d = new Date(payrollDate);
+    if (!isNaN(d.getTime())) {
+      return String(d.getMonth() + 1);
+    }
+  }
+  return '-';
+}
 
-  const isReject = record.status?.toLowerCase() === 'reject';
-  const isSuccess = record.status?.toLowerCase() === 'successful';
+function getEducAmount(rec: PayrollRecord): number {
+  if (rec.total_educ !== undefined && rec.total_educ !== null && rec.total_educ > 0) {
+    return Number(rec.total_educ);
+  }
+  const elem = Number(rec.educ_dc_elem || 0);
+  const jr = Number(rec.educ_jr_hs || 0);
+  const sr = Number(rec.educ_sr_hs || 0);
+  const hs = Number(rec.educ_total_hs || 0);
+  return elem + jr + sr + hs;
+}
 
-  // 1. Overview header
-  const showPeriodYear = isVisible('period_year');
-  const showDescription = isVisible('payroll_description');
-  const showHhSet = isVisible('hh_set');
-  const showStatus = isVisible('status');
+function getTotalAmount(rec: PayrollRecord, educAmount: number): number {
+  if (rec.net_amount !== undefined && rec.net_amount !== null && rec.net_amount > 0) {
+    return Number(rec.net_amount);
+  }
+  if (rec.gross_amount !== undefined && rec.gross_amount !== null && rec.gross_amount > 0) {
+    return Number(rec.gross_amount);
+  }
+  return (
+    educAmount +
+    Number(rec.health || 0) +
+    Number(rec.rice_amount || 0) +
+    Number(rec.f1kd_amount || 0) +
+    Number(rec.adjustment_amount || 0)
+  );
+}
 
-  // 2. Financial KPIs
-  const kpiItems = [
-    isVisible('gross_amount') && {
-      label: 'Gross Amount',
-      value: formatAmount(record.gross_amount || 0),
-      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
-      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
-      valClass: 'mt-1 font-mono text-base font-bold text-foreground',
-    },
-    isVisible('adjustment_amount') && {
-      label: 'Adjustments',
-      value: formatAmount(record.adjustment_amount || 0),
-      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
-      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
-      valClass: 'mt-1 font-mono text-base font-bold text-amber-600 dark:text-amber-400',
-    },
-    isVisible('net_amount') && {
-      label: 'Net Disbursed',
-      value: formatAmount(record.net_amount || 0),
-      className: 'rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 dark:bg-emerald-500/10',
-      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-400',
-      valClass: 'mt-1 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400',
-    },
-    isVisible('total_educ') && {
-      label: 'Total Education',
-      value: formatAmount(record.total_educ || 0),
-      className: 'rounded-lg border border-border/60 bg-muted/30 p-3',
-      labelClass: 'text-[11px] font-medium uppercase tracking-wider text-muted-foreground',
-      valClass: 'mt-1 font-mono text-base font-bold text-foreground',
-    },
-  ].filter(Boolean) as {
-    label: string;
-    value: string;
-    className: string;
-    labelClass: string;
-    valClass: string;
-  }[];
+function formatEducHealthRice(val: number): string {
+  if (val === undefined || val === null || isNaN(val)) return '0';
+  return val % 1 === 0 ? String(Math.round(val)) : val.toFixed(2);
+}
 
-  // 3. Grant Breakdown
-  const grantItems = [
-    isVisible('educ_dc_elem') && { label: 'Educ DC Elem', value: formatAmount(record.educ_dc_elem || 0) },
-    isVisible('educ_jr_hs') && { label: 'Educ Jr High', value: formatAmount(record.educ_jr_hs || 0) },
-    isVisible('educ_sr_hs') && { label: 'Educ Sr High', value: formatAmount(record.educ_sr_hs || 0) },
-    isVisible('health') && { label: 'Health Grant', value: formatAmount(record.health || 0) },
-    isVisible('rice_amount') && { label: 'Rice Subsidy', value: formatAmount(record.rice_amount || 0) },
-    isVisible('f1kd_amount') && { label: 'F1KD Amount', value: formatAmount(record.f1kd_amount || 0) },
-  ].filter(Boolean) as { label: string; value: string }[];
+function formatDecimal(val: number): string {
+  if (val === undefined || val === null || isNaN(val)) return '0.00';
+  return Number(val).toFixed(2);
+}
 
-  // 4. Banking & Disbursal details
-  const disbursalFieldKeys = [
-    'payment_mode_classification',
-    'mode_of_payment',
-    'account_number',
-    'new_account_number',
-    'payroll_date',
-    'finance_approval',
-    'address_psgc',
+function isCredited(rec: PayrollRecord): boolean {
+  const st = (rec.status || '').toLowerCase().trim();
+  return st === 'successful' || st === 'success' || st === 'credited' || st === 'paid';
+}
+
+function handleExportPayrollCsv(records: PayrollRecord[], hhid: string) {
+  const headers = [
+    'Payroll Type',
+    'Year',
+    'Month',
+    'Payment Mode',
+    'Account',
+    'Educ Amount',
+    'Health Amount',
+    'Rice Amount',
+    'F1KD Amount',
+    'Adjustment Amount',
+    'Total Amount',
+    'Credited into Account?',
+    'Status',
+    'Rejection Reason',
   ];
-  const hasDisbursalFields = disbursalFieldKeys.some((k) => isVisible(k));
 
-  // 5. Remarks / Reason
-  const showReason = isVisible('reason') && isReject;
+  const rows = records.map((rec) => {
+    const educ = getEducAmount(rec);
+    const total = getTotalAmount(rec, educ);
+    return [
+      `"${(rec.payroll_description || '1 - CVS Regular').replace(/"/g, '""')}"`,
+      rec.year || '',
+      getMonthNumber(rec.period, rec.payroll_date),
+      `"${(rec.mode_of_payment || rec.payment_mode_classification || '').replace(/"/g, '""')}"`,
+      `"${rec.account_number || ''}"`,
+      formatEducHealthRice(educ),
+      formatEducHealthRice(rec.health || 0),
+      formatEducHealthRice(rec.rice_amount || 0),
+      formatDecimal(rec.f1kd_amount || 0),
+      formatDecimal(rec.adjustment_amount || 0),
+      formatDecimal(total),
+      isCredited(rec) ? 'Yes' : 'No',
+      `"${(rec.status || '').replace(/"/g, '""')}"`,
+      `"${(rec.reason || '').replace(/"/g, '""')}"`,
+    ].join(',');
+  });
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `payroll_${hhid}_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+interface SortHeaderProps {
+  columnKey: string;
+  label: string;
+  currentSortKey: string;
+  sortDirection: 'asc' | 'desc';
+  onSort: (key: string) => void;
+  className?: string;
+}
+
+function SortHeader({
+  columnKey,
+  label,
+  currentSortKey,
+  sortDirection,
+  onSort,
+  className = '',
+}: SortHeaderProps) {
+  const isSorted = currentSortKey === columnKey;
 
   return (
-    <div className="rounded-xl border border-border/80 bg-background/50 p-5 shadow-xs transition hover:border-indigo-500/30 dark:bg-card/40">
-      {/* Header of Cycle */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500/10 text-xs font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-            {index + 1}
-          </span>
-          {showPeriodYear && (
-            <span className="rounded-md bg-indigo-500/10 px-2.5 py-1 font-mono text-xs font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-              {record.period} - {record.year}
-            </span>
-          )}
-          {showDescription && (
-            <span className="text-sm font-semibold text-foreground">
-              {record.payroll_description || 'Payroll Cycle'}
-            </span>
-          )}
-          {!showPeriodYear && !showDescription && (
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cycle #{index + 1} of {totalCount}
-            </span>
-          )}
-          {showHhSet && record.hh_set && (
-            <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              Set {record.hh_set} {record.set_group ? `• Group ${record.set_group}` : ''}
-            </span>
-          )}
-        </div>
+    <th
+      onClick={() => onSort(columnKey)}
+      className={cn(
+        'group cursor-pointer select-none px-3.5 py-3 text-left font-semibold text-muted-foreground transition hover:text-foreground',
+        className
+      )}
+    >
+      <div className="flex items-center gap-1.5">
+        <span>{label}</span>
+        {isSorted ? (
+          sortDirection === 'asc' ? (
+            <ChevronUp className="h-3 w-3 shrink-0 text-primary" />
+          ) : (
+            <ChevronDown className="h-3 w-3 shrink-0 text-primary" />
+          )
+        ) : (
+          <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-40 hover:opacity-100" />
+        )}
+      </div>
+    </th>
+  );
+}
 
-        <div className="flex items-center gap-2">
-          {showStatus && (
-            record.status ? (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                  isSuccess
-                    ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
-                    : isReject
-                    ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
-                    : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-                )}
+function PayrollRecordsTable({
+  records,
+  displayHhid,
+  selectedFields = ALL_PAYROLL_FIELD_KEYS,
+}: {
+  records: PayrollRecord[];
+  displayHhid: string;
+  selectedFields?: string[];
+}) {
+  const [sortKey, setSortKey] = useState<string>('year');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | number | null>(null);
+  const [pageSize, setPageSize] = useState<number | 'ALL'>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setExpandedRowId(null);
+  }, [records, pageSize, searchQuery]);
+
+  const isVisible = (k: string) => selectedFields.includes(k);
+  const visibleColumnCount = Math.max(1, selectedFields.length);
+
+  const columnOrder = [
+    'payroll_type',
+    'year',
+    'month',
+    'payment_mode',
+    'account_number',
+    'educ_amount',
+    'health_amount',
+    'rice_amount',
+    'f1kd_amount',
+    'adjustment_amount',
+    'total_amount',
+    'credited',
+  ];
+  const firstVisibleCol = columnOrder.find((k) => isVisible(k));
+
+  const leadingCols = ['payroll_type', 'year', 'month', 'payment_mode', 'account_number'];
+  const leadingColSpan = leadingCols.filter((k) => isVisible(k)).length;
+
+  const renderExpandChevron = (colKey: string, isExpanded: boolean) => {
+    if (firstVisibleCol !== colKey) return null;
+    return (
+      <ChevronRight
+        className={cn(
+          'h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform',
+          isExpanded && 'rotate-90 text-primary'
+        )}
+      />
+    );
+  };
+
+  const handleCopyAccount = (account: string, rowId: string | number) => {
+    navigator.clipboard.writeText(account);
+    setCopiedAccountId(String(rowId));
+    setTimeout(() => setCopiedAccountId(null), 2000);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      const numericCols = [
+        'year',
+        'month',
+        'educ_amount',
+        'health_amount',
+        'rice_amount',
+        'f1kd_amount',
+        'adjustment_amount',
+        'total_amount',
+      ];
+      setSortDirection(numericCols.includes(key) ? 'desc' : 'asc');
+    }
+  };
+
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortKey) {
+        case 'payroll_type': {
+          const valA = (a.payroll_description || '').toLowerCase();
+          const valB = (b.payroll_description || '').toLowerCase();
+          comparison = valA.localeCompare(valB);
+          break;
+        }
+        case 'year': {
+          const valA = Number(a.year || 0);
+          const valB = Number(b.year || 0);
+          comparison = valA - valB;
+          if (comparison === 0) {
+            const mA = Number(getMonthNumber(a.period, a.payroll_date)) || 0;
+            const mB = Number(getMonthNumber(b.period, b.payroll_date)) || 0;
+            return sortDirection === 'desc' ? mB - mA : mA - mB;
+          }
+          break;
+        }
+        case 'month': {
+          const mA = Number(getMonthNumber(a.period, a.payroll_date)) || 0;
+          const mB = Number(getMonthNumber(b.period, b.payroll_date)) || 0;
+          comparison = mA - mB;
+          break;
+        }
+        case 'payment_mode': {
+          const valA = (a.mode_of_payment || a.payment_mode_classification || '').toLowerCase();
+          const valB = (b.mode_of_payment || b.payment_mode_classification || '').toLowerCase();
+          comparison = valA.localeCompare(valB);
+          break;
+        }
+        case 'account_number': {
+          const valA = String(a.account_number || '');
+          const valB = String(b.account_number || '');
+          comparison = valA.localeCompare(valB);
+          break;
+        }
+        case 'educ_amount': {
+          const valA = getEducAmount(a);
+          const valB = getEducAmount(b);
+          comparison = valA - valB;
+          break;
+        }
+        case 'health_amount': {
+          const valA = Number(a.health || 0);
+          const valB = Number(b.health || 0);
+          comparison = valA - valB;
+          break;
+        }
+        case 'rice_amount': {
+          const valA = Number(a.rice_amount || 0);
+          const valB = Number(b.rice_amount || 0);
+          comparison = valA - valB;
+          break;
+        }
+        case 'f1kd_amount': {
+          const valA = Number(a.f1kd_amount || 0);
+          const valB = Number(b.f1kd_amount || 0);
+          comparison = valA - valB;
+          break;
+        }
+        case 'adjustment_amount': {
+          const valA = Number(a.adjustment_amount || 0);
+          const valB = Number(b.adjustment_amount || 0);
+          comparison = valA - valB;
+          break;
+        }
+        case 'total_amount': {
+          const valA = getTotalAmount(a, getEducAmount(a));
+          const valB = getTotalAmount(b, getEducAmount(b));
+          comparison = valA - valB;
+          break;
+        }
+        case 'credited': {
+          const valA = isCredited(a) ? 1 : 0;
+          const valB = isCredited(b) ? 1 : 0;
+          comparison = valA - valB;
+          break;
+        }
+        default:
+          break;
+      }
+
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+  }, [records, sortKey, sortDirection]);
+
+  const filteredRecords = useMemo(() => {
+    if (!searchQuery.trim()) return sortedRecords;
+    const q = searchQuery.toLowerCase().trim();
+    return sortedRecords.filter((rec) => {
+      const pDesc = (rec.payroll_description || '').toLowerCase();
+      const yr = String(rec.year || '').toLowerCase();
+      const mo = String(getMonthNumber(rec.period, rec.payroll_date) || '').toLowerCase();
+      const pMode = (rec.mode_of_payment || rec.payment_mode_classification || '').toLowerCase();
+      const acc = String(rec.account_number || '').toLowerCase();
+      const period = (rec.period || '').toLowerCase();
+      const status = (rec.status || '').toLowerCase();
+      return (
+        pDesc.includes(q) ||
+        yr.includes(q) ||
+        mo.includes(q) ||
+        pMode.includes(q) ||
+        acc.includes(q) ||
+        period.includes(q) ||
+        status.includes(q)
+      );
+    });
+  }, [sortedRecords, searchQuery]);
+
+  // Pagination calculation
+  const totalItems = filteredRecords.length;
+  const effectivePageSize = pageSize === 'ALL' ? totalItems || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalItems / effectivePageSize));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedRecords = useMemo(() => {
+    if (pageSize === 'ALL') return filteredRecords;
+    const start = (validCurrentPage - 1) * pageSize;
+    return filteredRecords.slice(start, start + pageSize);
+  }, [filteredRecords, validCurrentPage, pageSize]);
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [];
+    if (validCurrentPage <= 3) {
+      pages.push(1, 2, 3, 4, '...', totalPages);
+    } else if (validCurrentPage >= totalPages - 2) {
+      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages);
+    }
+    return pages;
+  }, [totalPages, validCurrentPage]);
+
+  const totals = useMemo(() => {
+    const list = searchQuery.trim() ? filteredRecords : records;
+    return list.reduce(
+      (acc, rec) => {
+        const educ = getEducAmount(rec);
+        const health = Number(rec.health || 0);
+        const rice = Number(rec.rice_amount || 0);
+        const f1kd = Number(rec.f1kd_amount || 0);
+        const adj = Number(rec.adjustment_amount || 0);
+        const tot = getTotalAmount(rec, educ);
+
+        acc.educ += educ;
+        acc.health += health;
+        acc.rice += rice;
+        acc.f1kd += f1kd;
+        acc.adj += adj;
+        acc.total += tot;
+        return acc;
+      },
+      { educ: 0, health: 0, rice: 0, f1kd: 0, adj: 0, total: 0 }
+    );
+  }, [records, filteredRecords, searchQuery]);
+
+  return (
+    <div>
+      {/* Search / Filter bar for larger histories */}
+      {records.length > 5 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-muted/20 px-6 py-2.5 text-xs">
+          <div className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter by year, mode, account, or type..."
+              className="h-8 pl-8 pr-7 text-xs bg-background"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
               >
-                {isSuccess ? (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                ) : isReject ? (
-                  <XCircle className="h-3.5 w-3.5" />
-                ) : null}
-                {record.status}
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {searchQuery.trim() ? (
+              <span>
+                Found <strong className="text-foreground">{filteredRecords.length}</strong> of {records.length} records
               </span>
             ) : (
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                Unprocessed
-              </span>
-            )
-          )}
+              <span>Total records: <strong className="text-foreground">{records.length}</strong></span>
+            )}
+          </div>
         </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
+        <thead className="border-b border-border/80 bg-muted/40 dark:bg-muted/20">
+          <tr>
+            {isVisible('payroll_type') && (
+              <SortHeader
+                columnKey="payroll_type"
+                label="Payroll Type"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('year') && (
+              <SortHeader
+                columnKey="year"
+                label="Year"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('month') && (
+              <SortHeader
+                columnKey="month"
+                label="Month"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('payment_mode') && (
+              <SortHeader
+                columnKey="payment_mode"
+                label="Payment Mode"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('account_number') && (
+              <SortHeader
+                columnKey="account_number"
+                label="Account"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('educ_amount') && (
+              <SortHeader
+                columnKey="educ_amount"
+                label="Educ Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('health_amount') && (
+              <SortHeader
+                columnKey="health_amount"
+                label="Health Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('rice_amount') && (
+              <SortHeader
+                columnKey="rice_amount"
+                label="Rice Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('f1kd_amount') && (
+              <SortHeader
+                columnKey="f1kd_amount"
+                label="F1KD Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('adjustment_amount') && (
+              <SortHeader
+                columnKey="adjustment_amount"
+                label="Adjustment Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('total_amount') && (
+              <SortHeader
+                columnKey="total_amount"
+                label="Total Amount"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+            {isVisible('credited') && (
+              <SortHeader
+                columnKey="credited"
+                label="Credited into Account?"
+                currentSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/60">
+          {paginatedRecords.length === 0 ? (
+            <tr>
+              <td colSpan={visibleColumnCount} className="py-10 text-center text-xs text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Search className="h-5 w-5 text-muted-foreground/50" />
+                  <p>No payroll records match &ldquo;{searchQuery}&rdquo;</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 h-7 text-xs"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear Filter
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            paginatedRecords.map((record, idx) => {
+              const globalIdx = pageSize === 'ALL' ? idx : (validCurrentPage - 1) * pageSize + idx;
+              const rowKey = record.id || `row_${globalIdx}`;
+            const educ = getEducAmount(record);
+            const total = getTotalAmount(record, educ);
+            const isCred = isCredited(record);
+            const isExpanded = expandedRowId === rowKey;
+
+            return (
+              <Fragment key={rowKey}>
+                <tr
+                  onClick={() => setExpandedRowId((prev) => (prev === rowKey ? null : rowKey))}
+                  className={cn(
+                    'cursor-pointer transition-colors hover:bg-muted/40',
+                    isExpanded ? 'bg-muted/30 font-medium' : idx % 2 === 1 ? 'bg-muted/10' : 'bg-transparent'
+                  )}
+                >
+                  {/* 1. Payroll Type */}
+                  {isVisible('payroll_type') && (
+                    <td className="px-3.5 py-3 text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('payroll_type', isExpanded)}
+                        <span>{record.payroll_description || '1 - CVS Regular'}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 2. Year */}
+                  {isVisible('year') && (
+                    <td className="px-3.5 py-3 text-muted-foreground font-mono">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('year', isExpanded)}
+                        <span>{record.year || '-'}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 3. Month */}
+                  {isVisible('month') && (
+                    <td className="px-3.5 py-3 text-muted-foreground font-mono">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('month', isExpanded)}
+                        <span>{getMonthNumber(record.period, record.payroll_date)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 4. Payment Mode */}
+                  {isVisible('payment_mode') && (
+                    <td
+                      className="px-3.5 py-3 text-muted-foreground max-w-xs truncate"
+                      title={record.mode_of_payment || record.payment_mode_classification || '-'}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('payment_mode', isExpanded)}
+                        <span className="truncate">{record.mode_of_payment || record.payment_mode_classification || '-'}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 5. Account */}
+                  {isVisible('account_number') && (
+                    <td className="px-3.5 py-3 font-mono text-foreground/90">
+                      <div className="flex items-center gap-1.5 group">
+                        {renderExpandChevron('account_number', isExpanded)}
+                        <span>{record.account_number || '-'}</span>
+                        {record.account_number && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyAccount(record.account_number!, rowKey);
+                            }}
+                            className="rounded p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground opacity-40 group-hover:opacity-100"
+                            title="Copy account number"
+                          >
+                            {copiedAccountId === String(rowKey) ? (
+                              <Check className="h-3 w-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 6. Educ Amount */}
+                  {isVisible('educ_amount') && (
+                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('educ_amount', isExpanded)}
+                        <span>{formatEducHealthRice(educ)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 7. Health Amount */}
+                  {isVisible('health_amount') && (
+                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('health_amount', isExpanded)}
+                        <span>{formatEducHealthRice(record.health ?? 0)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 8. Rice Amount */}
+                  {isVisible('rice_amount') && (
+                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('rice_amount', isExpanded)}
+                        <span>{formatEducHealthRice(record.rice_amount ?? 0)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 9. F1KD Amount */}
+                  {isVisible('f1kd_amount') && (
+                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('f1kd_amount', isExpanded)}
+                        <span>{formatDecimal(record.f1kd_amount ?? 0)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 10. Adjustment Amount */}
+                  {isVisible('adjustment_amount') && (
+                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('adjustment_amount', isExpanded)}
+                        <span>{formatDecimal(record.adjustment_amount ?? 0)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 11. Total Amount */}
+                  {isVisible('total_amount') && (
+                    <td className="px-3.5 py-3 font-mono font-medium text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('total_amount', isExpanded)}
+                        <span>{formatDecimal(total)}</span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* 12. Credited into Account? */}
+                  {isVisible('credited') && (
+                    <td className="px-3.5 py-3 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {renderExpandChevron('credited', isExpanded)}
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 font-medium',
+                            isCred ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground'
+                          )}
+                        >
+                          {isCred ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+
+                {/* Expanded Row for Extra Details */}
+                {isExpanded && (
+                  <tr className="bg-muted/20 border-b border-border/80">
+                    <td colSpan={visibleColumnCount} className="px-6 py-4">
+                      <div className="rounded-xl border border-border/70 bg-card/90 p-4 shadow-2xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-foreground">
+                              Cycle #{globalIdx + 1} Breakdown: {record.period || 'Period'} - {record.year || 'Year'}
+                            </span>
+                            {record.hh_set && (
+                              <span className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                Set {record.hh_set} {record.set_group ? `• Group ${record.set_group}` : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                record.status?.toLowerCase() === 'successful'
+                                  ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                  : record.status?.toLowerCase() === 'reject'
+                                  ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
+                                  : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
+                              )}
+                            >
+                              {record.status?.toLowerCase() === 'successful' ? (
+                                <CheckCircle2 className="h-3 w-3" />
+                              ) : record.status?.toLowerCase() === 'reject' ? (
+                                <XCircle className="h-3 w-3" />
+                              ) : null}
+                              {record.status || 'Unprocessed'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Breakdown of education components & dates */}
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 text-xs">
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ DC Elem</span>
+                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_dc_elem || 0)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Jr High</span>
+                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_jr_hs || 0)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Sr High</span>
+                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_sr_hs || 0)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Gross Amount</span>
+                            <p className="font-mono font-bold text-foreground">{formatAmount(record.gross_amount || 0)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Payroll Date</span>
+                            <p className="font-medium text-foreground">{record.payroll_date || '-'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Finance Approval</span>
+                            <p className="font-medium text-foreground">{record.finance_approval || '-'}</p>
+                          </div>
+                          {record.new_account_number && (
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">New Account Number</span>
+                              <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{record.new_account_number}</p>
+                            </div>
+                          )}
+                          {record.address_psgc && (
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">PSGC Code</span>
+                              <p className="font-medium text-foreground">{record.address_psgc}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Rejection / Remarks box */}
+                        {record.reason && (
+                          <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-400">
+                            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold">Remarks / Rejection Reason:</span>
+                              <p className="mt-0.5 text-foreground">{record.reason}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          }))}
+        </tbody>
+        <tfoot className="border-t-2 border-border/80 bg-muted/30 font-semibold text-xs text-foreground">
+          <tr>
+            {leadingColSpan > 0 && (
+              <td colSpan={leadingColSpan} className="px-3.5 py-3 text-left">
+                <div className="flex flex-col">
+                  <span>
+                    {searchQuery.trim()
+                      ? `Filtered Total (${filteredRecords.length} of ${records.length} records)`
+                      : `Total (${records.length} ${records.length === 1 ? 'record' : 'records'})`}
+                  </span>
+                  {totalPages > 1 && pageSize !== 'ALL' && (
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      Page {validCurrentPage} of {totalPages}
+                    </span>
+                  )}
+                </div>
+              </td>
+            )}
+            {isVisible('educ_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ)}</td>
+            )}
+            {isVisible('health_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.health)}</td>
+            )}
+            {isVisible('rice_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.rice)}</td>
+            )}
+            {isVisible('f1kd_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.f1kd)}</td>
+            )}
+            {isVisible('adjustment_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.adj)}</td>
+            )}
+            {isVisible('total_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatDecimal(totals.total)}
+              </td>
+            )}
+            {isVisible('credited') && (
+              <td className="px-3.5 py-3 text-left text-muted-foreground">-</td>
+            )}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {/* Modern Pagination Footer */}
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/80 px-6 py-3.5 text-xs text-muted-foreground bg-card">
+      <div>
+        {totalItems > 0 ? (
+          <span>
+            Showing{' '}
+            <strong className="text-foreground">
+              {pageSize === 'ALL' ? 1 : (validCurrentPage - 1) * pageSize + 1}
+            </strong>{' '}
+            to{' '}
+            <strong className="text-foreground">
+              {pageSize === 'ALL' ? totalItems : Math.min(validCurrentPage * pageSize, totalItems)}
+            </strong>{' '}
+            of <strong className="text-foreground">{totalItems}</strong> entries
+            {searchQuery.trim() && ` (filtered from ${records.length} total)`}
+          </span>
+        ) : (
+          <span>Showing 0 of 0 entries</span>
+        )}
       </div>
 
-      {/* Financial Summary KPI Strip */}
-      {kpiItems.length > 0 && (
-        <div
-          className={cn(
-            'mt-4 grid gap-3',
-            kpiItems.length === 1 && 'grid-cols-1 sm:grid-cols-2',
-            kpiItems.length === 2 && 'grid-cols-2',
-            kpiItems.length === 3 && 'grid-cols-1 sm:grid-cols-3',
-            kpiItems.length >= 4 && 'grid-cols-2 sm:grid-cols-4'
-          )}
-        >
-          {kpiItems.map((item, i) => (
-            <div key={i} className={item.className}>
-              <p className={item.labelClass}>{item.label}</p>
-              <p className={item.valClass}>{item.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Grants Breakdown Accordion/Grid */}
-      {grantItems.length > 0 && (
-        <div className="mt-4 rounded-lg border border-border/60 bg-background/60 p-3.5 dark:bg-card/60">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Grant Component Breakdown</p>
-          <div
-            className={cn(
-              'mt-2.5 grid gap-3 text-xs',
-              grantItems.length <= 2 && 'grid-cols-2',
-              grantItems.length === 3 && 'grid-cols-2 sm:grid-cols-3',
-              grantItems.length === 4 && 'grid-cols-2 sm:grid-cols-4',
-              grantItems.length >= 5 && 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
-            )}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Rows Per Page */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-muted-foreground">Rows per page:</span>
+          <select
+            aria-label="Rows per page"
+            className="h-7 rounded-md border border-border/80 bg-secondary/50 px-2 py-0.5 text-xs font-semibold text-foreground transition focus:border-primary focus:outline-none"
+            onChange={(e) => {
+              const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
+              setPageSize(val);
+              setCurrentPage(1);
+            }}
+            value={pageSize}
           >
-            {grantItems.map((grant, i) => (
-              <DetailField key={i} label={grant.label} value={grant.value} isMono />
-            ))}
-          </div>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value="ALL">All</option>
+          </select>
         </div>
-      )}
 
-      {/* Banking & Disbursal Details */}
-      {hasDisbursalFields && (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {isVisible('payment_mode_classification') && (
-            <DetailField label="Payment Classification" value={record.payment_mode_classification} />
-          )}
-          {isVisible('mode_of_payment') && (
-            <DetailField label="Mode of Payment" value={record.mode_of_payment} />
-          )}
-          {isVisible('account_number') && (
-            <DetailField
-              label="Account Number"
-              value={record.account_number}
-              isMono
-              isCopyable
-              onCopy={(val) => onCopy(val, `pr_acct_${index}`)}
-              isCopied={copiedHhid === `pr_acct_${index}`}
-            />
-          )}
-          {isVisible('new_account_number') && (
-            <DetailField
-              label="New Account Number"
-              value={record.new_account_number || '-'}
-              isMono
-              highlight={record.new_account_number ? 'emerald' : undefined}
-              isCopyable={!!record.new_account_number}
-              onCopy={(val) => onCopy(val, `pr_new_acct_${index}`)}
-              isCopied={copiedHhid === `pr_new_acct_${index}`}
-            />
-          )}
-          {isVisible('payroll_date') && (
-            <DetailField label="Payroll Date" value={record.payroll_date} />
-          )}
-          {isVisible('finance_approval') && (
-            <DetailField label="Finance Approval" value={record.finance_approval} />
-          )}
-          {isVisible('address_psgc') && (
-            <DetailField label="Address PSGC" value={record.address_psgc} />
-          )}
-        </div>
-      )}
+        {/* Pagination Navigation */}
+        {pageSize !== 'ALL' && totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            {/* First Page */}
+            <button
+              aria-label="First page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage(1)}
+              type="button"
+              title="First page"
+            >
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </button>
 
-      {/* Rejection / Remarks Box */}
-      {showReason && (
-        <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">
-          <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold">Rejection Reason / Remarks:</span>
-            <p className="mt-0.5 text-foreground font-medium">{record.reason || 'No specific reason entered.'}</p>
+            {/* Prev Page */}
+            <button
+              aria-label="Previous page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              type="button"
+              title="Previous page"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {pageNumbers.map((p, pIdx) => {
+                if (p === '...') {
+                  return (
+                    <span className="px-1 text-xs text-muted-foreground" key={`dots-${pIdx}`}>
+                      ...
+                    </span>
+                  );
+                }
+                const pageNum = Number(p);
+                const isCurrent = pageNum === validCurrentPage;
+                return (
+                  <button
+                    className={cn(
+                      'flex h-7 min-w-[1.75rem] items-center justify-center rounded-md px-2 text-xs font-semibold transition',
+                      isCurrent
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'border border-border/70 text-foreground hover:bg-secondary'
+                    )}
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    type="button"
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Page */}
+            <button
+              aria-label="Next page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              type="button"
+              title="Next page"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Last Page */}
+            <button
+              aria-label="Last page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              type="button"
+              title="Last page"
+            >
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  );
+  </div>
+);
 }
 
 // ----------------------------------------------------------------------
