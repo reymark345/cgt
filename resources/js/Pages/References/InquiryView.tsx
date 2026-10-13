@@ -7,10 +7,14 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ChevronUp,
   ChevronsUpDown,
   Download,
+  Expand,
   ClipboardList,
   Clock,
   Copy,
@@ -24,12 +28,15 @@ import {
   Layers,
   Loader2,
   MapPin,
+  Maximize2,
+  Minimize2,
   Plus,
   RefreshCw,
   Search,
   Send,
   ShieldAlert,
   ShieldCheck,
+  Shrink,
   SlidersHorizontal,
   Sparkles,
   Tag,
@@ -506,6 +513,42 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
     setSelectedPayrollFields([]);
   };
 
+  // 4. Payroll Card Width Expansion & Fullscreen State
+  const [payrollCardExpanded, setPayrollCardExpanded] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_inquiry_payroll_expanded');
+      return saved === 'true';
+    }
+    return false;
+  });
+  const [payrollFullscreen, setPayrollFullscreen] = useState(false);
+
+  const togglePayrollCardExpanded = () => {
+    setPayrollCardExpanded((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cgt_inquiry_payroll_expanded', String(next));
+      }
+      onSetNotice?.(
+        next
+          ? 'Payroll card stretched to full width'
+          : 'Payroll card restored to standard width'
+      );
+      return next;
+    });
+  };
+
+  // Keyboard shortcut listener for Fullscreen modal (Esc to exit)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && payrollFullscreen) {
+        setPayrollFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [payrollFullscreen]);
+
   // Unified click-outside listener for all field customization dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -836,9 +879,19 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 pb-12">
+    <div
+      className={cn(
+        'mx-auto w-full space-y-6 pb-12 transition-all duration-300',
+        payrollCardExpanded ? 'max-w-none' : 'max-w-7xl'
+      )}
+    >
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 shadow-xs transition-colors dark:border-border dark:bg-card">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+          payrollCardExpanded && 'max-w-7xl mx-auto'
+        )}
+      >
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 dark:bg-primary/20 dark:text-cyan-300">
@@ -935,7 +988,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
       {/* Household ID Not Existed State */}
       {result && !isHouseholdExisting && (
-        <div className="rounded-2xl border border-rose-500/30 bg-card p-8 sm:p-12 text-center shadow-xs dark:border-rose-500/20">
+        <div
+          className={cn(
+            'rounded-2xl border border-rose-500/30 bg-card p-8 sm:p-12 text-center shadow-xs transition-all duration-300 dark:border-rose-500/20',
+            payrollCardExpanded && 'max-w-7xl mx-auto'
+          )}
+        >
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
             <AlertCircle className="h-8 w-8" />
           </div>
@@ -1047,7 +1105,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       {result && isHouseholdExisting && (
         <div className="space-y-6">
           {/* Household Master Summary Banner */}
-          <div className="relative z-20 rounded-2xl border border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 p-6 shadow-sm dark:border-primary/30">
+          <div
+            className={cn(
+              'relative z-20 rounded-2xl border border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 p-6 shadow-sm transition-all duration-300 dark:border-primary/30',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
@@ -1304,7 +1367,8 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                 'flex items-center justify-between rounded-xl p-4 text-sm font-medium shadow-xs transition-all animate-in fade-in',
                 requestFeedback.type === 'success'
                   ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                  : 'border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                  : 'border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                payrollCardExpanded && 'max-w-7xl mx-auto'
               )}
             >
               <div className="flex items-center gap-2.5">
@@ -1327,7 +1391,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
           {/* Household Requests History Card */}
           {householdRequestsList.length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-all dark:border-border dark:bg-card">
+            <div
+              className={cn(
+                'overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+                payrollCardExpanded && 'max-w-7xl mx-auto'
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setRequestsExpanded((prev) => !prev)}
@@ -1422,7 +1491,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           )}
 
           {/* CARD 1: Grantee List Record */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400">
@@ -1674,7 +1748,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           </div>
 
           {/* CARD 2: EMV Database & Multiple Cash Cards */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded && 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400">
@@ -1853,14 +1932,19 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
           </div>
 
           {/* CARD 3: Payroll Disbursements Record */}
-          <div className="rounded-2xl border border-border/80 bg-card shadow-xs transition-colors dark:border-border dark:bg-card">
+          <div
+            className={cn(
+              'rounded-2xl border border-border/80 bg-card shadow-xs transition-all duration-300 dark:border-border dark:bg-card',
+              payrollCardExpanded ? 'w-full' : 'max-w-7xl mx-auto'
+            )}
+          >
             <div className="flex flex-col gap-3 border-b border-border/80 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
                   <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-bold text-foreground">Payroll & Disbursal History</h3>
                     <span
                       className={cn(
@@ -1872,6 +1956,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     >
                       {result.payroll_records.length} {result.payroll_records.length === 1 ? 'Cycle' : 'Cycles'}
                     </span>
+                    {payrollCardExpanded && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                        <Maximize2 className="h-3 w-3" />
+                        Full Width
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">Disbursement periods, breakdown of grants, payment modes, and approvals.</p>
                 </div>
@@ -1917,6 +2007,48 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                       Export CSV
                     </Button>
                   </>
+                )}
+
+                {/* Stretch Card / Standard Width Toggle */}
+                <Button
+                  type="button"
+                  variant={payrollCardExpanded ? 'secondary' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    'h-8 gap-1.5 text-xs transition-colors',
+                    payrollCardExpanded
+                      ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-300'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  onClick={togglePayrollCardExpanded}
+                  title={payrollCardExpanded ? 'Compress back to standard layout' : 'Stretch card horizontally to fill screen width'}
+                >
+                  {payrollCardExpanded ? (
+                    <>
+                      <Minimize2 className="h-3.5 w-3.5" />
+                      Standard Width
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      Stretch to Full
+                    </>
+                  )}
+                </Button>
+
+                {/* Fullscreen Modal View Button */}
+                {result.payroll_records.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setPayrollFullscreen(true)}
+                    title="Open Payroll table in full-screen modal view"
+                  >
+                    <Expand className="h-3.5 w-3.5" />
+                    Fullscreen
+                  </Button>
                 )}
               </div>
             </div>
@@ -1968,7 +2100,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
       {/* Initial Empty State (before searching) */}
       {!result && !loading && (
-        <div className="rounded-2xl border border-dashed border-border/80 bg-card/40 p-12 text-center">
+        <div
+          className={cn(
+            'rounded-2xl border border-dashed border-border/80 bg-card/40 p-12 text-center transition-all duration-300',
+            payrollCardExpanded && 'max-w-7xl mx-auto'
+          )}
+        >
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-cyan-300">
             <Search className="h-8 w-8" />
           </div>
@@ -2317,6 +2454,94 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Payroll Records Modal */}
+      {payrollFullscreen && result && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md p-4 sm:p-6 animate-in fade-in">
+          {/* Top header of fullscreen modal */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-md sm:flex-row sm:items-center sm:justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground">Payroll & Disbursal History (Fullscreen)</h3>
+                  <span className="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                    {result.payroll_records.length} {result.payroll_records.length === 1 ? 'Cycle' : 'Cycles'}
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-muted-foreground">
+                    HHID: {result.display_hhid}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Beneficiary: <span className="font-semibold text-foreground">{result.summary.full_name || 'Household Beneficiary'}</span> • Fullscreen disbursal inspection
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5">
+                <span className="text-[11px] text-muted-foreground">Total Disbursed:</span>
+                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  {formatAmount(result.summary.total_net)}
+                </span>
+              </div>
+
+              <FieldCustomizerDropdown
+                title="Customize Table Columns"
+                subtitle="Select columns to show in the disbursal table"
+                categories={PAYROLL_FIELD_CATEGORIES}
+                allFieldKeys={ALL_PAYROLL_FIELD_KEYS}
+                selectedFields={selectedPayrollFields}
+                isOpen={payrollFieldDropdownOpen}
+                onOpenChange={setPayrollFieldDropdownOpen}
+                onToggleField={togglePayrollField}
+                onToggleCategory={togglePayrollCategory}
+                onSelectAll={selectAllPayrollFields}
+                onClearAll={clearAllPayrollFields}
+                search={payrollFieldSearch}
+                onSearchChange={setPayrollFieldSearch}
+                dropdownRef={payrollFieldDropdownRef}
+              />
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => handleExportPayrollCsv(result.payroll_records, result.display_hhid)}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={() => setPayrollFullscreen(false)}
+                title="Exit fullscreen modal view (Esc)"
+              >
+                <Shrink className="h-3.5 w-3.5" />
+                Exit Fullscreen (Esc)
+              </Button>
+            </div>
+          </div>
+
+          {/* Modal Body with full table */}
+          <div className="mt-3 flex-1 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-lg flex flex-col">
+            <div className="flex-1 overflow-auto">
+              <PayrollRecordsTable
+                records={result.payroll_records}
+                displayHhid={result.display_hhid}
+                selectedFields={selectedPayrollFields}
+              />
             </div>
           </div>
         </div>
@@ -2887,6 +3112,14 @@ function PayrollRecordsTable({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | number | null>(null);
+  const [pageSize, setPageSize] = useState<number | 'ALL'>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setExpandedRowId(null);
+  }, [records, pageSize, searchQuery]);
 
   const isVisible = (k: string) => selectedFields.includes(k);
   const visibleColumnCount = Math.max(1, selectedFields.length);
@@ -3037,8 +3270,59 @@ function PayrollRecordsTable({
     });
   }, [records, sortKey, sortDirection]);
 
+  const filteredRecords = useMemo(() => {
+    if (!searchQuery.trim()) return sortedRecords;
+    const q = searchQuery.toLowerCase().trim();
+    return sortedRecords.filter((rec) => {
+      const pDesc = (rec.payroll_description || '').toLowerCase();
+      const yr = String(rec.year || '').toLowerCase();
+      const mo = String(getMonthNumber(rec.period, rec.payroll_date) || '').toLowerCase();
+      const pMode = (rec.mode_of_payment || rec.payment_mode_classification || '').toLowerCase();
+      const acc = String(rec.account_number || '').toLowerCase();
+      const period = (rec.period || '').toLowerCase();
+      const status = (rec.status || '').toLowerCase();
+      return (
+        pDesc.includes(q) ||
+        yr.includes(q) ||
+        mo.includes(q) ||
+        pMode.includes(q) ||
+        acc.includes(q) ||
+        period.includes(q) ||
+        status.includes(q)
+      );
+    });
+  }, [sortedRecords, searchQuery]);
+
+  // Pagination calculation
+  const totalItems = filteredRecords.length;
+  const effectivePageSize = pageSize === 'ALL' ? totalItems || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalItems / effectivePageSize));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedRecords = useMemo(() => {
+    if (pageSize === 'ALL') return filteredRecords;
+    const start = (validCurrentPage - 1) * pageSize;
+    return filteredRecords.slice(start, start + pageSize);
+  }, [filteredRecords, validCurrentPage, pageSize]);
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [];
+    if (validCurrentPage <= 3) {
+      pages.push(1, 2, 3, 4, '...', totalPages);
+    } else if (validCurrentPage >= totalPages - 2) {
+      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages);
+    }
+    return pages;
+  }, [totalPages, validCurrentPage]);
+
   const totals = useMemo(() => {
-    return records.reduce(
+    const list = searchQuery.trim() ? filteredRecords : records;
+    return list.reduce(
       (acc, rec) => {
         const educ = getEducAmount(rec);
         const health = Number(rec.health || 0);
@@ -3057,11 +3341,46 @@ function PayrollRecordsTable({
       },
       { educ: 0, health: 0, rice: 0, f1kd: 0, adj: 0, total: 0 }
     );
-  }, [records]);
+  }, [records, filteredRecords, searchQuery]);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
+    <div>
+      {/* Search / Filter bar for larger histories */}
+      {records.length > 5 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-muted/20 px-6 py-2.5 text-xs">
+          <div className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter by year, mode, account, or type..."
+              className="h-8 pl-8 pr-7 text-xs bg-background"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {searchQuery.trim() ? (
+              <span>
+                Found <strong className="text-foreground">{filteredRecords.length}</strong> of {records.length} records
+              </span>
+            ) : (
+              <span>Total records: <strong className="text-foreground">{records.length}</strong></span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
         <thead className="border-b border-border/80 bg-muted/40 dark:bg-muted/20">
           <tr>
             {isVisible('payroll_type') && (
@@ -3175,8 +3494,28 @@ function PayrollRecordsTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-border/60">
-          {sortedRecords.map((record, idx) => {
-            const rowKey = record.id || `row_${idx}`;
+          {paginatedRecords.length === 0 ? (
+            <tr>
+              <td colSpan={visibleColumnCount} className="py-10 text-center text-xs text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Search className="h-5 w-5 text-muted-foreground/50" />
+                  <p>No payroll records match &ldquo;{searchQuery}&rdquo;</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 h-7 text-xs"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear Filter
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            paginatedRecords.map((record, idx) => {
+              const globalIdx = pageSize === 'ALL' ? idx : (validCurrentPage - 1) * pageSize + idx;
+              const rowKey = record.id || `row_${globalIdx}`;
             const educ = getEducAmount(record);
             const total = getTotalAmount(record, educ);
             const isCred = isCredited(record);
@@ -3347,7 +3686,7 @@ function PayrollRecordsTable({
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2.5">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-foreground">
-                              Cycle #{idx + 1} Breakdown: {record.period || 'Period'} - {record.year || 'Year'}
+                              Cycle #{globalIdx + 1} Breakdown: {record.period || 'Period'} - {record.year || 'Year'}
                             </span>
                             {record.hh_set && (
                               <span className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -3432,13 +3771,24 @@ function PayrollRecordsTable({
                 )}
               </Fragment>
             );
-          })}
+          }))}
         </tbody>
         <tfoot className="border-t-2 border-border/80 bg-muted/30 font-semibold text-xs text-foreground">
           <tr>
             {leadingColSpan > 0 && (
               <td colSpan={leadingColSpan} className="px-3.5 py-3 text-left">
-                Total ({records.length} {records.length === 1 ? 'record' : 'records'})
+                <div className="flex flex-col">
+                  <span>
+                    {searchQuery.trim()
+                      ? `Filtered Total (${filteredRecords.length} of ${records.length} records)`
+                      : `Total (${records.length} ${records.length === 1 ? 'record' : 'records'})`}
+                  </span>
+                  {totalPages > 1 && pageSize !== 'ALL' && (
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      Page {validCurrentPage} of {totalPages}
+                    </span>
+                  )}
+                </div>
               </td>
             )}
             {isVisible('educ_amount') && (
@@ -3468,7 +3818,135 @@ function PayrollRecordsTable({
         </tfoot>
       </table>
     </div>
-  );
+
+    {/* Modern Pagination Footer */}
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/80 px-6 py-3.5 text-xs text-muted-foreground bg-card">
+      <div>
+        {totalItems > 0 ? (
+          <span>
+            Showing{' '}
+            <strong className="text-foreground">
+              {pageSize === 'ALL' ? 1 : (validCurrentPage - 1) * pageSize + 1}
+            </strong>{' '}
+            to{' '}
+            <strong className="text-foreground">
+              {pageSize === 'ALL' ? totalItems : Math.min(validCurrentPage * pageSize, totalItems)}
+            </strong>{' '}
+            of <strong className="text-foreground">{totalItems}</strong> entries
+            {searchQuery.trim() && ` (filtered from ${records.length} total)`}
+          </span>
+        ) : (
+          <span>Showing 0 of 0 entries</span>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Rows Per Page */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-muted-foreground">Rows per page:</span>
+          <select
+            aria-label="Rows per page"
+            className="h-7 rounded-md border border-border/80 bg-secondary/50 px-2 py-0.5 text-xs font-semibold text-foreground transition focus:border-primary focus:outline-none"
+            onChange={(e) => {
+              const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
+              setPageSize(val);
+              setCurrentPage(1);
+            }}
+            value={pageSize}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value="ALL">All</option>
+          </select>
+        </div>
+
+        {/* Pagination Navigation */}
+        {pageSize !== 'ALL' && totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            {/* First Page */}
+            <button
+              aria-label="First page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage(1)}
+              type="button"
+              title="First page"
+            >
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Prev Page */}
+            <button
+              aria-label="Previous page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              type="button"
+              title="Previous page"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {pageNumbers.map((p, pIdx) => {
+                if (p === '...') {
+                  return (
+                    <span className="px-1 text-xs text-muted-foreground" key={`dots-${pIdx}`}>
+                      ...
+                    </span>
+                  );
+                }
+                const pageNum = Number(p);
+                const isCurrent = pageNum === validCurrentPage;
+                return (
+                  <button
+                    className={cn(
+                      'flex h-7 min-w-[1.75rem] items-center justify-center rounded-md px-2 text-xs font-semibold transition',
+                      isCurrent
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'border border-border/70 text-foreground hover:bg-secondary'
+                    )}
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    type="button"
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Page */}
+            <button
+              aria-label="Next page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              type="button"
+              title="Next page"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Last Page */}
+            <button
+              aria-label="Last page"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/70 text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={validCurrentPage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              type="button"
+              title="Last page"
+            >
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
 }
 
 // ----------------------------------------------------------------------
