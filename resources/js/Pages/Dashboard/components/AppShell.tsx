@@ -55,6 +55,8 @@ type AppShellProps = PropsWithChildren<{
   granteeCount?: number;
   payrollCount?: number;
   incomingCount: number;
+  moduleCounts?: Record<string, number>;
+  usersCount?: number;
   sidebarOpen: boolean;
   title: string;
   onOpenView: (view: CurrentView) => void;
@@ -171,6 +173,8 @@ export function AppShell({
   granteeCount,
   payrollCount,
   incomingCount,
+  moduleCounts,
+  usersCount,
   sidebarOpen,
   title,
   onOpenView,
@@ -257,11 +261,11 @@ export function AppShell({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-extrabold tracking-tight text-foreground">iGrants</span>
+            <span className="text-sm font-extrabold tracking-tight text-foreground">GRANTS</span>
             <span className="rounded bg-primary/20 px-1 py-0.2 text-[9px] font-bold text-primary dark:text-cyan-300">CGT</span>
           </div>
-          <div className="truncate text-[10px] font-medium text-muted-foreground">
-            DSWD Caraga Portal
+          <div className="truncate text-[10px] font-medium text-muted-foreground" title="Grants Registry And Navigation Tracking System">
+            Grants Registry & Navigation
           </div>
         </div>
 
@@ -299,7 +303,7 @@ export function AppShell({
       </div>
 
       {/* Navigation Groups */}
-      <nav className="mt-4 flex-1 space-y-4 overflow-y-auto pr-0.5">
+      <nav className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1 custom-scrollbar-thin">
         <div>
           <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
             Overview
@@ -348,8 +352,14 @@ export function AppShell({
             <div className="space-y-1">
               <NavItem
                 active={currentView === 'grantee'}
-                badge={granteeCount && granteeCount > 0 ? (granteeCount > 9999 ? `${Math.round(granteeCount / 1000)}k` : granteeCount.toLocaleString()) : undefined}
-                badgeColor="primary"
+                badge={
+                  granteeCount !== undefined
+                    ? granteeCount > 9999
+                      ? `${Math.round(granteeCount / 1000)}k`
+                      : granteeCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={granteeCount && granteeCount > 0 ? 'primary' : 'default'}
                 icon={UsersRound}
                 onClick={() => onOpenView('grantee')}
               >
@@ -357,8 +367,16 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'emv-database'}
-                badge={emvCount !== undefined ? (emvCount > 0 ? (emvCount > 9999 ? `${Math.round(emvCount / 1000)}k` : emvCount.toLocaleString()) : undefined) : (incomingCount > 0 ? incomingCount : undefined)}
-                badgeColor="primary"
+                badge={
+                  emvCount !== undefined
+                    ? emvCount > 9999
+                      ? `${Math.round(emvCount / 1000)}k`
+                      : emvCount.toLocaleString()
+                    : incomingCount > 0
+                    ? incomingCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={emvCount && emvCount > 0 ? 'primary' : 'default'}
                 icon={Database}
                 onClick={() => onOpenView('emv-database')}
               >
@@ -366,8 +384,14 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'emv-payroll'}
-                badge={payrollCount !== undefined ? (payrollCount > 0 ? (payrollCount > 9999 ? `${Math.round(payrollCount / 1000)}k` : payrollCount.toLocaleString()) : undefined) : undefined}
-                badgeColor="primary"
+                badge={
+                  payrollCount !== undefined
+                    ? payrollCount > 9999
+                      ? `${Math.round(payrollCount / 1000)}k`
+                      : payrollCount.toLocaleString()
+                    : undefined
+                }
+                badgeColor={payrollCount && payrollCount > 0 ? 'primary' : 'default'}
                 icon={HandCoins}
                 onClick={() => onOpenView('emv-payroll')}
               >
@@ -397,6 +421,8 @@ export function AppShell({
             <div className="space-y-1">
               <NavItem
                 active={currentView === 'opening'}
+                badge={moduleCounts?.opening ? moduleCounts.opening.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={FolderOpen}
                 onClick={() => onOpenView('opening')}
               >
@@ -404,6 +430,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'distribution'}
+                badge={moduleCounts?.distribution ? moduleCounts.distribution.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Truck}
                 onClick={() => onOpenView('distribution')}
               >
@@ -411,6 +439,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'otc-withdrawal'}
+                badge={moduleCounts?.['otc-withdrawal'] ? moduleCounts['otc-withdrawal'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Banknote}
                 onClick={() => onOpenView('otc-withdrawal')}
               >
@@ -418,6 +448,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'replacement'}
+                badge={moduleCounts?.replacement ? moduleCounts.replacement.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={RefreshCw}
                 onClick={() => onOpenView('replacement')}
               >
@@ -425,6 +457,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'transfer-of-fund'}
+                badge={moduleCounts?.['transfer-of-fund'] ? moduleCounts['transfer-of-fund'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={ArrowRightLeft}
                 onClick={() => onOpenView('transfer-of-fund')}
               >
@@ -432,6 +466,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'force-pin'}
+                badge={moduleCounts?.['force-pin'] ? moduleCounts['force-pin'].toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={KeyRound}
                 onClick={() => onOpenView('force-pin')}
               >
@@ -439,6 +475,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'locking'}
+                badge={moduleCounts?.locking ? moduleCounts.locking.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Lock}
                 onClick={() => onOpenView('locking')}
               >
@@ -446,6 +484,8 @@ export function AppShell({
               </NavItem>
               <NavItem
                 active={currentView === 'lifting'}
+                badge={moduleCounts?.lifting ? moduleCounts.lifting.toLocaleString() : undefined}
+                badgeColor="primary"
                 icon={Unlock}
                 onClick={() => onOpenView('lifting')}
               >
@@ -462,6 +502,8 @@ export function AppShell({
           <div className="space-y-1">
             <NavItem
               active={currentView === 'users'}
+              badge={usersCount}
+              badgeColor="default"
               icon={UserCog}
               onClick={() => onOpenView('users')}
             >
@@ -626,7 +668,7 @@ export function AppShell({
                   className="font-semibold text-muted-foreground transition hover:text-foreground cursor-pointer"
                   onClick={() => onOpenView('dashboard')}
                 >
-                  iGrants
+                  GRANTS
                 </span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
                 <span className="text-muted-foreground hidden sm:inline">{currentMeta.section}</span>

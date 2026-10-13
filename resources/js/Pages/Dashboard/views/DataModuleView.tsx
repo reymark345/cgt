@@ -1,8 +1,10 @@
 import {
+  AlertTriangle,
   Archive,
   ArrowRightLeft,
   ArrowUpDown,
   Banknote,
+  CheckCircle2,
   Download,
   FileSpreadsheet,
   FileText,
@@ -14,13 +16,16 @@ import {
   Loader2,
   Lock,
   Plus,
+  Printer,
   RefreshCw,
   Scissors,
   Search,
   Truck,
+  Undo2,
   Unlock,
   Upload,
   UserX,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -38,6 +43,106 @@ type OpeningRecord = {
   status: string | null;
   remarks: string | null;
   created_at: string | null;
+};
+
+type DistributionRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  run_date: string | null;
+  name: string | null;
+  card_number: string | null;
+  schedule: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type OtcWithdrawalRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  reason_of_request: string | null;
+  account_balance: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type ReplacementRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  reason_of_request: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type TransferOfFundRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  old_card_number: string | null;
+  old_cardholder_name: string | null;
+  new_card_number: string | null;
+  new_cardholder_name: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type ForcePinRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type LockingRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type LiftingRecord = {
+  id: number;
+  item_no: string | null;
+  address: string | null;
+  household_id_number: string | null;
+  name: string | null;
+  card_number: string | null;
+  status: string | null;
+  remarks: string | null;
+  created_at: string | null;
+};
+
+type UndoTarget = {
+  id: number;
+  household_id_number: string | null;
+  name: string | null;
+  address?: string | null;
+  card_number?: string | null;
+  moduleType: 'opening' | 'distribution' | 'otc-withdrawal' | 'replacement' | 'transfer-of-fund' | 'force-pin' | 'locking' | 'lifting';
 };
 
 type DataModuleConfig = {
@@ -64,23 +169,42 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name of Old Grantee',
       'Card Number of Old',
       'Status of Old Grantee',
+      'Action',
     ],
   },
   distribution: {
     title: 'Distribution',
-    subtitle: 'Oversee payout distribution batch series, logistics schedules, releasing events, and field issuance logs.',
+    subtitle: 'Manage and monitor card distribution schedules, releasing batch endorsements, and beneficiary card claims.',
     icon: Truck,
     badge: 'Logistics',
     accentColor: 'text-cyan-600 bg-cyan-500/10 dark:text-cyan-400 dark:bg-cyan-500/20',
-    columns: ['Distribution Batch', 'Cluster / Area', 'Target Beneficiaries', 'Scheduled Date', 'Focal Person', 'Cards Released', 'Progress'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Run Date',
+      'Name',
+      'Card Number',
+      'Schedule',
+      'Action',
+    ],
   },
   'otc-withdrawal': {
     title: 'OTC Withdrawal',
-    subtitle: 'Manage and track Over-The-Counter payout schedules, offsite authorization batches, and acknowledgment receipts.',
+    subtitle: 'Manage and track Over-The-Counter payout schedules, offsite authorization batches, and Land Bank endorsement letters.',
     icon: Banknote,
     badge: 'Disbursement',
     accentColor: 'text-emerald-600 bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/20',
-    columns: ['Payout Batch', 'Municipality', 'Household ID', 'Grantee Name', 'Disbursement Amount', 'Servicing Branch', 'Payout Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name/ Updated Name',
+      'Card Number',
+      'Reason of Request',
+      'Account Balance',
+      'Action',
+    ],
   },
   replacement: {
     title: 'Replacement',
@@ -88,15 +212,32 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
     icon: RefreshCw,
     badge: 'Card Management',
     accentColor: 'text-purple-600 bg-purple-500/10 dark:text-purple-400 dark:bg-purple-500/20',
-    columns: ['Series No.', 'Household ID', 'Grantee Name', 'Old Account', 'New Account', 'Reason for Replacement', 'Series Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name/ Updated Name',
+      'Card Number',
+      'Reason of Request',
+      'Action',
+    ],
   },
   'transfer-of-fund': {
     title: 'Transfer of Fund',
-    subtitle: 'Track fund transfer batches, depository crediting orders, transmittal numbers, and settlement reconciliation.',
+    subtitle: 'Manage and monitor fund transfer endorsements, depository crediting requests, and unwithdrawn grant reconciliations.',
     icon: ArrowRightLeft,
     badge: 'Fund Transfers',
     accentColor: 'text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20',
-    columns: ['TOF Batch No.', 'Funding Source', 'Total Accounts', 'Total Amount', 'Endorsement Date', 'Settlement Reference', 'TOF Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Old Card Number',
+      'Old Cardholder Name',
+      'New Card Number',
+      'New Cardholder Name',
+      'Action',
+    ],
   },
   'force-pin': {
     title: 'Force PIN',
@@ -104,23 +245,44 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
     icon: KeyRound,
     badge: 'Security & PIN',
     accentColor: 'text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20',
-    columns: ['Request ID', 'Household ID', 'Cardholder Name', 'Account Number', 'Branch Assigned', 'Date Requested', 'PIN Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   locking: {
     title: 'Locking',
-    subtitle: 'Manage card locking requests, restriction flags, lost/stolen reports, and frozen transaction batches.',
+    subtitle: 'Manage and monitor card locking requests, depository restriction flags, and security endorsement status.',
     icon: Lock,
     badge: 'Security',
     accentColor: 'text-rose-600 bg-rose-500/10 dark:text-rose-400 dark:bg-rose-500/20',
-    columns: ['Reference No.', 'Household ID', 'Cardholder Name', 'Account Number', 'Lock Reason', 'Date Locked', 'Lock Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   lifting: {
     title: 'Lifting',
-    subtitle: 'Process card restriction liftings, unfreeze requests, compliance validations, and clearance tracking.',
+    subtitle: 'Manage and monitor card unfreezing requests, lifting restriction flags, and security endorsement status.',
     icon: Unlock,
     badge: 'Resolution',
     accentColor: 'text-teal-600 bg-teal-500/10 dark:text-teal-400 dark:bg-teal-500/20',
-    columns: ['Clearance No.', 'Household ID', 'Grantee Name', 'Account Number', 'Lift Reason', 'Authorized By', 'Lifting Status'],
+    columns: [
+      'Item No',
+      'Address',
+      'Household Id Number',
+      'Name',
+      'Card Number',
+      'Action',
+    ],
   },
   matching: {
     title: 'Matching',
@@ -213,6 +375,20 @@ export function DataModuleView({ view }: DataModuleViewProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [openingRecords, setOpeningRecords] = useState<OpeningRecord[]>([]);
   const [openingTotal, setOpeningTotal] = useState(0);
+  const [distributionRecords, setDistributionRecords] = useState<DistributionRecord[]>([]);
+  const [distributionTotal, setDistributionTotal] = useState(0);
+  const [otcRecords, setOtcRecords] = useState<OtcWithdrawalRecord[]>([]);
+  const [otcTotal, setOtcTotal] = useState(0);
+  const [replacementRecords, setReplacementRecords] = useState<ReplacementRecord[]>([]);
+  const [replacementTotal, setReplacementTotal] = useState(0);
+  const [transferOfFundRecords, setTransferOfFundRecords] = useState<TransferOfFundRecord[]>([]);
+  const [transferOfFundTotal, setTransferOfFundTotal] = useState(0);
+  const [forcePinRecords, setForcePinRecords] = useState<ForcePinRecord[]>([]);
+  const [forcePinTotal, setForcePinTotal] = useState(0);
+  const [lockingRecords, setLockingRecords] = useState<LockingRecord[]>([]);
+  const [lockingTotal, setLockingTotal] = useState(0);
+  const [liftingRecords, setLiftingRecords] = useState<LiftingRecord[]>([]);
+  const [liftingTotal, setLiftingTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -254,8 +430,190 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     }
   }, [view]);
 
+  const fetchDistributionData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'distribution') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/distribution/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setDistributionRecords(json.data || []);
+          setDistributionTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load distribution records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchOtcData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'otc-withdrawal') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/otc-withdrawal/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setOtcRecords(json.data || []);
+          setOtcTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load OTC withdrawal records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchReplacementData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'replacement') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/replacement/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setReplacementRecords(json.data || []);
+          setReplacementTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load replacement records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchTransferOfFundData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'transfer-of-fund') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/transfer-of-fund/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setTransferOfFundRecords(json.data || []);
+          setTransferOfFundTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load transfer of fund records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchForcePinData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'force-pin') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/force-pin/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setForcePinRecords(json.data || []);
+          setForcePinTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load force pin records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchLockingData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'locking') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/locking/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setLockingRecords(json.data || []);
+          setLockingTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load locking records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
+  const fetchLiftingData = useCallback(async (page = 1, query = '') => {
+    if (view !== 'lifting') return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: '15',
+        search: query,
+      });
+      const res = await fetch(`/lifting/search?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setLiftingRecords(json.data || []);
+          setLiftingTotal(json.total || 0);
+          setCurrentPage(json.current_page || 1);
+          setLastPage(json.last_page || 1);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load lifting records:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [view]);
+
   useEffect(() => {
-    if (view !== 'opening') return;
+    if (!['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view)) return;
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
@@ -266,8 +624,154 @@ export function DataModuleView({ view }: DataModuleViewProps) {
   useEffect(() => {
     if (view === 'opening') {
       fetchOpeningData(currentPage, debouncedSearch);
+    } else if (view === 'distribution') {
+      fetchDistributionData(currentPage, debouncedSearch);
+    } else if (view === 'otc-withdrawal') {
+      fetchOtcData(currentPage, debouncedSearch);
+    } else if (view === 'replacement') {
+      fetchReplacementData(currentPage, debouncedSearch);
+    } else if (view === 'transfer-of-fund') {
+      fetchTransferOfFundData(currentPage, debouncedSearch);
+    } else if (view === 'force-pin') {
+      fetchForcePinData(currentPage, debouncedSearch);
+    } else if (view === 'locking') {
+      fetchLockingData(currentPage, debouncedSearch);
+    } else if (view === 'lifting') {
+      fetchLiftingData(currentPage, debouncedSearch);
     }
-  }, [view, currentPage, debouncedSearch, fetchOpeningData]);
+  }, [view, currentPage, debouncedSearch, fetchOpeningData, fetchDistributionData, fetchOtcData, fetchReplacementData, fetchTransferOfFundData, fetchForcePinData, fetchLockingData, fetchLiftingData]);
+
+  const [recordToUndo, setRecordToUndo] = useState<UndoTarget | null>(null);
+  const [isUndoing, setIsUndoing] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleConfirmUndo = async () => {
+    if (!recordToUndo) return;
+    setIsUndoing(true);
+    setFeedback(null);
+
+    const isDist = recordToUndo.moduleType === 'distribution';
+    const isOtc = recordToUndo.moduleType === 'otc-withdrawal';
+    const isRep = recordToUndo.moduleType === 'replacement';
+    const isTof = recordToUndo.moduleType === 'transfer-of-fund';
+    const isFp = recordToUndo.moduleType === 'force-pin';
+    const isLock = recordToUndo.moduleType === 'locking';
+    const isLift = recordToUndo.moduleType === 'lifting';
+    const endpoint = isDist
+      ? `/distribution/${recordToUndo.id}`
+      : isOtc
+      ? `/otc-withdrawal/${recordToUndo.id}`
+      : isRep
+      ? `/replacement/${recordToUndo.id}`
+      : isTof
+      ? `/transfer-of-fund/${recordToUndo.id}`
+      : isFp
+      ? `/force-pin/${recordToUndo.id}`
+      : isLock
+      ? `/locking/${recordToUndo.id}`
+      : isLift
+      ? `/lifting/${recordToUndo.id}`
+      : `/opening/${recordToUndo.id}`;
+
+    const moduleLabel = isDist
+      ? 'Distribution'
+      : isOtc
+      ? 'OTC Withdrawal'
+      : isRep
+      ? 'Replacement'
+      : isTof
+      ? 'Transfer of Fund'
+      : isFp
+      ? 'Force PIN'
+      : isLock
+      ? 'Locking'
+      : isLift
+      ? 'Lifting'
+      : 'Opening';
+
+    try {
+      const metaToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+      const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+
+      const res = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(metaToken ? { 'X-CSRF-TOKEN': metaToken } : {}),
+          ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+        },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        if (isDist) {
+          setDistributionRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setDistributionTotal((prev) => Math.max(0, prev - 1));
+        } else if (isOtc) {
+          setOtcRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setOtcTotal((prev) => Math.max(0, prev - 1));
+        } else if (isRep) {
+          setReplacementRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setReplacementTotal((prev) => Math.max(0, prev - 1));
+        } else if (isTof) {
+          setTransferOfFundRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setTransferOfFundTotal((prev) => Math.max(0, prev - 1));
+        } else if (isFp) {
+          setForcePinRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setForcePinTotal((prev) => Math.max(0, prev - 1));
+        } else if (isLock) {
+          setLockingRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setLockingTotal((prev) => Math.max(0, prev - 1));
+        } else if (isLift) {
+          setLiftingRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setLiftingTotal((prev) => Math.max(0, prev - 1));
+        } else {
+          setOpeningRecords((prev) => prev.filter((r) => r.id !== recordToUndo.id));
+          setOpeningTotal((prev) => Math.max(0, prev - 1));
+        }
+        setFeedback({
+          type: 'success',
+          message:
+            data.message ||
+            `${moduleLabel} record for Household ${recordToUndo.household_id_number} was successfully undone and removed.`,
+        });
+        setRecordToUndo(null);
+
+        // Live update sidebar badges and dashboard metrics immediately
+        if (data.module_counts) {
+          window.dispatchEvent(
+            new CustomEvent('cgt:module-counts-updated', {
+              detail: { counts: data.module_counts },
+            })
+          );
+        } else {
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+        }
+      } else {
+        setFeedback({
+          type: 'error',
+          message: data.message || `Failed to remove the ${moduleLabel.toLowerCase()} record.`,
+        });
+      }
+    } catch (err) {
+      console.error(`Failed to undo ${recordToUndo.moduleType} record:`, err);
+      setFeedback({
+        type: 'error',
+        message: `A network error occurred while removing the ${moduleLabel.toLowerCase()} record.`,
+      });
+    } finally {
+      setIsUndoing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   return (
     <section className="mx-auto w-full max-w-[1800px] space-y-5">
@@ -295,15 +799,47 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
-            {view === 'opening' ? (
-              <a
-                href="/opening/export"
-                download
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Data</span>
-              </a>
+            {['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view) ? (
+              <>
+                <a
+                  href={
+                    debouncedSearch
+                      ? `/${view}/print?search=${encodeURIComponent(debouncedSearch)}`
+                      : `/${view}/print`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
+                    view === 'distribution'
+                      ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25'
+                      : view === 'otc-withdrawal'
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300 dark:hover:bg-emerald-400/25'
+                      : view === 'replacement'
+                      ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-400/30 dark:bg-purple-400/15 dark:text-purple-300 dark:hover:bg-purple-400/25'
+                      : view === 'transfer-of-fund'
+                      ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-400/15 dark:text-indigo-300 dark:hover:bg-indigo-400/25'
+                      : view === 'force-pin'
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300 dark:hover:bg-amber-400/25'
+                      : view === 'locking'
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-300 dark:hover:bg-rose-400/25'
+                      : view === 'lifting'
+                      ? 'border-teal-500/30 bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300 dark:hover:bg-teal-400/25'
+                      : 'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25'
+                  }`}
+                  title={`Open printable ${config.title} Form in new tab`}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Print Form</span>
+                </a>
+                <a
+                  href={`/${view}/export`}
+                  download
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export Data</span>
+                </a>
+              </>
             ) : (
               <>
                 <button
@@ -330,7 +866,23 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           <div className="rounded-lg border border-border/70 bg-secondary/30 p-3.5 dark:border-border/60 dark:bg-secondary/20">
             <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Total Records</div>
             <div className="mt-1 text-xl font-bold text-foreground">
-              {view === 'opening' ? openingTotal.toLocaleString() : '0'}
+              {view === 'opening'
+                ? openingTotal.toLocaleString()
+                : view === 'distribution'
+                ? distributionTotal.toLocaleString()
+                : view === 'otc-withdrawal'
+                ? otcTotal.toLocaleString()
+                : view === 'replacement'
+                ? replacementTotal.toLocaleString()
+                : view === 'transfer-of-fund'
+                ? transferOfFundTotal.toLocaleString()
+                : view === 'force-pin'
+                ? forcePinTotal.toLocaleString()
+                : view === 'locking'
+                ? lockingTotal.toLocaleString()
+                : view === 'lifting'
+                ? liftingTotal.toLocaleString()
+                : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Current system entries</div>
           </div>
@@ -339,6 +891,20 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             <div className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
               {view === 'opening'
                 ? openingRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
+                : view === 'distribution'
+                ? distributionRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'claimed').length
+                : view === 'otc-withdrawal'
+                ? otcRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'claimed').length
+                : view === 'replacement'
+                ? replacementRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'replaced').length
+                : view === 'transfer-of-fund'
+                ? transferOfFundRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'transferred').length
+                : view === 'force-pin'
+                ? forcePinRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
+                : view === 'locking'
+                ? lockingRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
+                : view === 'lifting'
+                ? liftingRecords.filter((r) => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'completed').length
                 : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Processed & validated</div>
@@ -348,6 +914,20 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             <div className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
               {view === 'opening'
                 ? openingRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending').length
+                : view === 'distribution'
+                ? distributionRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'scheduled').length
+                : view === 'otc-withdrawal'
+                ? otcRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'scheduled').length
+                : view === 'replacement'
+                ? replacementRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'transfer-of-fund'
+                ? transferOfFundRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'force-pin'
+                ? forcePinRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'locking'
+                ? lockingRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
+                : view === 'lifting'
+                ? liftingRecords.filter((r) => !r.status || r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'processing').length
                 : '0'}
             </div>
             <div className="mt-0.5 text-[10px] text-muted-foreground">Awaiting review or dispatch</div>
@@ -395,6 +975,20 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               onClick={() => {
                 if (view === 'opening') {
                   fetchOpeningData(currentPage, debouncedSearch);
+                } else if (view === 'distribution') {
+                  fetchDistributionData(currentPage, debouncedSearch);
+                } else if (view === 'otc-withdrawal') {
+                  fetchOtcData(currentPage, debouncedSearch);
+                } else if (view === 'replacement') {
+                  fetchReplacementData(currentPage, debouncedSearch);
+                } else if (view === 'transfer-of-fund') {
+                  fetchTransferOfFundData(currentPage, debouncedSearch);
+                } else if (view === 'force-pin') {
+                  fetchForcePinData(currentPage, debouncedSearch);
+                } else if (view === 'locking') {
+                  fetchLockingData(currentPage, debouncedSearch);
+                } else if (view === 'lifting') {
+                  fetchLiftingData(currentPage, debouncedSearch);
                 }
               }}
               type="button"
@@ -406,12 +1000,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
         </div>
 
         {/* Table Data Preview */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar-table">
           <table className="w-full min-w-[900px] text-left text-xs">
             <thead className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:bg-secondary/30">
               <tr>
                 {config.columns.map((col, idx) => (
-                  <th key={idx} className="px-4 py-3">
+                  <th key={idx} className={`px-4 py-3 ${col === 'Action' ? 'text-right' : ''}`}>
                     {col}
                   </th>
                 ))}
@@ -465,6 +1059,38 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                           {item.status_of_old_grantee || 'Active'}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/opening/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="Print Endorsement Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name_of_old_grantee || item.name_of_new_grantee || null,
+                                address: item.address,
+                                card_number: item.card_number_of_old,
+                                moduleType: 'opening',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Opening list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -481,6 +1107,621 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                           {debouncedSearch
                             ? `No account opening records found matching "${debouncedSearch}".`
                             : 'There are no account opening records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'distribution' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-cyan-600 dark:text-cyan-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Distribution records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : distributionRecords.length > 0 ? (
+                  distributionRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        {item.run_date || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                        {item.schedule ? (
+                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300">
+                            {item.schedule}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground italic">Pending schedule</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/distribution/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400"
+                            title="Print Distribution Endorsement Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'distribution',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Distribution list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No distribution records found matching "${debouncedSearch}".`
+                            : 'There are no distribution records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'otc-withdrawal' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-emerald-600 dark:text-emerald-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading OTC Withdrawal records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : otcRecords.length > 0 ? (
+                  otcRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
+                        {item.reason_of_request || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        {item.account_balance || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/otc-withdrawal/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
+                            title="Print OTC Withdrawal Endorsement Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'otc-withdrawal',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from OTC Withdrawal list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No OTC withdrawal records found matching "${debouncedSearch}".`
+                            : 'There are no OTC withdrawal records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'replacement' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Replacement records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : replacementRecords.length > 0 ? (
+                  replacementRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="max-w-[250px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
+                        {item.reason_of_request || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/replacement/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400"
+                            title="Print Replacement Endorsement Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'replacement',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Replacement list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No replacement records found matching "${debouncedSearch}".`
+                            : 'There are no replacement records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'transfer-of-fund' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Transfer of Fund records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : transferOfFundRecords.length > 0 ? (
+                  transferOfFundRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.old_card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.old_cardholder_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.new_card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.new_cardholder_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/transfer-of-fund/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            title="Print Transfer of Fund Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.new_cardholder_name || item.old_cardholder_name || null,
+                                address: item.address,
+                                card_number: item.old_card_number || item.new_card_number,
+                                moduleType: 'transfer-of-fund',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Transfer of Fund list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No transfer of fund records found matching "${debouncedSearch}".`
+                            : 'There are no transfer of fund records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'force-pin' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Force PIN records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : forcePinRecords.length > 0 ? (
+                  forcePinRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/force-pin/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+                            title="Print Force PIN Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'force-pin',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Force PIN list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No force pin records found matching "${debouncedSearch}".`
+                            : 'There are no force pin records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'locking' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-rose-600 dark:text-rose-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Locking records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : lockingRecords.length > 0 ? (
+                  lockingRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/locking/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+                            title="Print Locking Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'locking',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Locking list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No locking records found matching "${debouncedSearch}".`
+                            : 'There are no locking records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ) : view === 'lifting' ? (
+                loading ? (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex flex-col items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-400" />
+                        <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Lifting records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : liftingRecords.length > 0 ? (
+                  liftingRecords.map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3 font-semibold text-foreground">
+                        {item.item_no || idx + 1}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                        {item.address || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">
+                        {item.household_id_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {item.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`/lifting/print?ids=${item.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400"
+                            title="Print Lifting Form for this grantee"
+                          >
+                            <Printer className="h-3 w-3" />
+                            <span>Print</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRecordToUndo({
+                                id: item.id,
+                                household_id_number: item.household_id_number,
+                                name: item.name,
+                                address: item.address,
+                                card_number: item.card_number,
+                                moduleType: 'lifting',
+                              })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                            title="Undo / Remove from Lifting list"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                      <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                          <FileSpreadsheet className="h-6 w-6" />
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-foreground">
+                          No {config.title} records found
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                          {debouncedSearch
+                            ? `No lifting records found matching "${debouncedSearch}".`
+                            : 'There are no lifting records logged yet. Records will automatically appear here when requests are submitted in Inquiry.'}
                         </p>
                       </div>
                     </td>
@@ -509,12 +1750,32 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
         {/* Footer / Pagination Placeholder */}
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          {view === 'opening' ? (
+          {['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view) ? (
             <>
-              <span>
-                Showing {openingTotal === 0 ? 0 : (currentPage - 1) * 15 + 1} to{' '}
-                {Math.min(currentPage * 15, openingTotal)} of {openingTotal} entries
-              </span>
+              {(() => {
+                const totalEntries =
+                  view === 'opening'
+                    ? openingTotal
+                    : view === 'distribution'
+                    ? distributionTotal
+                    : view === 'otc-withdrawal'
+                    ? otcTotal
+                    : view === 'replacement'
+                    ? replacementTotal
+                    : view === 'transfer-of-fund'
+                    ? transferOfFundTotal
+                    : view === 'force-pin'
+                    ? forcePinTotal
+                    : view === 'locking'
+                    ? lockingTotal
+                    : liftingTotal;
+                return (
+                  <span>
+                    Showing {totalEntries === 0 ? 0 : (currentPage - 1) * 15 + 1} to{' '}
+                    {Math.min(currentPage * 15, totalEntries)} of {totalEntries} entries
+                  </span>
+                );
+              })()}
               <div className="flex items-center gap-1.5">
                 <button
                   className="rounded px-2.5 py-1 text-muted-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
@@ -560,6 +1821,152 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           )}
         </div>
       </div>
+
+      {/* Undo Confirmation Modal */}
+      {recordToUndo && (() => {
+        const undoLabel =
+          recordToUndo.moduleType === 'distribution'
+            ? 'Distribution'
+            : recordToUndo.moduleType === 'otc-withdrawal'
+            ? 'OTC Withdrawal'
+            : recordToUndo.moduleType === 'replacement'
+            ? 'Replacement'
+            : recordToUndo.moduleType === 'transfer-of-fund'
+            ? 'Transfer of Fund'
+            : recordToUndo.moduleType === 'force-pin'
+            ? 'Force PIN'
+            : recordToUndo.moduleType === 'locking'
+            ? 'Locking'
+            : recordToUndo.moduleType === 'lifting'
+            ? 'Lifting'
+            : 'Opening';
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+            <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl transition-all">
+              <div className="flex items-center justify-between border-b border-border/80 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                    <Undo2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      Undo {undoLabel} Record
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Remove grantee from {undoLabel}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !isUndoing && setRecordToUndo(null)}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Are you sure you want to remove this grantee from the {undoLabel} list? If this was added by mistake in the Inquiry page, this action will remove the record from {undoLabel} and cancel its pending request.
+                </p>
+
+              <div className="rounded-xl border border-border/80 bg-muted/40 p-3.5 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Household ID:</span>
+                  <span className="font-mono font-bold text-foreground">{recordToUndo.household_id_number || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Grantee Name:</span>
+                  <span className="font-semibold text-foreground">
+                    {recordToUndo.name || '-'}
+                  </span>
+                </div>
+                {recordToUndo.address && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Address:</span>
+                    <span className="max-w-[220px] truncate text-foreground">{recordToUndo.address}</span>
+                  </div>
+                )}
+                {recordToUndo.card_number && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Card Number:</span>
+                    <span className="font-mono text-muted-foreground">{recordToUndo.card_number}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2 border-t border-border/80 pt-4">
+              <button
+                type="button"
+                disabled={isUndoing}
+                onClick={() => setRecordToUndo(null)}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-4 text-xs font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isUndoing}
+                onClick={handleConfirmUndo}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50 dark:bg-rose-600 dark:hover:bg-rose-700"
+              >
+                {isUndoing ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Undo2 className="h-3.5 w-3.5" />
+                    <span>Confirm Undo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+      })()}
+
+      {/* Feedback Toast */}
+      {feedback && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex max-w-md items-center gap-3 rounded-xl border p-4 shadow-xl transition-all animate-in slide-in-from-bottom-2 ${
+            feedback.type === 'success'
+              ? 'border-emerald-500/30 bg-card text-foreground dark:border-emerald-500/40'
+              : 'border-rose-500/30 bg-card text-foreground dark:border-rose-500/40'
+          }`}
+        >
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+              feedback.type === 'success'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                : 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
+            }`}
+          >
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+          </div>
+          <div className="flex-1 text-xs">
+            <p className="font-semibold text-foreground">
+              {feedback.type === 'success' ? 'Action Completed' : 'Action Failed'}
+            </p>
+            <p className="mt-0.5 text-muted-foreground">{feedback.message}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

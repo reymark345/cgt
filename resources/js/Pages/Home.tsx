@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartNoAxesCombined, CheckCircle2, CircleHelp, FileText, PackageCheck, UserCog, X, XCircle } from 'lucide-react';
 
 import { AppShell } from './Dashboard/components/AppShell';
@@ -83,6 +83,7 @@ type HomeProps = {
   payrollPeriods?: string[];
   payrollYears?: string[];
   payrollHhSets?: string[];
+  moduleCounts?: Record<string, number>;
   users?: UserListItem[];
 };
 
@@ -120,12 +121,129 @@ export default function Home({
   payrollPeriods = [],
   payrollYears = [],
   payrollHhSets = [],
+  moduleCounts,
   users = [],
 }: HomeProps) {
   const { props } = usePage<SharedPageProps>();
   const [records, setRecords] = useState<RecordItem[]>(initialRecords);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inquirySearchHhId, setInquirySearchHhId] = useState<string>('');
+
+  const [liveModuleCounts, setLiveModuleCounts] = useState<Record<string, number>>(() => {
+    return moduleCounts || dashboardMetrics?.moduleCounts || {};
+  });
+
+  const [liveEmvCount, setLiveEmvCount] = useState<number>(emvTotalCount ?? 0);
+  const [liveGranteeCount, setLiveGranteeCount] = useState<number>(granteeTotalCount ?? 0);
+  const [livePayrollCount, setLivePayrollCount] = useState<number>(payrollTotalCount ?? 0);
+
+  useEffect(() => {
+    if (typeof emvTotalCount === 'number') {
+      setLiveEmvCount(emvTotalCount);
+    }
+  }, [emvTotalCount]);
+
+  useEffect(() => {
+    if (typeof granteeTotalCount === 'number') {
+      setLiveGranteeCount(granteeTotalCount);
+    }
+  }, [granteeTotalCount]);
+
+  useEffect(() => {
+    if (typeof payrollTotalCount === 'number') {
+      setLivePayrollCount(payrollTotalCount);
+    }
+  }, [payrollTotalCount]);
+
+  useEffect(() => {
+    if (moduleCounts) {
+      setLiveModuleCounts(moduleCounts);
+    } else if (dashboardMetrics?.moduleCounts) {
+      setLiveModuleCounts(dashboardMetrics.moduleCounts);
+    }
+  }, [moduleCounts, dashboardMetrics?.moduleCounts]);
+
+  const refreshModuleCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/module-counts', {
+        headers: {
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if (data.counts) {
+            setLiveModuleCounts(data.counts);
+          }
+          if (data.references) {
+            if (typeof data.references.emv === 'number') {
+              setLiveEmvCount(data.references.emv);
+            }
+            if (typeof data.references.grantee === 'number') {
+              setLiveGranteeCount(data.references.grantee);
+            }
+            if (typeof data.references.payroll === 'number') {
+              setLivePayrollCount(data.references.payroll);
+            }
+          }
+        }
+      }
+    } catch {
+      // Background count fetch - ignore network error
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleModuleCountsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ counts?: Record<string, number> }>;
+      if (customEvent.detail?.counts) {
+        setLiveModuleCounts(customEvent.detail.counts);
+      } else {
+        refreshModuleCounts();
+      }
+    };
+
+    const handleReferenceCountsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        emv?: number;
+        grantee?: number;
+        payroll?: number;
+      }>;
+      if (customEvent.detail) {
+        if (typeof customEvent.detail.emv === 'number') {
+          setLiveEmvCount(customEvent.detail.emv);
+        }
+        if (typeof customEvent.detail.grantee === 'number') {
+          setLiveGranteeCount(customEvent.detail.grantee);
+        }
+        if (typeof customEvent.detail.payroll === 'number') {
+          setLivePayrollCount(customEvent.detail.payroll);
+        }
+      }
+      refreshModuleCounts();
+    };
+
+    const handleRefresh = () => {
+      refreshModuleCounts();
+    };
+
+    window.addEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+    window.addEventListener('cgt:reference-counts-updated', handleReferenceCountsUpdated);
+    window.addEventListener('cgt:refresh-module-counts', handleRefresh);
+    window.addEventListener('focus', handleRefresh);
+
+    const interval = window.setInterval(refreshModuleCounts, 20000);
+
+    return () => {
+      window.removeEventListener('cgt:module-counts-updated', handleModuleCountsUpdated);
+      window.removeEventListener('cgt:reference-counts-updated', handleReferenceCountsUpdated);
+      window.removeEventListener('cgt:refresh-module-counts', handleRefresh);
+      window.removeEventListener('focus', handleRefresh);
+      window.clearInterval(interval);
+    };
+  }, [refreshModuleCounts]);
 
   const availableOffices = useMemo(() => {
     const list = Array.from(new Set(records.map((record) => record.office).filter(Boolean)));
@@ -138,7 +256,27 @@ export default function Home({
   const [activeStatus, setActiveStatus] = useState('All');
   const [notice, setNotice] = useState('Ready');
   const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cgt_dark_mode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cgt_dark_mode', String(darkMode));
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [darkMode]);
   const [importingGrantee, setImportingGrantee] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -191,6 +329,7 @@ export default function Home({
   function openView(view: CurrentView) {
     setCurrentView(view);
     setSidebarOpen(false);
+    refreshModuleCounts();
     const notices: Record<CurrentView, string> = {
       aging: 'Aging opened',
       dashboard: 'Dashboard opened',
@@ -237,10 +376,12 @@ export default function Home({
       <AppShell
         currentView={currentView}
         darkMode={darkMode}
-        emvCount={emvTotalCount}
-        granteeCount={granteeTotalCount}
-        payrollCount={payrollTotalCount}
+        emvCount={liveEmvCount}
+        granteeCount={liveGranteeCount}
+        payrollCount={livePayrollCount}
         incomingCount={records.length}
+        moduleCounts={liveModuleCounts}
+        usersCount={users.length}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
         onOpenView={openView}
@@ -253,7 +394,34 @@ export default function Home({
       >
         <div className={currentView === 'dashboard' ? 'block' : 'hidden'}>
           <DashboardView
-            dashboardMetrics={dashboardMetrics}
+            dashboardMetrics={
+              dashboardMetrics
+                ? {
+                    ...dashboardMetrics,
+                    moduleCounts: liveModuleCounts,
+                    payroll: {
+                      ...dashboardMetrics.payroll,
+                      total: livePayrollCount,
+                      gross: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.gross,
+                      net: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.net,
+                      withholdings: livePayrollCount === 0 ? 0 : dashboardMetrics.payroll.withholdings,
+                    },
+                    grantee: {
+                      ...dashboardMetrics.grantee,
+                      total: liveGranteeCount,
+                    },
+                    emv: {
+                      ...dashboardMetrics.emv,
+                      total: liveEmvCount,
+                    },
+                    requests: {
+                      ...dashboardMetrics.requests,
+                      total: Object.values(liveModuleCounts).reduce((acc, curr) => acc + (curr || 0), 0),
+                      pending: Object.values(liveModuleCounts).reduce((acc, curr) => acc + (curr || 0), 0),
+                    },
+                  }
+                : undefined
+            }
             emvRecords={emvRecords}
             dashboardStats={dashboardStats}
             notice={notice}
@@ -298,7 +466,7 @@ export default function Home({
             granteeMunicipalities={granteeMunicipalities}
             granteePaymentModesCount={granteePaymentModesCount}
             grantees={grantees}
-            granteeTotalCount={granteeTotalCount}
+            granteeTotalCount={liveGranteeCount}
             isImporting={importingGrantee}
             onImportExcel={importGranteeExcel}
             onSetNotice={setNotice}
@@ -312,7 +480,7 @@ export default function Home({
             emvClaimedCount={emvClaimedCount}
             emvMunicipalities={emvMunicipalities}
             emvRecords={emvRecords}
-            emvTotalCount={emvTotalCount}
+            emvTotalCount={liveEmvCount}
             onSetNotice={setNotice}
           />
         </div>
@@ -326,7 +494,7 @@ export default function Home({
             payrollNetTotal={payrollNetTotal}
             payrollPeriods={payrollPeriods}
             payrollRecords={payrollRecords}
-            payrollTotalCount={payrollTotalCount}
+            payrollTotalCount={livePayrollCount}
             payrollYears={payrollYears}
           />
         </div>

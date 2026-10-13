@@ -40,6 +40,7 @@ import {
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { cn } from '@/lib/utils';
+import { formatDisplayDate } from '../Dashboard/utils';
 import type { EmvDatabaseRecord, EmvSortKey } from '../Dashboard/types';
 
 export const emvColumns: { key: EmvSortKey; label: string; group: string }[] = [
@@ -181,14 +182,12 @@ export function EmvDatabaseView({
 
   // Sync if emvRecords or meta props update
   useEffect(() => {
-    if (emvRecords.length > 0) {
-      setData(emvRecords);
-    }
-    if (emvTotalCount > 0) {
+    setData(emvRecords);
+    if (emvTotalCount !== undefined) {
       setDbTotal(emvTotalCount);
       setTotalCount(emvTotalCount);
     }
-    if (emvClaimedCount > 0) {
+    if (emvClaimedCount !== undefined) {
       setClaimedCount(emvClaimedCount);
     }
   }, [emvRecords, emvTotalCount, emvClaimedCount]);
@@ -255,6 +254,11 @@ export function EmvDatabaseView({
         }
         if (typeof json.total_in_database === 'number') {
           setDbTotal(json.total_in_database);
+          window.dispatchEvent(
+            new CustomEvent('cgt:reference-counts-updated', {
+              detail: { emv: json.total_in_database },
+            })
+          );
         }
         if (typeof json.claimed_count === 'number') {
           setClaimedCount(json.claimed_count);
@@ -466,8 +470,21 @@ export function EmvDatabaseView({
             `Import complete! ${statusData.imported_count.toLocaleString()} added, ${statusData.updated_count.toLocaleString()} updated.`
           );
           fetchRecentRecords();
+          window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+          fetch('/reference-counts')
+            .then((r) => r.json())
+            .then((res) => {
+              if (res.success && res.references) {
+                window.dispatchEvent(
+                  new CustomEvent('cgt:reference-counts-updated', {
+                    detail: res.references,
+                  })
+                );
+              }
+            })
+            .catch(() => {});
           try {
-            router.reload({ preserveScroll: true, preserveState: true });
+            router.reload({ preserveScroll: true, preserveState: false });
           } catch {
             // ignore
           }
@@ -516,8 +533,21 @@ export function EmvDatabaseView({
                 `Import complete! ${pumpData.imported_count.toLocaleString()} added, ${pumpData.updated_count.toLocaleString()} updated.`
               );
               fetchRecentRecords();
+              window.dispatchEvent(new CustomEvent('cgt:refresh-module-counts'));
+              fetch('/reference-counts')
+                .then((r) => r.json())
+                .then((res) => {
+                  if (res.success && res.references) {
+                    window.dispatchEvent(
+                      new CustomEvent('cgt:reference-counts-updated', {
+                        detail: res.references,
+                      })
+                    );
+                  }
+                })
+                .catch(() => {});
               try {
-                router.reload({ preserveScroll: true, preserveState: true });
+                router.reload({ preserveScroll: true, preserveState: false });
               } catch {
                 // ignore
               }
@@ -1017,6 +1047,14 @@ export function EmvDatabaseView({
                         );
                       }
 
+                      if (['run_date', 'date_claimed', 'date_acted', 'agreed_distribution_date'].includes(col.key)) {
+                        return (
+                          <td key={col.key} className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                            {formatDisplayDate(value)}
+                          </td>
+                        );
+                      }
+
                       return (
                         <td key={col.key} className="px-4 py-3 text-muted-foreground">
                           {value || '—'}
@@ -1252,7 +1290,7 @@ export function EmvDatabaseView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">RUN_DATE</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedRecord.run_date || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedRecord.run_date)}</p>
                   </div>
                 </div>
               </div>
@@ -1347,11 +1385,11 @@ export function EmvDatabaseView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">DATE_CLAIMED</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedRecord.date_claimed || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedRecord.date_claimed)}</p>
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">AGREED_DISTRIBUTION_DATE</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedRecord.agreed_distribution_date || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedRecord.agreed_distribution_date)}</p>
                   </div>
                 </div>
               </div>
@@ -1377,7 +1415,7 @@ export function EmvDatabaseView({
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">DATE_ACTED</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedRecord.date_acted || '—'}</p>
+                    <p className="font-semibold text-foreground mt-0.5">{formatDisplayDate(selectedRecord.date_acted)}</p>
                   </div>
                 </div>
               </div>

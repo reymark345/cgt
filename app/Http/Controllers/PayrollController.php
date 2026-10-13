@@ -237,6 +237,7 @@ class PayrollController extends Controller
                         @unlink($import->file_path);
                     }
                     $importer->cleanExtractDir($import->file_path);
+                    EmvRecordController::clearMetricsCache();
                 }
             } else {
                 $import->update([
@@ -250,6 +251,7 @@ class PayrollController extends Controller
                     @unlink($import->file_path);
                 }
                 $importer->cleanExtractDir($import->file_path);
+                EmvRecordController::clearMetricsCache();
             }
 
             $fresh = $import->fresh();

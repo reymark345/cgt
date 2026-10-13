@@ -119,6 +119,7 @@ class ImportPayrollJob implements ShouldQueue
                 @unlink($filePath);
             }
             $importer->cleanExtractDir($filePath);
+            \App\Http\Controllers\EmvRecordController::clearMetricsCache();
         } catch (\Throwable $e) {
             Log::error("ImportPayrollJob failed on ID {$import->id}: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),

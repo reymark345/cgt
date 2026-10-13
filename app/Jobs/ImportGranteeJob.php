@@ -123,6 +123,7 @@ class ImportGranteeJob implements ShouldQueue
                 @unlink($filePath);
             }
             $importer->cleanExtractDir($filePath);
+            \App\Http\Controllers\EmvRecordController::clearMetricsCache();
         } catch (\Throwable $e) {
             Log::error('ImportGranteeJob failed for import #' . $import->id . ': ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -231,6 +232,12 @@ class ImportGranteeJob implements ShouldQueue
 
                 foreach ($attributes as $k => $v) {
                     $attributes[$k] = $v !== null && $v !== '' ? trim((string) $v) : null;
+                }
+
+                foreach (GranteeSpreadsheetImporter::DATE_COLUMNS as $dCol) {
+                    if (isset($attributes[$dCol])) {
+                        $attributes[$dCol] = GranteeSpreadsheetImporter::normalizeDateValue($attributes[$dCol]);
+                    }
                 }
 
                 $rawHhId = $attributes['hh_id'] ?? null;

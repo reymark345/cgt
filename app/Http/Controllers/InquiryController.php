@@ -2,12 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Distribution;
 use App\Models\EmvRecord;
+use App\Models\ForcePin;
 use App\Models\GranteeList;
 use App\Models\HouseholdRequest;
+use App\Models\Lifting;
+use App\Models\Locking;
 use App\Models\Opening;
+use App\Models\OtcWithdrawal;
 use App\Models\PayrollRecord;
+use App\Models\Replacement;
 use App\Models\RequestType;
+use App\Models\TransferOfFund;
+use App\Models\User;
+use App\Support\EmvSpreadsheetImporter;
+use App\Support\GranteeSpreadsheetImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,14 +80,14 @@ class InquiryController extends Controller
                 'ext_name' => (string) ($grantee->ext_name ?? ''),
                 'maiden_name' => (string) ($grantee->maiden_name ?? ''),
                 'contact_number' => (string) ($grantee->contact_number ?? ''),
-                'birthday' => (string) ($grantee->birthday ?? ''),
+                'birthday' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->birthday) ?? (string) ($grantee->birthday ?? ''),
                 'hh_grantee' => (string) ($grantee->hh_grantee ?? ''),
                 'current_age' => (string) ($grantee->current_age ?? ''),
                 'age' => (string) ($grantee->age ?? ''),
                 'sex' => (string) ($grantee->sex ?? ''),
                 'old_client_status' => (string) ($grantee->old_client_status ?? ''),
                 'client_status' => (string) ($grantee->client_status ?? ''),
-                'date_tagged' => (string) ($grantee->date_tagged ?? ''),
+                'date_tagged' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_tagged) ?? (string) ($grantee->date_tagged ?? ''),
                 'tagged_by' => (string) ($grantee->tagged_by ?? ''),
                 'cs_category' => (string) ($grantee->cs_category ?? ''),
                 'member_status' => (string) ($grantee->member_status ?? ''),
@@ -88,9 +98,9 @@ class InquiryController extends Controller
                 'ip_status' => (string) ($grantee->ip_status ?? ''),
                 'payment_mode' => (string) ($grantee->payment_mode ?? ''),
                 'lbp_account' => (string) ($grantee->lbp_account ?? ''),
-                'date_of_enumeration' => (string) ($grantee->date_of_enumeration ?? ''),
-                'date_registered' => (string) ($grantee->date_registered ?? ''),
-                'date_registered_v2' => (string) ($grantee->date_registered_v2 ?? ''),
+                'date_of_enumeration' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_of_enumeration) ?? (string) ($grantee->date_of_enumeration ?? ''),
+                'date_registered' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_registered) ?? (string) ($grantee->date_registered ?? ''),
+                'date_registered_v2' => GranteeSpreadsheetImporter::normalizeDateValue($grantee->date_registered_v2) ?? (string) ($grantee->date_registered_v2 ?? ''),
                 'family_id' => (string) ($grantee->family_id ?? ''),
                 'rel_to_fam_head' => (string) ($grantee->rel_to_fam_head ?? ''),
                 'selected_family' => (string) ($grantee->selected_family ?? ''),
@@ -118,7 +128,7 @@ class InquiryController extends Controller
                 'barangay' => (string) ($record->barangay ?? ''),
                 'hh_id' => (string) ($record->hh_id ?? ''),
                 'lbp_account' => (string) ($record->lbp_account ?? ''),
-                'run_date' => (string) ($record->run_date ?? ''),
+                'run_date' => EmvSpreadsheetImporter::normalizeDateValue($record->run_date) ?? (string) ($record->run_date ?? ''),
                 'first_name' => (string) ($record->first_name ?? ''),
                 'mid_name' => (string) ($record->mid_name ?? ''),
                 'last_name' => (string) ($record->last_name ?? ''),
@@ -126,12 +136,12 @@ class InquiryController extends Controller
                 'cct_type' => (string) ($record->cct_type ?? ''),
                 'lbp_servicing_branch' => (string) ($record->lbp_servicing_branch ?? ''),
                 'distribution_status' => (string) ($record->distribution_status ?? ''),
-                'date_claimed' => (string) ($record->date_claimed ?? ''),
+                'date_claimed' => EmvSpreadsheetImporter::normalizeDateValue($record->date_claimed) ?? (string) ($record->date_claimed ?? ''),
                 'reason_why_unclaimed' => (string) ($record->reason_why_unclaimed ?? ''),
                 'recommended_action' => (string) ($record->recommended_action ?? ''),
                 'action_taken' => (string) ($record->action_taken ?? ''),
-                'date_acted' => (string) ($record->date_acted ?? ''),
-                'agreed_distribution_date' => (string) ($record->agreed_distribution_date ?? ''),
+                'date_acted' => EmvSpreadsheetImporter::normalizeDateValue($record->date_acted) ?? (string) ($record->date_acted ?? ''),
+                'agreed_distribution_date' => EmvSpreadsheetImporter::normalizeDateValue($record->agreed_distribution_date) ?? (string) ($record->agreed_distribution_date ?? ''),
                 'createdAt' => optional($record->created_at)->format('M d, Y'),
                 'updatedAt' => optional($record->updated_at)->format('M d, Y'),
             ];
@@ -220,12 +230,18 @@ class InquiryController extends Controller
         $totalMatches = $grantees->count() + $emvRecords->count() + $payrollRecords->count();
 
         // 4. Query Household Requests
+        $defaultCreator = $this->resolveCurrentUserName($request);
         $requests = HouseholdRequest::where(function ($q) use ($candidates, $stripped) {
             $q->whereIn('hh_id', $candidates);
             if (! empty($stripped) && strlen($stripped) >= 6) {
                 $q->orWhere('hh_id', 'like', "%{$stripped}%");
             }
-        })->orderBy('created_at', 'desc')->get()->map(function (HouseholdRequest $req) {
+        })->orderBy('created_at', 'desc')->get()->map(function (HouseholdRequest $req) use ($defaultCreator) {
+            $creator = $req->created_by;
+            if (empty($creator) || $creator === 'Authorized User') {
+                $creator = $defaultCreator;
+            }
+
             return [
                 'id' => $req->id,
                 'hh_id' => $req->hh_id,
@@ -234,14 +250,18 @@ class InquiryController extends Controller
                 'beneficiary_name' => $req->beneficiary_name,
                 'remarks' => $req->remarks,
                 'status' => $req->status,
-                'created_by' => $req->created_by,
+                'created_by' => $creator,
                 'created_at' => optional($req->created_at)->format('M d, Y h:i A'),
                 'updated_at' => optional($req->updated_at)->format('M d, Y h:i A'),
             ];
         });
 
+        $totalMatches = $grantees->count() + $emvRecords->count() + $payrollRecords->count();
+        $exists = ($totalMatches > 0 || $requests->count() > 0);
+
         return response()->json([
             'success' => true,
+            'exists' => $exists,
             'query' => $raw,
             'display_hhid' => $displayHhid,
             'total_matches' => $totalMatches,
@@ -314,9 +334,40 @@ class InquiryController extends Controller
         // Load all requested type rows
         $typeRows = DB::table('request')->whereIn('name', $requestNames)->get()->keyBy('name');
 
-        // Get creator info from session / auth
-        $user = auth()->user() ?? session('user');
-        $creator = is_object($user) ? ($user->name ?? $user->username ?? 'Authorized User') : (is_array($user) ? ($user['name'] ?? 'Authorized User') : 'Authorized User');
+        // Get creator info from session / auth / input
+        $creator = $this->resolveCurrentUserName($request);
+
+        // Resolve candidate HH_IDs to handle any prefixes (e.g., HHID)
+        $strippedHhId = preg_replace('/^hhid[-\s]*/i', '', $hhId);
+        $hhCandidates = array_values(array_unique(array_filter([
+            $hhId,
+            $strippedHhId,
+            'HHID' . $strippedHhId,
+            'HHID ' . $strippedHhId,
+            'HHID-' . $strippedHhId,
+        ])));
+
+        $grantee = GranteeList::whereIn('hh_id', $hhCandidates)->first();
+        if (! $grantee && strlen($strippedHhId) >= 6) {
+            $grantee = GranteeList::where('hh_id', 'like', "%{$strippedHhId}%")->first();
+        }
+
+        $emv = EmvRecord::whereIn('hh_id', $hhCandidates)->latest('id')->first();
+        if (! $emv && strlen($strippedHhId) >= 6) {
+            $emv = EmvRecord::where('hh_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+        }
+
+        $payroll = PayrollRecord::whereIn('household_id', $hhCandidates)->latest('id')->first();
+        if (! $payroll && strlen($strippedHhId) >= 6) {
+            $payroll = PayrollRecord::where('household_id', 'like', "%{$strippedHhId}%")->latest('id')->first();
+        }
+
+        if (! $grantee && ! $emv && ! $payroll) {
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot create request. Household ID '{$hhId}' does not exist in any database.",
+            ], 422);
+        }
 
         $createdRecords = [];
         foreach ($requestNames as $reqName) {
@@ -333,37 +384,196 @@ class InquiryController extends Controller
                 'created_by' => $creator,
             ]);
 
-            if ($reqName === 'opening') {
-                Opening::ensureTableExists();
-
-                $grantee = GranteeList::where('hh_id', $hhId)->first();
-                $emv = EmvRecord::where('hh_id', $hhId)->latest('id')->first();
-                $payroll = PayrollRecord::where('household_id', $hhId)->latest('id')->first();
-
+            // Resolve Address Parts
+            $addressParts = [];
+            if ($grantee) {
                 $addressParts = array_filter([
                     $grantee->purok ?? null,
                     $grantee->barangay ?? null,
                     $grantee->municipality ?? null,
                     $grantee->province ?? null,
                 ]);
-                $address = ! empty($addressParts) ? implode(', ', $addressParts) : null;
+            }
+            if (empty($addressParts) && $emv) {
+                $addressParts = array_filter([
+                    $emv->barangay ?? null,
+                    $emv->municipality ?? null,
+                    $emv->province ?? null,
+                ]);
+            }
+            if (empty($addressParts) && $payroll) {
+                $addressParts = array_filter([
+                    $payroll->barangay ?? null,
+                    $payroll->municipality ?? null,
+                    $payroll->province ?? null,
+                ]);
+            }
+            $resolvedAddress = ! empty($addressParts) ? implode(', ', $addressParts) : null;
 
-                $oldGranteeName = $grantee
-                    ? trim("{$grantee->first_name} {$grantee->middle_name} {$grantee->last_name} {$grantee->ext_name}")
-                    : ($beneficiaryName ?: null);
+            // Resolve Beneficiary Name
+            $resolvedName = null;
+            if ($grantee) {
+                $resolvedName = trim("{$grantee->first_name} {$grantee->middle_name} {$grantee->last_name} {$grantee->ext_name}");
+            }
+            if (empty($resolvedName) && $emv) {
+                $resolvedName = trim("{$emv->first_name} {$emv->mid_name} {$emv->last_name}");
+            }
+            if (empty($resolvedName) && $payroll) {
+                $resolvedName = trim("{$payroll->first_name} {$payroll->middle_name} {$payroll->last_name}");
+            }
+            if (empty($resolvedName)) {
+                $resolvedName = $beneficiaryName ?: null;
+            }
 
-                $oldCardNumber = $emv->card_number ?? $grantee->lbp_account ?? $payroll->card_number ?? null;
+            // Resolve Card Number
+            $resolvedCardNumber = $emv->card_number ?? $emv->lbp_account ?? $grantee->lbp_account ?? $payroll->account_number ?? $payroll->new_account_number ?? null;
+
+            if ($reqName === 'opening') {
+                Opening::ensureTableExists();
+
                 $oldStatus = $grantee->client_status ?? $grantee->old_client_status ?? 'Active';
                 $nextItemNo = (Opening::max('id') ?? 0) + 1;
 
                 Opening::create([
                     'item_no' => (string) $nextItemNo,
-                    'address' => $address,
+                    'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
                     'name_of_new_grantee' => null,
-                    'name_of_old_grantee' => $oldGranteeName,
-                    'card_number_of_old' => $oldCardNumber,
+                    'name_of_old_grantee' => $resolvedName,
+                    'card_number_of_old' => $resolvedCardNumber,
                     'status_of_old_grantee' => $oldStatus,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if ($reqName === 'distribution' || in_array(strtolower($reqName), ['distribution', 'distribution-series', 'distribution_series'])) {
+                Distribution::ensureTableExists();
+
+                $runDate = EmvSpreadsheetImporter::normalizeDateValue($emv->run_date ?? null) ?? ($emv->run_date ?? null);
+                $schedule = EmvSpreadsheetImporter::normalizeDateValue($emv->agreed_distribution_date ?? null) ?? ($emv->agreed_distribution_date ?? null);
+                $nextItemNo = (Distribution::max('id') ?? 0) + 1;
+
+                Distribution::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'run_date' => $runDate,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'schedule' => $schedule,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['otc-withdrawal', 'otc_withdrawal', 'otc'])) {
+                OtcWithdrawal::ensureTableExists();
+
+                $nextItemNo = (OtcWithdrawal::max('id') ?? 0) + 1;
+                $payrollBalance = ($payroll && ! empty($payroll->net_amount) && (float) $payroll->net_amount > 0)
+                    ? number_format((float) $payroll->net_amount, 2)
+                    : null;
+
+                OtcWithdrawal::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'reason_of_request' => $remarks ?: 'Unwithdrawn grant / Cash card replacement endorsement',
+                    'account_balance' => $payrollBalance,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['replacement', 'replacement-series', 'replacement_series'])) {
+                Replacement::ensureTableExists();
+
+                $nextItemNo = (Replacement::max('id') ?? 0) + 1;
+
+                Replacement::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'reason_of_request' => $remarks ?: 'Damaged / Defective / Lost cash card replacement',
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['transfer-of-fund', 'transfer_of_fund', 'tof', 'tof-branch'])) {
+                TransferOfFund::ensureTableExists();
+
+                $nextItemNo = (TransferOfFund::max('id') ?? 0) + 1;
+                $newCardNumber = $payroll->new_account_number ?? null;
+
+                TransferOfFund::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'old_card_number' => $resolvedCardNumber,
+                    'old_cardholder_name' => $resolvedName,
+                    'new_card_number' => $newCardNumber,
+                    'new_cardholder_name' => $resolvedName,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['force-pin', 'force_pin', 'force pin', 'forcepin'])) {
+                ForcePin::ensureTableExists();
+
+                $nextItemNo = (ForcePin::max('id') ?? 0) + 1;
+
+                ForcePin::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['locking', 'lock', 'card-locking', 'card_locking', 'card locking'])) {
+                Locking::ensureTableExists();
+
+                $nextItemNo = (Locking::max('id') ?? 0) + 1;
+
+                Locking::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
+                    'status' => 'Pending',
+                    'remarks' => $remarks ?: null,
+                    'created_by' => $creator,
+                ]);
+            }
+
+            if (in_array(strtolower($reqName), ['lifting', 'lift', 'card-lifting', 'card_lifting', 'card lifting', 'unfreeze'])) {
+                Lifting::ensureTableExists();
+
+                $nextItemNo = (Lifting::max('id') ?? 0) + 1;
+
+                Lifting::create([
+                    'item_no' => (string) $nextItemNo,
+                    'address' => $resolvedAddress,
+                    'household_id_number' => $hhId,
+                    'name' => $resolvedName,
+                    'card_number' => $resolvedCardNumber,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
                     'created_by' => $creator,
@@ -393,6 +603,7 @@ class InquiryController extends Controller
             'message' => $message,
             'requests' => $createdRecords,
             'request' => $createdRecords[0] ?? null,
+            'module_counts' => self::getModuleCounts(),
         ]);
     }
 
@@ -411,10 +622,16 @@ class InquiryController extends Controller
 
         HouseholdRequest::ensureTableExists();
 
+        $defaultCreator = $this->resolveCurrentUserName($request);
         $requests = HouseholdRequest::where('hh_id', $hhId)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($req) {
+            ->map(function ($req) use ($defaultCreator) {
+                $creator = $req->created_by;
+                if (empty($creator) || $creator === 'Authorized User') {
+                    $creator = $defaultCreator;
+                }
+
                 return [
                     'id' => $req->id,
                     'hh_id' => $req->hh_id,
@@ -423,7 +640,7 @@ class InquiryController extends Controller
                     'beneficiary_name' => $req->beneficiary_name,
                     'remarks' => $req->remarks,
                     'status' => $req->status,
-                    'created_by' => $req->created_by,
+                    'created_by' => $creator,
                     'created_at' => optional($req->created_at)->format('M d, Y h:i A'),
                 ];
             });
@@ -432,6 +649,47 @@ class InquiryController extends Controller
             'success' => true,
             'requests' => $requests,
         ]);
+    }
+
+    /**
+     * Resolve the current authenticated user's full name.
+     */
+    protected function resolveCurrentUserName(Request $request): string
+    {
+        $passed = trim((string) $request->input('created_by', ''));
+        if ($passed !== '' && $passed !== 'Authorized User') {
+            return $passed;
+        }
+
+        if ($request->hasSession()) {
+            $ssoUserId = $request->session()->get('sso_user_id');
+            if ($ssoUserId) {
+                $user = User::find($ssoUserId);
+                if ($user && ! empty($user->name)) {
+                    return $user->name;
+                }
+            }
+
+            $sessionUser = session('user');
+            if (is_object($sessionUser) && ! empty($sessionUser->name)) {
+                return $sessionUser->name;
+            }
+            if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
+                return $sessionUser['name'];
+            }
+        }
+
+        $authUser = auth()->user();
+        if ($authUser && ! empty($authUser->name)) {
+            return $authUser->name;
+        }
+
+        $firstUser = User::first();
+        if ($firstUser && ! empty($firstUser->name)) {
+            return $firstUser->name;
+        }
+
+        return 'Authorized User';
     }
 
     /**
@@ -486,6 +744,71 @@ class InquiryController extends Controller
         return response()->json([
             'success' => true,
             'samples' => $samples,
+        ]);
+    }
+
+    /**
+     * Return live record counts across the 8 standard service request modules.
+     */
+    public static function getModuleCounts(): array
+    {
+        $moduleTableMap = [
+            'opening' => 'opening',
+            'distribution' => 'distribution',
+            'otc-withdrawal' => 'otc_withdrawal',
+            'replacement' => 'replacement',
+            'transfer-of-fund' => 'transfer_of_fund',
+            'force-pin' => 'force_pin',
+            'locking' => 'locking',
+            'lifting' => 'lifting',
+        ];
+
+        $counts = [];
+        foreach ($moduleTableMap as $slug => $tbl) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($tbl)) {
+                $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table($tbl)->count();
+            } elseif (\Illuminate\Support\Facades\Schema::hasTable('household_requests')) {
+                $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table('household_requests')->where('request_name', $slug)->count();
+            } else {
+                $counts[$slug] = 0;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Return live record counts across reference tables (EMV, Grantee, Payroll).
+     */
+    public static function getReferenceCounts(): array
+    {
+        return [
+            'emv' => \Illuminate\Support\Facades\Schema::hasTable('emv_database') ? (int) \Illuminate\Support\Facades\DB::table('emv_database')->count() : 0,
+            'grantee' => \Illuminate\Support\Facades\Schema::hasTable('grantee_list') ? (int) \Illuminate\Support\Facades\DB::table('grantee_list')->count() : 0,
+            'payroll' => \Illuminate\Support\Facades\Schema::hasTable('payroll') ? (int) \Illuminate\Support\Facades\DB::table('payroll')->count() : 0,
+        ];
+    }
+
+    /**
+     * Endpoint to fetch live module and reference counts.
+     */
+    public function moduleCounts(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'counts' => self::getModuleCounts(),
+            'references' => self::getReferenceCounts(),
+        ]);
+    }
+
+    /**
+     * Dedicated endpoint to fetch live reference counts.
+     */
+    public function referenceCounts(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'references' => self::getReferenceCounts(),
         ]);
     }
 }
