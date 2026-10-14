@@ -14,6 +14,7 @@ import { EmvPayrollView } from './References/EmvPayrollView';
 import { GranteeView } from './References/GranteeView';
 import { InquiryView } from './References/InquiryView';
 import { DataModuleView } from './Dashboard/views/DataModuleView';
+import { AuditTrailView } from './Dashboard/views/AuditTrailView';
 
 const pageTitles: Record<CurrentView, string> = {
   aging: 'Aging',
@@ -23,6 +24,7 @@ const pageTitles: Record<CurrentView, string> = {
   grantee: 'Grantee',
   overpayment: 'Overpayment',
   users: 'Users',
+  'audit-trail': 'Audit Trails',
   manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
@@ -46,6 +48,7 @@ const headTitles: Record<CurrentView, string> = {
   grantee: 'Grantee',
   overpayment: 'Overpayment',
   users: 'Users',
+  'audit-trail': 'Audit Trails',
   manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
@@ -61,7 +64,63 @@ const headTitles: Record<CurrentView, string> = {
   lifting: 'Lifting',
 };
 
+const VIEW_TO_PATH: Record<CurrentView, string> = {
+  aging: '/aging',
+  dashboard: '/dashboard',
+  'emv-database': '/emv-database',
+  'emv-payroll': '/payroll',
+  grantee: '/grantee-list',
+  overpayment: '/overpayment',
+  users: '/users',
+  'audit-trail': '/audit-trails',
+  manual: '/user-manual',
+  Inquiry: '/inquiry',
+  inquiry: '/inquiry',
+  open: '/data',
+  data: '/data',
+  opening: '/opening',
+  distribution: '/distribution',
+  'otc-withdrawal': '/otc-withdrawal',
+  replacement: '/replacement',
+  'transfer-of-fund': '/transfer-of-fund',
+  'force-pin': '/force-pin',
+  locking: '/locking',
+  lifting: '/lifting',
+};
+
+const PATH_TO_VIEW: Record<string, CurrentView> = {
+  '/dashboard': 'dashboard',
+  '/inquiry': 'inquiry',
+  '/grantee-list': 'grantee',
+  '/grantee': 'grantee',
+  '/emv-database': 'emv-database',
+  '/payroll': 'emv-payroll',
+  '/emv-payroll': 'emv-payroll',
+  '/opening': 'opening',
+  '/distribution': 'distribution',
+  '/otc-withdrawal': 'otc-withdrawal',
+  '/replacement': 'replacement',
+  '/transfer-of-fund': 'transfer-of-fund',
+  '/force-pin': 'force-pin',
+  '/locking': 'locking',
+  '/lifting': 'lifting',
+  '/users': 'users',
+  '/audit-trails': 'audit-trail',
+  '/audit-trail': 'audit-trail',
+  '/user-manual': 'manual',
+  '/manual': 'manual',
+  '/aging': 'aging',
+  '/overpayment': 'overpayment',
+  '/data': 'data',
+};
+
+function resolveViewFromPath(pathname: string, fallback: CurrentView = 'dashboard'): CurrentView {
+  const clean = ('/' + pathname.replace(/^\/+|\/+$/g, '')).toLowerCase();
+  return PATH_TO_VIEW[clean] ?? fallback;
+}
+
 type HomeProps = {
+  initialView?: CurrentView;
   dashboardMetrics?: DashboardMetrics;
   emvRecords?: EmvDatabaseRecord[];
   emvTotalCount?: number;
@@ -85,6 +144,7 @@ type HomeProps = {
   payrollHhSets?: string[];
   moduleCounts?: Record<string, number>;
   users?: UserListItem[];
+  auditTrailCount?: number;
 };
 
 type SharedPageProps = {
@@ -100,6 +160,7 @@ type Toast = {
 };
 
 export default function Home({
+  initialView = 'dashboard',
   dashboardMetrics,
   emvRecords = [],
   emvTotalCount = 0,
@@ -123,6 +184,7 @@ export default function Home({
   payrollHhSets = [],
   moduleCounts,
   users = [],
+  auditTrailCount = 0,
 }: HomeProps) {
   const { props } = usePage<SharedPageProps>();
   const [records, setRecords] = useState<RecordItem[]>(initialRecords);
@@ -136,6 +198,7 @@ export default function Home({
   const [liveEmvCount, setLiveEmvCount] = useState<number>(emvTotalCount ?? 0);
   const [liveGranteeCount, setLiveGranteeCount] = useState<number>(granteeTotalCount ?? 0);
   const [livePayrollCount, setLivePayrollCount] = useState<number>(payrollTotalCount ?? 0);
+  const [liveAuditTrailCount, setLiveAuditTrailCount] = useState<number>(auditTrailCount ?? 0);
 
   useEffect(() => {
     if (typeof emvTotalCount === 'number') {
@@ -154,6 +217,12 @@ export default function Home({
       setLivePayrollCount(payrollTotalCount);
     }
   }, [payrollTotalCount]);
+
+  useEffect(() => {
+    if (typeof auditTrailCount === 'number') {
+      setLiveAuditTrailCount(auditTrailCount);
+    }
+  }, [auditTrailCount]);
 
   useEffect(() => {
     if (moduleCounts) {
@@ -186,6 +255,9 @@ export default function Home({
             }
             if (typeof data.references.payroll === 'number') {
               setLivePayrollCount(data.references.payroll);
+            }
+            if (typeof data.references.audit_trail === 'number') {
+              setLiveAuditTrailCount(data.references.audit_trail);
             }
           }
         }
@@ -255,7 +327,35 @@ export default function Home({
   });
   const [activeStatus, setActiveStatus] = useState('All');
   const [notice, setNotice] = useState('Ready');
-  const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
+  const [currentView, setCurrentView] = useState<CurrentView>(() => {
+    if (typeof window !== 'undefined') {
+      return resolveViewFromPath(window.location.pathname, initialView);
+    }
+    return initialView;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const canonicalPath = VIEW_TO_PATH[currentView] ?? '/dashboard';
+    if (window.location.pathname.toLowerCase() !== canonicalPath.toLowerCase()) {
+      window.history.replaceState({ view: currentView }, '', canonicalPath);
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.view) {
+        setCurrentView(event.state.view as CurrentView);
+      } else {
+        setCurrentView(resolveViewFromPath(window.location.pathname, 'dashboard'));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('cgt_dark_mode');
@@ -329,6 +429,12 @@ export default function Home({
   function openView(view: CurrentView) {
     setCurrentView(view);
     setSidebarOpen(false);
+    if (typeof window !== 'undefined') {
+      const targetPath = VIEW_TO_PATH[view] ?? `/${String(view).toLowerCase()}`;
+      if (window.location.pathname.toLowerCase() !== targetPath.toLowerCase()) {
+        window.history.pushState({ view }, '', targetPath);
+      }
+    }
     refreshModuleCounts();
     const notices: Record<CurrentView, string> = {
       aging: 'Aging opened',
@@ -343,6 +449,14 @@ export default function Home({
       inquiry: 'Inquiry opened',
       open: 'Data opened',
       data: 'Data opened',
+      opening: 'Opening opened',
+      distribution: 'Distribution opened',
+      'otc-withdrawal': 'OTC Withdrawal opened',
+      replacement: 'Replacement opened',
+      'transfer-of-fund': 'Transfer of Fund opened',
+      'force-pin': 'Force PIN opened',
+      locking: 'Locking opened',
+      lifting: 'Lifting opened',
     };
     setNotice(notices[view] ?? `${view} opened`);
   }
@@ -382,6 +496,7 @@ export default function Home({
         incomingCount={records.length}
         moduleCounts={liveModuleCounts}
         usersCount={users.length}
+        auditTrailCount={liveAuditTrailCount}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
         onOpenView={openView}
@@ -506,6 +621,10 @@ export default function Home({
         <div className={currentView === 'users' ? 'block' : 'hidden'}>
           <UsersView users={users} />
         </div>
+
+        {currentView === 'audit-trail' && (
+          <AuditTrailView onCountChange={setLiveAuditTrailCount} />
+        )}
 
         {(currentView === 'Inquiry' || currentView === 'inquiry') && (
           <InquiryView initialQuery={inquirySearchHhId} onSetNotice={setNotice} />

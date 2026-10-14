@@ -786,6 +786,7 @@ class InquiryController extends Controller
             'emv' => \Illuminate\Support\Facades\Schema::hasTable('emv_database') ? (int) \Illuminate\Support\Facades\DB::table('emv_database')->count() : 0,
             'grantee' => \Illuminate\Support\Facades\Schema::hasTable('grantee_list') ? (int) \Illuminate\Support\Facades\DB::table('grantee_list')->count() : 0,
             'payroll' => \Illuminate\Support\Facades\Schema::hasTable('payroll') ? (int) \Illuminate\Support\Facades\DB::table('payroll')->count() : 0,
+            'audit_trail' => \Illuminate\Support\Facades\Schema::hasTable('audit_trail') ? (int) \Illuminate\Support\Facades\DB::table('audit_trail')->where('method', 'POST')->count() : 0,
         ];
     }
 

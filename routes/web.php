@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\EmvRecordController;
 use App\Http\Controllers\ForcePinController;
@@ -32,9 +33,35 @@ Route::post('/sso/logout', [SSOController::class, 'logout'])->name('sso.logout')
 
 Route::middleware('sso.auth')->group(function () {
     Route::get('/dashboard', [EmvRecordController::class, 'dashboard'])->name('dashboard');
-    Route::get('/emv-records/import', fn () => redirect()->route('dashboard'));
+    Route::get('/inquiry', [EmvRecordController::class, 'dashboard'])->name('inquiry');
+    Route::get('/grantee-list', [EmvRecordController::class, 'dashboard'])->name('grantee-list');
+    Route::get('/grantee', [EmvRecordController::class, 'dashboard']);
+    Route::get('/emv-database', [EmvRecordController::class, 'dashboard'])->name('emv-database');
+    Route::get('/payroll', [EmvRecordController::class, 'dashboard'])->name('payroll');
+    Route::get('/emv-payroll', [EmvRecordController::class, 'dashboard']);
+    Route::get('/opening', [EmvRecordController::class, 'dashboard'])->name('opening');
+    Route::get('/distribution', [EmvRecordController::class, 'dashboard'])->name('distribution');
+    Route::get('/otc-withdrawal', [EmvRecordController::class, 'dashboard'])->name('otc-withdrawal');
+    Route::get('/replacement', [EmvRecordController::class, 'dashboard'])->name('replacement');
+    Route::get('/transfer-of-fund', [EmvRecordController::class, 'dashboard'])->name('transfer-of-fund');
+    Route::get('/force-pin', [EmvRecordController::class, 'dashboard'])->name('force-pin');
+    Route::get('/locking', [EmvRecordController::class, 'dashboard'])->name('locking');
+    Route::get('/lifting', [EmvRecordController::class, 'dashboard'])->name('lifting');
+    Route::get('/users', [EmvRecordController::class, 'dashboard'])->name('users');
+    Route::get('/audit-trails', [EmvRecordController::class, 'dashboard'])->name('audit-trails');
+    Route::get('/audit-trail', [EmvRecordController::class, 'dashboard']);
+    Route::get('/user-manual', [EmvRecordController::class, 'dashboard'])->name('user-manual');
+    Route::get('/manual', [EmvRecordController::class, 'dashboard']);
+    Route::get('/aging', [EmvRecordController::class, 'dashboard'])->name('aging');
+    Route::get('/overpayment', [EmvRecordController::class, 'dashboard'])->name('overpayment');
+    Route::get('/data', [EmvRecordController::class, 'dashboard'])->name('data');
+
+    Route::get('/audit-trails/search', [AuditTrailController::class, 'search'])->name('audit-trails.search');
+    Route::get('/audit-trails/export', [AuditTrailController::class, 'export'])->name('audit-trails.export');
+
+    Route::get('/emv-records/import', fn () => redirect()->route('emv-database'));
     Route::post('/emv-records/import', [EmvRecordController::class, 'import'])->name('emv-records.import');
-    Route::get('/grantees/import', fn () => redirect()->route('dashboard'));
+    Route::get('/grantees/import', fn () => redirect()->route('grantee-list'));
     Route::post('/grantees/import', [GranteeListController::class, 'import'])->name('grantees.import');
     Route::get('/grantees/import/{id}/status', [GranteeListController::class, 'status'])->name('grantees.import.status');
     Route::post('/grantees/import/{id}/process-batch', [GranteeListController::class, 'processBatch'])->name('grantees.import.batch');

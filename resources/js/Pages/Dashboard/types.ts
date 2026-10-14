@@ -59,6 +59,7 @@ export type CurrentView =
   | 'aging'
   | 'overpayment'
   | 'users'
+  | 'audit-trail'
   | 'manual'
   | 'Inquiry'
   | 'inquiry'

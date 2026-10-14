@@ -54,6 +54,7 @@ type AppShellProps = PropsWithChildren<{
   emvCount?: number;
   granteeCount?: number;
   payrollCount?: number;
+  auditTrailCount?: number;
   incomingCount: number;
   moduleCounts?: Record<string, number>;
   usersCount?: number;
@@ -80,15 +81,16 @@ type SharedPageProps = {
   };
 };
 
-const viewMeta: Record<CurrentView, { section: string; icon: typeof LayoutDashboard }> = {
+const viewMeta: Record<string, { section: string; icon: typeof LayoutDashboard }> = {
   dashboard: { section: 'Overview', icon: LayoutDashboard },
   grantee: { section: 'References', icon: UsersRound },
   'emv-database': { section: 'References', icon: Database },
   'emv-payroll': { section: 'References', icon: HandCoins },
   aging: { section: 'References', icon: CalendarClock },
   overpayment: { section: 'References', icon: Scale },
-  users: { section: 'Administration', icon: UserCog },
-  manual: { section: 'Documentation', icon: BookOpen },
+  users: { section: 'System', icon: UserCog },
+  'audit-trail': { section: 'System', icon: History },
+  manual: { section: 'System', icon: BookOpen },
   Inquiry: { section: 'Transactions', icon: UserCog },
   inquiry: { section: 'Transactions', icon: UserCog },
   open: { section: 'Data', icon: UserCog },
@@ -172,6 +174,7 @@ export function AppShell({
   emvCount,
   granteeCount,
   payrollCount,
+  auditTrailCount,
   incomingCount,
   moduleCounts,
   usersCount,
@@ -508,6 +511,13 @@ export function AppShell({
               onClick={() => onOpenView('users')}
             >
               Users
+            </NavItem>
+            <NavItem
+              active={currentView === 'audit-trail'}
+              icon={History}
+              onClick={() => onOpenView('audit-trail')}
+            >
+              Audit Trails
             </NavItem>
             <NavItem
               active={currentView === 'manual'}

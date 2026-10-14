@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ImportEmvJob;
+use App\Models\AuditTrail;
 use App\Models\EmvImport;
 use App\Models\EmvRecord;
 use App\Models\GranteeList;
@@ -36,18 +37,48 @@ class EmvRecordController extends Controller
     /**
      * Dashboard view with initial data for EMV Database and Grantees.
      */
-    public function dashboard(): Response
+    public function dashboard(Request $request): Response
     {
         @ini_set('memory_limit', '1024M');
+
+        $pathToView = [
+            'dashboard' => 'dashboard',
+            'inquiry' => 'inquiry',
+            'grantee-list' => 'grantee',
+            'grantee' => 'grantee',
+            'emv-database' => 'emv-database',
+            'payroll' => 'emv-payroll',
+            'emv-payroll' => 'emv-payroll',
+            'opening' => 'opening',
+            'distribution' => 'distribution',
+            'otc-withdrawal' => 'otc-withdrawal',
+            'replacement' => 'replacement',
+            'transfer-of-fund' => 'transfer-of-fund',
+            'force-pin' => 'force-pin',
+            'locking' => 'locking',
+            'lifting' => 'lifting',
+            'users' => 'users',
+            'audit-trails' => 'audit-trail',
+            'audit-trail' => 'audit-trail',
+            'user-manual' => 'manual',
+            'manual' => 'manual',
+            'aging' => 'aging',
+            'overpayment' => 'overpayment',
+            'data' => 'data',
+        ];
+        $currentPath = trim(strtolower($request->path()), '/');
+        $initialView = $pathToView[$currentPath] ?? 'dashboard';
 
         EmvRecord::ensureTableExists();
         GranteeList::ensureTableExists();
         PayrollRecord::ensureTableExists();
+        AuditTrail::ensureTableExists();
 
         // 1. Check live database counts
         $emvTotal = EmvRecord::count();
         $granteeTotal = GranteeList::count();
         $payrollTotal = PayrollRecord::count();
+        $auditTrailTotal = AuditTrail::where('method', 'POST')->count();
 
         // 2. Validate cache against live counts - if database changed (e.g. truncated or imported), purge stale cache immediately
         $cachedMetrics = Cache::get('dashboard_system_metrics_v3');
@@ -163,8 +194,10 @@ class EmvRecordController extends Controller
             ->map(fn (PayrollRecord $rec) => $payrollController->toFrontendRecord($rec));
 
         return Inertia::render('Home', [
+            'initialView' => $initialView,
             'dashboardMetrics' => $dashboardMetrics,
             'moduleCounts' => $moduleCounts,
+            'auditTrailCount' => $auditTrailTotal,
             'emvRecords' => $initialEmvRecords,
             'emvTotalCount' => $dashboardMetrics['emv']['total'],
             'emvClaimedCount' => $dashboardMetrics['emv']['claimed'],
@@ -189,7 +222,6 @@ class EmvRecordController extends Controller
             'payrollPeriods' => $filters['payrollPeriods'],
             'payrollYears' => $filters['payrollYears'],
             'payrollHhSets' => $filters['payrollHhSets'],
-            'moduleCounts' => $moduleCounts,
             'users' => User::query()
                 ->latest()
                 ->get()
