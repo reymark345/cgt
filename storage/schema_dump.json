@@ -1,0 +1,2150 @@
+{
+    "grantee_list": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "region",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "province",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "municipality",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "barangay",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "purok",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "district",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "hh_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "entry_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "first_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "middle_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "last_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "ext_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "maiden_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "contact_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "birthday",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "hh_grantee",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "current_age",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "age",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "sex",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "old_client_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "client_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_tagged",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "tagged_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "cs_category",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "member_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "relation_to_hh",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "hh_set",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "registration_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "ip_label",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "ip_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "payment_mode",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "lbp_account",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_of_enumeration",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_registered",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_registered_v2",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "family_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "rel_to_fam_head",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "selected_family",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "final_l3_result",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "emv_database": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "region",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "province",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "municipality",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "barangay",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "hh_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "lbp_account",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "run_date",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "first_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "mid_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "last_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "acct_description",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "cct_type",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "lbp_servicing_branch",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "distribution_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_claimed",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "reason_why_unclaimed",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "recommended_action",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "action_taken",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_acted",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "agreed_distribution_date",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "payroll": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "period",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "year",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "payroll_description",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "region",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "province",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "municipality",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "barangay",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address_psgc",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "last_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "first_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "middle_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "payment_mode_classification",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "mode_of_payment",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "account_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "new_account_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "reason",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "payroll_date",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "finance_approval",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "educ_dc_elem",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "educ_jr_hs",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "educ_sr_hs",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "educ_total_hs",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "total_educ",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "health",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "rice_amount",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "f1kd_amount",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "gross_amount",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "adjustment_amount",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "net_amount",
+            "type": "decimal(12,2)",
+            "null": "NO",
+            "key": "",
+            "default": "0.00",
+            "extra": ""
+        },
+        {
+            "field": "hh_set",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "set_group",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "household_requests": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "hh_id",
+            "type": "varchar(255)",
+            "null": "NO",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "request_name",
+            "type": "varchar(255)",
+            "null": "NO",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "request_label",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "beneficiary_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "request": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "NO",
+            "key": "UNI",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "label",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "description",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "",
+            "default": "active",
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "opening": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name_of_new_grantee",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name_of_old_grantee",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number_of_old",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status_of_old_grantee",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "distribution": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "run_date",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "schedule",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "otc_withdrawal": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "reason_of_request",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "account_balance",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "replacement": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "reason_of_request",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "transfer_of_fund": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "old_card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "old_cardholder_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "new_card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "new_cardholder_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "force_pin": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "locking": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "lifting": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "item_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "household_id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "card_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "MUL",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "status",
+            "type": "varchar(50)",
+            "null": "NO",
+            "key": "MUL",
+            "default": "Pending",
+            "extra": ""
+        },
+        {
+            "field": "remarks",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_by",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ],
+    "users": [
+        {
+            "field": "id",
+            "type": "bigint unsigned",
+            "null": "NO",
+            "key": "PRI",
+            "default": null,
+            "extra": "auto_increment"
+        },
+        {
+            "field": "sso_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "UNI",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "employee_id",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "id_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "name",
+            "type": "varchar(255)",
+            "null": "NO",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "first_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "middle_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "last_name",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "email",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "UNI",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "username",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "UNI",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "contact_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "mobile_no",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "account_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "position",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "empstatus",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "salary_rate",
+            "type": "decimal(12,2)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "salary_grade",
+            "type": "tinyint unsigned",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "step_inc",
+            "type": "tinyint unsigned",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "item_number",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "project",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "fundsource",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "former_incumbent",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "date_vacated",
+            "type": "date",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "division",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "section",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "area_of_assignment",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "gender",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "civil_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "birthdate",
+            "type": "date",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "avatar",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "portal_status",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "course",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "address",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "official_email",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "is_solo_parent",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "solo_parent_details",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "is_senior_citizen",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "is_pwd",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "type_of_disability",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "is_indigenous",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "type_of_indigenous_group",
+            "type": "varchar(255)",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "portal_profile",
+            "type": "json",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "mfa_enabled",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "mfa_verified",
+            "type": "tinyint(1)",
+            "null": "NO",
+            "key": "",
+            "default": "0",
+            "extra": ""
+        },
+        {
+            "field": "access_token",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "refresh_token",
+            "type": "text",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "token_expires_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "created_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        },
+        {
+            "field": "updated_at",
+            "type": "timestamp",
+            "null": "YES",
+            "key": "",
+            "default": null,
+            "extra": ""
+        }
+    ]
+}

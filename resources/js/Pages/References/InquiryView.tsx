@@ -226,29 +226,56 @@ export const ALL_EMV_FIELD_KEYS: string[] = EMV_FIELD_CATEGORIES.flatMap((c) =>
 export const STORAGE_KEY_EMV_FIELDS = 'cgt_emv_visible_fields';
 
 // ----------------------------------------------------------------------
-// Payroll Disbursal Field Customization Constants
+// Payroll Disbursal Field Customization Constants (30 Columns)
 // ----------------------------------------------------------------------
 export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
   {
     id: 'cycle_period',
-    label: 'Program & Cycle Info',
+    label: 'Period & Payroll Info',
     icon: Calendar,
     iconColor: 'text-indigo-500',
     fields: [
-      { key: 'payroll_type', label: 'Payroll Type' },
-      { key: 'year', label: 'Year' },
-      { key: 'month', label: 'Month' },
+      { key: 'period', label: 'PERIOD' },
+      { key: 'year', label: 'YEAR' },
+      { key: 'payroll_description', label: 'PAYROLL DESCRIPTION' },
+    ],
+  },
+  {
+    id: 'location_psgc',
+    label: 'Geographic & PSGC',
+    icon: MapPin,
+    iconColor: 'text-rose-500',
+    fields: [
+      { key: 'region', label: 'REGION' },
+      { key: 'province', label: 'PROVINCE' },
+      { key: 'municipality', label: 'MUNICIPALITY' },
+      { key: 'barangay', label: 'BARANGAY' },
+      { key: 'address_psgc', label: 'ADDRESS PSGC' },
+    ],
+  },
+  {
+    id: 'beneficiary_hh',
+    label: 'Beneficiary & Household',
+    icon: User,
+    iconColor: 'text-blue-500',
+    fields: [
+      { key: 'last_name', label: 'LAST NAME' },
+      { key: 'first_name', label: 'FIRST NAME' },
+      { key: 'middle_name', label: 'MIDDLE NAME' },
+      { key: 'household_id', label: 'HOUSEHOLD ID' },
     ],
   },
   {
     id: 'payment_account',
-    label: 'Account & Disbursement',
+    label: 'Payment, Account & Approval',
     icon: CreditCard,
     iconColor: 'text-cyan-500',
     fields: [
-      { key: 'payment_mode', label: 'Payment Mode' },
-      { key: 'account_number', label: 'Account' },
-      { key: 'credited', label: 'Credited into Account?' },
+      { key: 'payment_mode_classification', label: 'PAYMENT MODE CLASSIFICATION' },
+      { key: 'mode_of_payment', label: 'MODE OF PAYMENT' },
+      { key: 'account_number', label: 'ACCOUNT NUMBER' },
+      { key: 'payroll_date', label: 'PAYROLL DATE' },
+      { key: 'finance_approval', label: 'FINANCE APPROVAL' },
     ],
   },
   {
@@ -257,12 +284,27 @@ export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
     icon: DollarSign,
     iconColor: 'text-emerald-500',
     fields: [
-      { key: 'educ_amount', label: 'Educ Amount' },
-      { key: 'health_amount', label: 'Health Amount' },
-      { key: 'rice_amount', label: 'Rice Amount' },
-      { key: 'f1kd_amount', label: 'F1KD Amount' },
-      { key: 'adjustment_amount', label: 'Adjustment Amount' },
-      { key: 'total_amount', label: 'Total Amount' },
+      { key: 'educ_dc_elem', label: 'EDUC DC ELEM' },
+      { key: 'educ_jr_hs', label: 'EDUC JR HS' },
+      { key: 'educ_sr_hs', label: 'EDUC SR HS' },
+      { key: 'educ_total_hs', label: 'EDUC TOTAL HS' },
+      { key: 'total_educ', label: 'TOTAL EDUC' },
+      { key: 'health', label: 'HEALTH' },
+      { key: 'rice_amount', label: 'RICE AMOUNT' },
+      { key: 'f1kd_amount', label: 'F1KD AMOUNT' },
+      { key: 'gross_amount', label: 'GROSS AMOUNT' },
+      { key: 'adjustment_amount', label: 'ADJUSTMENT AMOUNT' },
+      { key: 'net_amount', label: 'NET AMOUNT' },
+    ],
+  },
+  {
+    id: 'set_classification',
+    label: 'Household Set & Group',
+    icon: ShieldCheck,
+    iconColor: 'text-amber-500',
+    fields: [
+      { key: 'hh_set', label: 'HH SET' },
+      { key: 'set_group', label: 'SET GROUP' },
     ],
   },
 ];
@@ -270,7 +312,7 @@ export const PAYROLL_FIELD_CATEGORIES: FieldCategory[] = [
 export const ALL_PAYROLL_FIELD_KEYS: string[] = PAYROLL_FIELD_CATEGORIES.flatMap((c) =>
   c.fields.map((f) => f.key)
 );
-export const STORAGE_KEY_PAYROLL_FIELDS = 'cgt_payroll_visible_fields_v2';
+export const STORAGE_KEY_PAYROLL_FIELDS = 'cgt_payroll_visible_fields_v3';
 
 export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const page = usePage<{
@@ -3007,42 +3049,89 @@ function isCredited(rec: PayrollRecord): boolean {
   return st === 'successful' || st === 'success' || st === 'credited' || st === 'paid';
 }
 
+export const PAYROLL_TABLE_COLUMNS: { key: keyof PayrollRecord; label: string }[] = [
+  { key: 'period', label: 'PERIOD' },
+  { key: 'year', label: 'YEAR' },
+  { key: 'payroll_description', label: 'PAYROLL DESCRIPTION' },
+  { key: 'region', label: 'REGION' },
+  { key: 'province', label: 'PROVINCE' },
+  { key: 'municipality', label: 'MUNICIPALITY' },
+  { key: 'barangay', label: 'BARANGAY' },
+  { key: 'address_psgc', label: 'ADDRESS PSGC' },
+  { key: 'last_name', label: 'LAST NAME' },
+  { key: 'first_name', label: 'FIRST NAME' },
+  { key: 'middle_name', label: 'MIDDLE NAME' },
+  { key: 'household_id', label: 'HOUSEHOLD ID' },
+  { key: 'payment_mode_classification', label: 'PAYMENT MODE CLASSIFICATION' },
+  { key: 'mode_of_payment', label: 'MODE OF PAYMENT' },
+  { key: 'account_number', label: 'ACCOUNT NUMBER' },
+  { key: 'payroll_date', label: 'PAYROLL DATE' },
+  { key: 'finance_approval', label: 'FINANCE APPROVAL' },
+  { key: 'educ_dc_elem', label: 'EDUC DC ELEM' },
+  { key: 'educ_jr_hs', label: 'EDUC JR HS' },
+  { key: 'educ_sr_hs', label: 'EDUC SR HS' },
+  { key: 'educ_total_hs', label: 'EDUC TOTAL HS' },
+  { key: 'total_educ', label: 'TOTAL EDUC' },
+  { key: 'health', label: 'HEALTH' },
+  { key: 'rice_amount', label: 'RICE AMOUNT' },
+  { key: 'f1kd_amount', label: 'F1KD AMOUNT' },
+  { key: 'gross_amount', label: 'GROSS AMOUNT' },
+  { key: 'adjustment_amount', label: 'ADJUSTMENT AMOUNT' },
+  { key: 'net_amount', label: 'NET AMOUNT' },
+  { key: 'hh_set', label: 'HH SET' },
+  { key: 'set_group', label: 'SET GROUP' },
+];
+
 function handleExportPayrollCsv(records: PayrollRecord[], hhid: string) {
-  const headers = [
-    'Payroll Type',
-    'Year',
-    'Month',
-    'Payment Mode',
-    'Account',
-    'Educ Amount',
-    'Health Amount',
-    'Rice Amount',
-    'F1KD Amount',
-    'Adjustment Amount',
-    'Total Amount',
-    'Credited into Account?',
-    'Status',
-    'Rejection Reason',
-  ];
+  const headers = PAYROLL_TABLE_COLUMNS.map((c) => c.label);
+
+  const escapeCsv = (val: unknown): string => {
+    const str = val !== undefined && val !== null ? String(val) : '';
+    return `"${str.replace(/"/g, '""')}"`;
+  };
 
   const rows = records.map((rec) => {
-    const educ = getEducAmount(rec);
-    const total = getTotalAmount(rec, educ);
+    const totalEduc = getEducAmount(rec);
+    const grossVal =
+      rec.gross_amount !== undefined && rec.gross_amount !== null && Number(rec.gross_amount) > 0
+        ? Number(rec.gross_amount)
+        : getTotalAmount(rec, totalEduc);
+    const netVal =
+      rec.net_amount !== undefined && rec.net_amount !== null && Number(rec.net_amount) > 0
+        ? Number(rec.net_amount)
+        : getTotalAmount(rec, totalEduc);
+
     return [
-      `"${(rec.payroll_description || '1 - CVS Regular').replace(/"/g, '""')}"`,
-      rec.year || '',
-      getMonthNumber(rec.period, rec.payroll_date),
-      `"${(rec.mode_of_payment || rec.payment_mode_classification || '').replace(/"/g, '""')}"`,
-      `"${rec.account_number || ''}"`,
-      formatEducHealthRice(educ),
-      formatEducHealthRice(rec.health || 0),
-      formatEducHealthRice(rec.rice_amount || 0),
-      formatDecimal(rec.f1kd_amount || 0),
-      formatDecimal(rec.adjustment_amount || 0),
-      formatDecimal(total),
-      isCredited(rec) ? 'Yes' : 'No',
-      `"${(rec.status || '').replace(/"/g, '""')}"`,
-      `"${(rec.reason || '').replace(/"/g, '""')}"`,
+      escapeCsv(rec.period),
+      escapeCsv(rec.year),
+      escapeCsv(rec.payroll_description || '1 - CVS Regular'),
+      escapeCsv(rec.region),
+      escapeCsv(rec.province),
+      escapeCsv(rec.municipality),
+      escapeCsv(rec.barangay),
+      escapeCsv(rec.address_psgc),
+      escapeCsv(rec.last_name),
+      escapeCsv(rec.first_name),
+      escapeCsv(rec.middle_name),
+      escapeCsv(rec.household_id),
+      escapeCsv(rec.payment_mode_classification),
+      escapeCsv(rec.mode_of_payment),
+      escapeCsv(rec.account_number),
+      escapeCsv(rec.payroll_date),
+      escapeCsv(rec.finance_approval),
+      formatEducHealthRice(Number(rec.educ_dc_elem || 0)),
+      formatEducHealthRice(Number(rec.educ_jr_hs || 0)),
+      formatEducHealthRice(Number(rec.educ_sr_hs || 0)),
+      formatEducHealthRice(Number(rec.educ_total_hs || 0)),
+      formatEducHealthRice(totalEduc),
+      formatEducHealthRice(Number(rec.health || 0)),
+      formatEducHealthRice(Number(rec.rice_amount || 0)),
+      formatDecimal(Number(rec.f1kd_amount || 0)),
+      formatDecimal(grossVal),
+      formatDecimal(Number(rec.adjustment_amount || 0)),
+      formatDecimal(netVal),
+      escapeCsv(rec.hh_set),
+      escapeCsv(rec.set_group),
     ].join(',');
   });
 
@@ -3124,23 +3213,28 @@ function PayrollRecordsTable({
   const isVisible = (k: string) => selectedFields.includes(k);
   const visibleColumnCount = Math.max(1, selectedFields.length);
 
-  const columnOrder = [
-    'payroll_type',
-    'year',
-    'month',
-    'payment_mode',
-    'account_number',
-    'educ_amount',
-    'health_amount',
-    'rice_amount',
-    'f1kd_amount',
-    'adjustment_amount',
-    'total_amount',
-    'credited',
-  ];
+  const columnOrder = PAYROLL_TABLE_COLUMNS.map((c) => c.key as string);
   const firstVisibleCol = columnOrder.find((k) => isVisible(k));
 
-  const leadingCols = ['payroll_type', 'year', 'month', 'payment_mode', 'account_number'];
+  const leadingCols = [
+    'period',
+    'year',
+    'payroll_description',
+    'region',
+    'province',
+    'municipality',
+    'barangay',
+    'address_psgc',
+    'last_name',
+    'first_name',
+    'middle_name',
+    'household_id',
+    'payment_mode_classification',
+    'mode_of_payment',
+    'account_number',
+    'payroll_date',
+    'finance_approval',
+  ];
   const leadingColSpan = leadingCols.filter((k) => isVisible(k)).length;
 
   const renderExpandChevron = (colKey: string, isExpanded: boolean) => {
@@ -3161,22 +3255,27 @@ function PayrollRecordsTable({
     setTimeout(() => setCopiedAccountId(null), 2000);
   };
 
+  const numericColKeys = [
+    'year',
+    'educ_dc_elem',
+    'educ_jr_hs',
+    'educ_sr_hs',
+    'educ_total_hs',
+    'total_educ',
+    'health',
+    'rice_amount',
+    'f1kd_amount',
+    'gross_amount',
+    'adjustment_amount',
+    'net_amount',
+  ];
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      const numericCols = [
-        'year',
-        'month',
-        'educ_amount',
-        'health_amount',
-        'rice_amount',
-        'f1kd_amount',
-        'adjustment_amount',
-        'total_amount',
-      ];
-      setSortDirection(numericCols.includes(key) ? 'desc' : 'asc');
+      setSortDirection(numericColKeys.includes(key) ? 'desc' : 'asc');
     }
   };
 
@@ -3185,12 +3284,6 @@ function PayrollRecordsTable({
       let comparison = 0;
 
       switch (sortKey) {
-        case 'payroll_type': {
-          const valA = (a.payroll_description || '').toLowerCase();
-          const valB = (b.payroll_description || '').toLowerCase();
-          comparison = valA.localeCompare(valB);
-          break;
-        }
         case 'year': {
           const valA = Number(a.year || 0);
           const valB = Number(b.year || 0);
@@ -3202,68 +3295,57 @@ function PayrollRecordsTable({
           }
           break;
         }
-        case 'month': {
-          const mA = Number(getMonthNumber(a.period, a.payroll_date)) || 0;
-          const mB = Number(getMonthNumber(b.period, b.payroll_date)) || 0;
-          comparison = mA - mB;
+        case 'period': {
+          const mA = Number(getMonthNumber(a.period, a.payroll_date));
+          const mB = Number(getMonthNumber(b.period, b.payroll_date));
+          if (!isNaN(mA) && !isNaN(mB) && mA !== mB) {
+            comparison = mA - mB;
+          } else {
+            comparison = String(a.period || '').localeCompare(String(b.period || ''));
+          }
           break;
         }
-        case 'payment_mode': {
-          const valA = (a.mode_of_payment || a.payment_mode_classification || '').toLowerCase();
-          const valB = (b.mode_of_payment || b.payment_mode_classification || '').toLowerCase();
-          comparison = valA.localeCompare(valB);
-          break;
-        }
-        case 'account_number': {
-          const valA = String(a.account_number || '');
-          const valB = String(b.account_number || '');
-          comparison = valA.localeCompare(valB);
-          break;
-        }
-        case 'educ_amount': {
-          const valA = getEducAmount(a);
-          const valB = getEducAmount(b);
-          comparison = valA - valB;
-          break;
-        }
-        case 'health_amount': {
-          const valA = Number(a.health || 0);
-          const valB = Number(b.health || 0);
-          comparison = valA - valB;
-          break;
-        }
-        case 'rice_amount': {
-          const valA = Number(a.rice_amount || 0);
-          const valB = Number(b.rice_amount || 0);
-          comparison = valA - valB;
-          break;
-        }
-        case 'f1kd_amount': {
-          const valA = Number(a.f1kd_amount || 0);
-          const valB = Number(b.f1kd_amount || 0);
-          comparison = valA - valB;
-          break;
-        }
+        case 'educ_dc_elem':
+        case 'educ_jr_hs':
+        case 'educ_sr_hs':
+        case 'educ_total_hs':
+        case 'health':
+        case 'rice_amount':
+        case 'f1kd_amount':
         case 'adjustment_amount': {
-          const valA = Number(a.adjustment_amount || 0);
-          const valB = Number(b.adjustment_amount || 0);
+          const valA = Number(a[sortKey as keyof PayrollRecord] || 0);
+          const valB = Number(b[sortKey as keyof PayrollRecord] || 0);
           comparison = valA - valB;
           break;
         }
-        case 'total_amount': {
-          const valA = getTotalAmount(a, getEducAmount(a));
-          const valB = getTotalAmount(b, getEducAmount(b));
-          comparison = valA - valB;
+        case 'total_educ': {
+          comparison = getEducAmount(a) - getEducAmount(b);
           break;
         }
-        case 'credited': {
-          const valA = isCredited(a) ? 1 : 0;
-          const valB = isCredited(b) ? 1 : 0;
-          comparison = valA - valB;
+        case 'gross_amount': {
+          const gA =
+            a.gross_amount !== undefined && a.gross_amount !== null && Number(a.gross_amount) > 0
+              ? Number(a.gross_amount)
+              : getTotalAmount(a, getEducAmount(a));
+          const gB =
+            b.gross_amount !== undefined && b.gross_amount !== null && Number(b.gross_amount) > 0
+              ? Number(b.gross_amount)
+              : getTotalAmount(b, getEducAmount(b));
+          comparison = gA - gB;
           break;
         }
-        default:
+        case 'net_amount': {
+          const nA = getTotalAmount(a, getEducAmount(a));
+          const nB = getTotalAmount(b, getEducAmount(b));
+          comparison = nA - nB;
           break;
+        }
+        default: {
+          const valA = String(a[sortKey as keyof PayrollRecord] || '').toLowerCase();
+          const valB = String(b[sortKey as keyof PayrollRecord] || '').toLowerCase();
+          comparison = valA.localeCompare(valB);
+          break;
+        }
       }
 
       return sortDirection === 'desc' ? -comparison : comparison;
@@ -3274,22 +3356,10 @@ function PayrollRecordsTable({
     if (!searchQuery.trim()) return sortedRecords;
     const q = searchQuery.toLowerCase().trim();
     return sortedRecords.filter((rec) => {
-      const pDesc = (rec.payroll_description || '').toLowerCase();
-      const yr = String(rec.year || '').toLowerCase();
-      const mo = String(getMonthNumber(rec.period, rec.payroll_date) || '').toLowerCase();
-      const pMode = (rec.mode_of_payment || rec.payment_mode_classification || '').toLowerCase();
-      const acc = String(rec.account_number || '').toLowerCase();
-      const period = (rec.period || '').toLowerCase();
-      const status = (rec.status || '').toLowerCase();
-      return (
-        pDesc.includes(q) ||
-        yr.includes(q) ||
-        mo.includes(q) ||
-        pMode.includes(q) ||
-        acc.includes(q) ||
-        period.includes(q) ||
-        status.includes(q)
-      );
+      return PAYROLL_TABLE_COLUMNS.some((col) => {
+        const val = rec[col.key];
+        return val !== undefined && val !== null && String(val).toLowerCase().includes(q);
+      });
     });
   }, [sortedRecords, searchQuery]);
 
@@ -3324,22 +3394,47 @@ function PayrollRecordsTable({
     const list = searchQuery.trim() ? filteredRecords : records;
     return list.reduce(
       (acc, rec) => {
-        const educ = getEducAmount(rec);
+        const educElem = Number(rec.educ_dc_elem || 0);
+        const educJr = Number(rec.educ_jr_hs || 0);
+        const educSr = Number(rec.educ_sr_hs || 0);
+        const educTotalHs = Number(rec.educ_total_hs || 0);
+        const totalEduc = getEducAmount(rec);
         const health = Number(rec.health || 0);
         const rice = Number(rec.rice_amount || 0);
         const f1kd = Number(rec.f1kd_amount || 0);
         const adj = Number(rec.adjustment_amount || 0);
-        const tot = getTotalAmount(rec, educ);
+        const gross =
+          rec.gross_amount !== undefined && rec.gross_amount !== null && Number(rec.gross_amount) > 0
+            ? Number(rec.gross_amount)
+            : getTotalAmount(rec, totalEduc);
+        const net = getTotalAmount(rec, totalEduc);
 
-        acc.educ += educ;
+        acc.educ_dc_elem += educElem;
+        acc.educ_jr_hs += educJr;
+        acc.educ_sr_hs += educSr;
+        acc.educ_total_hs += educTotalHs;
+        acc.total_educ += totalEduc;
         acc.health += health;
-        acc.rice += rice;
-        acc.f1kd += f1kd;
-        acc.adj += adj;
-        acc.total += tot;
+        acc.rice_amount += rice;
+        acc.f1kd_amount += f1kd;
+        acc.gross_amount += gross;
+        acc.adjustment_amount += adj;
+        acc.net_amount += net;
         return acc;
       },
-      { educ: 0, health: 0, rice: 0, f1kd: 0, adj: 0, total: 0 }
+      {
+        educ_dc_elem: 0,
+        educ_jr_hs: 0,
+        educ_sr_hs: 0,
+        educ_total_hs: 0,
+        total_educ: 0,
+        health: 0,
+        rice_amount: 0,
+        f1kd_amount: 0,
+        gross_amount: 0,
+        adjustment_amount: 0,
+        net_amount: 0,
+      }
     );
   }, [records, filteredRecords, searchQuery]);
 
@@ -3354,7 +3449,7 @@ function PayrollRecordsTable({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by year, mode, account, or type..."
+              placeholder="Filter by period, year, mode, account, location..."
               className="h-8 pl-8 pr-7 text-xs bg-background"
             />
             {searchQuery && (
@@ -3383,113 +3478,18 @@ function PayrollRecordsTable({
         <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
         <thead className="border-b border-border/80 bg-muted/40 dark:bg-muted/20">
           <tr>
-            {isVisible('payroll_type') && (
-              <SortHeader
-                columnKey="payroll_type"
-                label="Payroll Type"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('year') && (
-              <SortHeader
-                columnKey="year"
-                label="Year"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('month') && (
-              <SortHeader
-                columnKey="month"
-                label="Month"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('payment_mode') && (
-              <SortHeader
-                columnKey="payment_mode"
-                label="Payment Mode"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('account_number') && (
-              <SortHeader
-                columnKey="account_number"
-                label="Account"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('educ_amount') && (
-              <SortHeader
-                columnKey="educ_amount"
-                label="Educ Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('health_amount') && (
-              <SortHeader
-                columnKey="health_amount"
-                label="Health Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('rice_amount') && (
-              <SortHeader
-                columnKey="rice_amount"
-                label="Rice Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('f1kd_amount') && (
-              <SortHeader
-                columnKey="f1kd_amount"
-                label="F1KD Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('adjustment_amount') && (
-              <SortHeader
-                columnKey="adjustment_amount"
-                label="Adjustment Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('total_amount') && (
-              <SortHeader
-                columnKey="total_amount"
-                label="Total Amount"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-            )}
-            {isVisible('credited') && (
-              <SortHeader
-                columnKey="credited"
-                label="Credited into Account?"
-                currentSortKey={sortKey}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
+            {PAYROLL_TABLE_COLUMNS.map(
+              (col) =>
+                isVisible(col.key) && (
+                  <SortHeader
+                    key={col.key}
+                    columnKey={col.key}
+                    label={col.label}
+                    currentSortKey={sortKey}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                )
             )}
           </tr>
         </thead>
@@ -3516,262 +3516,444 @@ function PayrollRecordsTable({
             paginatedRecords.map((record, idx) => {
               const globalIdx = pageSize === 'ALL' ? idx : (validCurrentPage - 1) * pageSize + idx;
               const rowKey = record.id || `row_${globalIdx}`;
-            const educ = getEducAmount(record);
-            const total = getTotalAmount(record, educ);
-            const isCred = isCredited(record);
-            const isExpanded = expandedRowId === rowKey;
+              const totalEduc = getEducAmount(record);
+              const grossVal =
+                record.gross_amount !== undefined && record.gross_amount !== null && Number(record.gross_amount) > 0
+                  ? Number(record.gross_amount)
+                  : getTotalAmount(record, totalEduc);
+              const netVal = getTotalAmount(record, totalEduc);
+              const isExpanded = expandedRowId === rowKey;
 
-            return (
-              <Fragment key={rowKey}>
-                <tr
-                  onClick={() => setExpandedRowId((prev) => (prev === rowKey ? null : rowKey))}
-                  className={cn(
-                    'cursor-pointer transition-colors hover:bg-muted/40',
-                    isExpanded ? 'bg-muted/30 font-medium' : idx % 2 === 1 ? 'bg-muted/10' : 'bg-transparent'
-                  )}
-                >
-                  {/* 1. Payroll Type */}
-                  {isVisible('payroll_type') && (
-                    <td className="px-3.5 py-3 text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('payroll_type', isExpanded)}
-                        <span>{record.payroll_description || '1 - CVS Regular'}</span>
-                      </div>
-                    </td>
-                  )}
+              return (
+                <Fragment key={rowKey}>
+                  <tr
+                    onClick={() => setExpandedRowId((prev) => (prev === rowKey ? null : rowKey))}
+                    className={cn(
+                      'cursor-pointer transition-colors hover:bg-muted/40',
+                      isExpanded ? 'bg-muted/30 font-medium' : idx % 2 === 1 ? 'bg-muted/10' : 'bg-transparent'
+                    )}
+                  >
+                    {/* 1. PERIOD */}
+                    {isVisible('period') && (
+                      <td className="px-3.5 py-3 text-foreground font-mono">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('period', isExpanded)}
+                          <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary dark:text-cyan-300">
+                            {record.period || '-'}
+                          </span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 2. Year */}
-                  {isVisible('year') && (
-                    <td className="px-3.5 py-3 text-muted-foreground font-mono">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('year', isExpanded)}
-                        <span>{record.year || '-'}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 2. YEAR */}
+                    {isVisible('year') && (
+                      <td className="px-3.5 py-3 text-muted-foreground font-mono">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('year', isExpanded)}
+                          <span>{record.year || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 3. Month */}
-                  {isVisible('month') && (
-                    <td className="px-3.5 py-3 text-muted-foreground font-mono">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('month', isExpanded)}
-                        <span>{getMonthNumber(record.period, record.payroll_date)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 3. PAYROLL DESCRIPTION */}
+                    {isVisible('payroll_description') && (
+                      <td className="px-3.5 py-3 text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('payroll_description', isExpanded)}
+                          <span>{record.payroll_description || '1 - CVS Regular'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 4. Payment Mode */}
-                  {isVisible('payment_mode') && (
-                    <td
-                      className="px-3.5 py-3 text-muted-foreground max-w-xs truncate"
-                      title={record.mode_of_payment || record.payment_mode_classification || '-'}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('payment_mode', isExpanded)}
-                        <span className="truncate">{record.mode_of_payment || record.payment_mode_classification || '-'}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 4. REGION */}
+                    {isVisible('region') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('region', isExpanded)}
+                          <span>{record.region || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 5. Account */}
-                  {isVisible('account_number') && (
-                    <td className="px-3.5 py-3 font-mono text-foreground/90">
-                      <div className="flex items-center gap-1.5 group">
-                        {renderExpandChevron('account_number', isExpanded)}
-                        <span>{record.account_number || '-'}</span>
-                        {record.account_number && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyAccount(record.account_number!, rowKey);
-                            }}
-                            className="rounded p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground opacity-40 group-hover:opacity-100"
-                            title="Copy account number"
-                          >
-                            {copiedAccountId === String(rowKey) ? (
-                              <Check className="h-3 w-3 text-emerald-500" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                    {/* 5. PROVINCE */}
+                    {isVisible('province') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('province', isExpanded)}
+                          <span>{record.province || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 6. Educ Amount */}
-                  {isVisible('educ_amount') && (
-                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('educ_amount', isExpanded)}
-                        <span>{formatEducHealthRice(educ)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 6. MUNICIPALITY */}
+                    {isVisible('municipality') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('municipality', isExpanded)}
+                          <span>{record.municipality || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 7. Health Amount */}
-                  {isVisible('health_amount') && (
-                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('health_amount', isExpanded)}
-                        <span>{formatEducHealthRice(record.health ?? 0)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 7. BARANGAY */}
+                    {isVisible('barangay') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('barangay', isExpanded)}
+                          <span>{record.barangay || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 8. Rice Amount */}
-                  {isVisible('rice_amount') && (
-                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('rice_amount', isExpanded)}
-                        <span>{formatEducHealthRice(record.rice_amount ?? 0)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 8. ADDRESS PSGC */}
+                    {isVisible('address_psgc') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('address_psgc', isExpanded)}
+                          <span>{record.address_psgc || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 9. F1KD Amount */}
-                  {isVisible('f1kd_amount') && (
-                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('f1kd_amount', isExpanded)}
-                        <span>{formatDecimal(record.f1kd_amount ?? 0)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 9. LAST NAME */}
+                    {isVisible('last_name') && (
+                      <td className="px-3.5 py-3 font-medium text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('last_name', isExpanded)}
+                          <span>{record.last_name || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 10. Adjustment Amount */}
-                  {isVisible('adjustment_amount') && (
-                    <td className="px-3.5 py-3 font-mono text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('adjustment_amount', isExpanded)}
-                        <span>{formatDecimal(record.adjustment_amount ?? 0)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 10. FIRST NAME */}
+                    {isVisible('first_name') && (
+                      <td className="px-3.5 py-3 text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('first_name', isExpanded)}
+                          <span>{record.first_name || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 11. Total Amount */}
-                  {isVisible('total_amount') && (
-                    <td className="px-3.5 py-3 font-mono font-medium text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('total_amount', isExpanded)}
-                        <span>{formatDecimal(total)}</span>
-                      </div>
-                    </td>
-                  )}
+                    {/* 11. MIDDLE NAME */}
+                    {isVisible('middle_name') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('middle_name', isExpanded)}
+                          <span>{record.middle_name || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                  {/* 12. Credited into Account? */}
-                  {isVisible('credited') && (
-                    <td className="px-3.5 py-3 text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {renderExpandChevron('credited', isExpanded)}
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 font-medium',
-                            isCred ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground'
-                          )}
-                        >
-                          {isCred ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                </tr>
+                    {/* 12. HOUSEHOLD ID */}
+                    {isVisible('household_id') && (
+                      <td className="px-3.5 py-3 font-mono text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('household_id', isExpanded)}
+                          <span>{record.household_id || displayHhid || '-'}</span>
+                        </div>
+                      </td>
+                    )}
 
-                {/* Expanded Row for Extra Details */}
-                {isExpanded && (
-                  <tr className="bg-muted/20 border-b border-border/80">
-                    <td colSpan={visibleColumnCount} className="px-6 py-4">
-                      <div className="rounded-xl border border-border/70 bg-card/90 p-4 shadow-2xs space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-foreground">
-                              Cycle #{globalIdx + 1} Breakdown: {record.period || 'Period'} - {record.year || 'Year'}
-                            </span>
-                            {record.hh_set && (
-                              <span className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                                Set {record.hh_set} {record.set_group ? `• Group ${record.set_group}` : ''}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                                record.status?.toLowerCase() === 'successful'
-                                  ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                  : record.status?.toLowerCase() === 'reject'
-                                  ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
-                                  : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-                              )}
+                    {/* 13. PAYMENT MODE CLASSIFICATION */}
+                    {isVisible('payment_mode_classification') && (
+                      <td
+                        className="px-3.5 py-3 text-muted-foreground max-w-xs truncate"
+                        title={record.payment_mode_classification || '-'}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('payment_mode_classification', isExpanded)}
+                          <span className="truncate">{record.payment_mode_classification || '-'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 14. MODE OF PAYMENT */}
+                    {isVisible('mode_of_payment') && (
+                      <td
+                        className="px-3.5 py-3 text-muted-foreground max-w-xs truncate"
+                        title={record.mode_of_payment || '-'}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('mode_of_payment', isExpanded)}
+                          <span className="truncate">{record.mode_of_payment || '-'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 15. ACCOUNT NUMBER */}
+                    {isVisible('account_number') && (
+                      <td className="px-3.5 py-3 font-mono text-foreground/90">
+                        <div className="flex items-center gap-1.5 group">
+                          {renderExpandChevron('account_number', isExpanded)}
+                          <span>{record.account_number || '-'}</span>
+                          {record.account_number && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyAccount(record.account_number!, rowKey);
+                              }}
+                              className="rounded p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground opacity-40 group-hover:opacity-100"
+                              title="Copy account number"
                             >
-                              {record.status?.toLowerCase() === 'successful' ? (
-                                <CheckCircle2 className="h-3 w-3" />
-                              ) : record.status?.toLowerCase() === 'reject' ? (
-                                <XCircle className="h-3 w-3" />
-                              ) : null}
-                              {record.status || 'Unprocessed'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Breakdown of education components & dates */}
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 text-xs">
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ DC Elem</span>
-                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_dc_elem || 0)}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Jr High</span>
-                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_jr_hs || 0)}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Sr High</span>
-                            <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_sr_hs || 0)}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Gross Amount</span>
-                            <p className="font-mono font-bold text-foreground">{formatAmount(record.gross_amount || 0)}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Payroll Date</span>
-                            <p className="font-medium text-foreground">{record.payroll_date || '-'}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-medium uppercase text-muted-foreground">Finance Approval</span>
-                            <p className="font-medium text-foreground">{record.finance_approval || '-'}</p>
-                          </div>
-                          {record.new_account_number && (
-                            <div>
-                              <span className="text-[10px] font-medium uppercase text-muted-foreground">New Account Number</span>
-                              <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{record.new_account_number}</p>
-                            </div>
-                          )}
-                          {record.address_psgc && (
-                            <div>
-                              <span className="text-[10px] font-medium uppercase text-muted-foreground">PSGC Code</span>
-                              <p className="font-medium text-foreground">{record.address_psgc}</p>
-                            </div>
+                              {copiedAccountId === String(rowKey) ? (
+                                <Check className="h-3 w-3 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
                           )}
                         </div>
+                      </td>
+                    )}
 
-                        {/* Rejection / Remarks box */}
-                        {record.reason && (
-                          <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-400">
-                            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                            <div>
-                              <span className="font-bold">Remarks / Rejection Reason:</span>
-                              <p className="mt-0.5 text-foreground">{record.reason}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                    {/* 16. PAYROLL DATE */}
+                    {isVisible('payroll_date') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('payroll_date', isExpanded)}
+                          <span>{record.payroll_date || '-'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 17. FINANCE APPROVAL */}
+                    {isVisible('finance_approval') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('finance_approval', isExpanded)}
+                          <span>{record.finance_approval || '-'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 18. EDUC DC ELEM */}
+                    {isVisible('educ_dc_elem') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('educ_dc_elem', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.educ_dc_elem ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 19. EDUC JR HS */}
+                    {isVisible('educ_jr_hs') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('educ_jr_hs', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.educ_jr_hs ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 20. EDUC SR HS */}
+                    {isVisible('educ_sr_hs') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('educ_sr_hs', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.educ_sr_hs ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 21. EDUC TOTAL HS */}
+                    {isVisible('educ_total_hs') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('educ_total_hs', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.educ_total_hs ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 22. TOTAL EDUC */}
+                    {isVisible('total_educ') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('total_educ', isExpanded)}
+                          <span>{formatEducHealthRice(totalEduc)}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 23. HEALTH */}
+                    {isVisible('health') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('health', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.health ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 24. RICE AMOUNT */}
+                    {isVisible('rice_amount') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('rice_amount', isExpanded)}
+                          <span>{formatEducHealthRice(Number(record.rice_amount ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 25. F1KD AMOUNT */}
+                    {isVisible('f1kd_amount') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('f1kd_amount', isExpanded)}
+                          <span>{formatDecimal(Number(record.f1kd_amount ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 26. GROSS AMOUNT */}
+                    {isVisible('gross_amount') && (
+                      <td className="px-3.5 py-3 font-mono font-medium text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('gross_amount', isExpanded)}
+                          <span>{formatDecimal(grossVal)}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 27. ADJUSTMENT AMOUNT */}
+                    {isVisible('adjustment_amount') && (
+                      <td className="px-3.5 py-3 font-mono text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('adjustment_amount', isExpanded)}
+                          <span>{formatDecimal(Number(record.adjustment_amount ?? 0))}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 28. NET AMOUNT */}
+                    {isVisible('net_amount') && (
+                      <td className="px-3.5 py-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('net_amount', isExpanded)}
+                          <span>{formatDecimal(netVal)}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 29. HH SET */}
+                    {isVisible('hh_set') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('hh_set', isExpanded)}
+                          <span>{record.hh_set || '-'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 30. SET GROUP */}
+                    {isVisible('set_group') && (
+                      <td className="px-3.5 py-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          {renderExpandChevron('set_group', isExpanded)}
+                          <span>{record.set_group || '-'}</span>
+                        </div>
+                      </td>
+                    )}
                   </tr>
-                )}
-              </Fragment>
-            );
-          }))}
+
+                  {/* Expanded Row for Extra Details */}
+                  {isExpanded && (
+                    <tr className="bg-muted/20 border-b border-border/80">
+                      <td colSpan={visibleColumnCount} className="px-6 py-4">
+                        <div className="rounded-xl border border-border/70 bg-card/90 p-4 shadow-2xs space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-foreground">
+                                Cycle #{globalIdx + 1} Breakdown: {record.period || 'Period'} - {record.year || 'Year'}
+                              </span>
+                              {record.hh_set && (
+                                <span className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                  Set {record.hh_set} {record.set_group ? `• Group ${record.set_group}` : ''}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                  record.status?.toLowerCase() === 'successful'
+                                    ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                    : record.status?.toLowerCase() === 'reject'
+                                    ? 'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
+                                    : 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
+                                )}
+                              >
+                                {record.status?.toLowerCase() === 'successful' ? (
+                                  <CheckCircle2 className="h-3 w-3" />
+                                ) : record.status?.toLowerCase() === 'reject' ? (
+                                  <XCircle className="h-3 w-3" />
+                                ) : null}
+                                {record.status || 'Unprocessed'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Breakdown of education components & dates */}
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 text-xs">
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ DC Elem</span>
+                              <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_dc_elem || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Jr High</span>
+                              <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_jr_hs || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Educ Sr High</span>
+                              <p className="font-mono font-medium text-foreground">{formatAmount(record.educ_sr_hs || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Gross Amount</span>
+                              <p className="font-mono font-bold text-foreground">{formatAmount(record.gross_amount || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Payroll Date</span>
+                              <p className="font-medium text-foreground">{record.payroll_date || '-'}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-medium uppercase text-muted-foreground">Finance Approval</span>
+                              <p className="font-medium text-foreground">{record.finance_approval || '-'}</p>
+                            </div>
+                            {record.new_account_number && (
+                              <div>
+                                <span className="text-[10px] font-medium uppercase text-muted-foreground">New Account Number</span>
+                                <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{record.new_account_number}</p>
+                              </div>
+                            )}
+                            {record.address_psgc && (
+                              <div>
+                                <span className="text-[10px] font-medium uppercase text-muted-foreground">PSGC Code</span>
+                                <p className="font-medium text-foreground">{record.address_psgc}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Rejection / Remarks box */}
+                          {record.reason && (
+                            <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-400">
+                              <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold">Remarks / Rejection Reason:</span>
+                                <p className="mt-0.5 text-foreground">{record.reason}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })
+          )}
         </tbody>
         <tfoot className="border-t-2 border-border/80 bg-muted/30 font-semibold text-xs text-foreground">
           <tr>
@@ -3791,27 +3973,47 @@ function PayrollRecordsTable({
                 </div>
               </td>
             )}
-            {isVisible('educ_amount') && (
-              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ)}</td>
+            {isVisible('educ_dc_elem') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ_dc_elem)}</td>
             )}
-            {isVisible('health_amount') && (
+            {isVisible('educ_jr_hs') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ_jr_hs)}</td>
+            )}
+            {isVisible('educ_sr_hs') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ_sr_hs)}</td>
+            )}
+            {isVisible('educ_total_hs') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.educ_total_hs)}</td>
+            )}
+            {isVisible('total_educ') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.total_educ)}</td>
+            )}
+            {isVisible('health') && (
               <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.health)}</td>
             )}
             {isVisible('rice_amount') && (
-              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.rice)}</td>
+              <td className="px-3.5 py-3 text-left font-mono">{formatEducHealthRice(totals.rice_amount)}</td>
             )}
             {isVisible('f1kd_amount') && (
-              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.f1kd)}</td>
+              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.f1kd_amount)}</td>
             )}
-            {isVisible('adjustment_amount') && (
-              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.adj)}</td>
-            )}
-            {isVisible('total_amount') && (
-              <td className="px-3.5 py-3 text-left font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {formatDecimal(totals.total)}
+            {isVisible('gross_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono font-bold text-foreground">
+                {formatDecimal(totals.gross_amount)}
               </td>
             )}
-            {isVisible('credited') && (
+            {isVisible('adjustment_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono">{formatDecimal(totals.adjustment_amount)}</td>
+            )}
+            {isVisible('net_amount') && (
+              <td className="px-3.5 py-3 text-left font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatDecimal(totals.net_amount)}
+              </td>
+            )}
+            {isVisible('hh_set') && (
+              <td className="px-3.5 py-3 text-left text-muted-foreground">-</td>
+            )}
+            {isVisible('set_group') && (
               <td className="px-3.5 py-3 text-left text-muted-foreground">-</td>
             )}
           </tr>
