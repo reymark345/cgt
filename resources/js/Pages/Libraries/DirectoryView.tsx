@@ -56,7 +56,7 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
   const [provinceFilter, setProvinceFilter] = useState('ALL');
   const [branchFilter, setBranchFilter] = useState('ALL');
   const [muniPage, setMuniPage] = useState(1);
-  const [muniPerPage, setMuniPerPage] = useState(15);
+  const [muniPerPage, setMuniPerPage] = useState(10);
 
   // Inline editing state for Tab 1
   const [editingMuniId, setEditingMuniId] = useState<number | null>(null);
