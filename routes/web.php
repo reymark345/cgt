@@ -58,8 +58,6 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/roles-permissions', [EmvRecordController::class, 'dashboard']);
     Route::get('/audit-trails', [EmvRecordController::class, 'dashboard'])->name('audit-trails');
     Route::get('/audit-trail', [EmvRecordController::class, 'dashboard']);
-    Route::get('/user-manual', [EmvRecordController::class, 'dashboard'])->name('user-manual');
-    Route::get('/manual', [EmvRecordController::class, 'dashboard']);
     Route::get('/aging', [EmvRecordController::class, 'dashboard'])->name('aging');
     Route::get('/overpayment', [EmvRecordController::class, 'dashboard'])->name('overpayment');
     Route::get('/data', [EmvRecordController::class, 'dashboard'])->name('data');

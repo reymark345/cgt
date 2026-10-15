@@ -59,6 +59,7 @@ type AppShellProps = PropsWithChildren<{
   incomingCount: number;
   moduleCounts?: Record<string, number>;
   usersCount?: number;
+  pendingUsersCount?: number;
   sidebarOpen: boolean;
   title: string;
   onOpenView: (view: CurrentView) => void;
@@ -98,7 +99,6 @@ const viewMeta: Record<string, { section: string; icon: typeof LayoutDashboard }
   'roles-permissions': { section: 'System', icon: ShieldCheck },
   'audit-trail': { section: 'System', icon: History },
   directory: { section: 'Libraries', icon: Building2 },
-  manual: { section: 'System', icon: BookOpen },
   Inquiry: { section: 'Transactions', icon: UserCog },
   inquiry: { section: 'Transactions', icon: UserCog },
   open: { section: 'Data', icon: UserCog },
@@ -164,7 +164,8 @@ function NavItem({
           className={cn(
             'ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold tracking-tight',
             badgeColor === 'primary' && 'bg-primary text-primary-foreground',
-            badgeColor === 'amber' && 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+            badgeColor === 'amber' &&
+              'bg-amber-500/20 text-amber-700 ring-1 ring-amber-500/40 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/40',
             badgeColor === 'default' && 'bg-secondary text-muted-foreground dark:bg-secondary/80',
           )}
         >
@@ -186,6 +187,7 @@ export function AppShell({
   incomingCount,
   moduleCounts,
   usersCount,
+  pendingUsersCount,
   sidebarOpen,
   title,
   onOpenView,
@@ -550,6 +552,8 @@ export function AppShell({
             <div className="space-y-1">
               <NavItem
                 active={currentView === 'roles-permissions'}
+                badge={pendingUsersCount ?? 0}
+                badgeColor="amber"
                 icon={ShieldCheck}
                 onClick={() => onOpenView('roles-permissions')}
               >
@@ -570,13 +574,6 @@ export function AppShell({
                 onClick={() => onOpenView('audit-trail')}
               >
                 Audit Trails
-              </NavItem>
-              <NavItem
-                active={currentView === 'manual'}
-                icon={BookOpen}
-                onClick={() => onOpenView('manual')}
-              >
-                User Manual
               </NavItem>
             </div>
           </div>
@@ -827,19 +824,6 @@ export function AppShell({
                 variant="ghost"
               >
                 {darkMode ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-600" />}
-              </Button>
-
-              {/* Help Button */}
-              <Button
-                onClick={() => {
-                  onOpenView('manual');
-                  onSetNotice('Opened User Manual');
-                }}
-                size="icon"
-                title="Documentation & Guide"
-                variant="ghost"
-              >
-                <CircleHelp className="h-4 w-4" />
               </Button>
             </div>
           </div>

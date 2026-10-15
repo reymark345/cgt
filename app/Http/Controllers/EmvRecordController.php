@@ -64,8 +64,6 @@ class EmvRecordController extends Controller
             'audit-trail' => 'audit-trail',
             'directory' => 'directory',
             'libraries/directory' => 'directory',
-            'user-manual' => 'manual',
-            'manual' => 'manual',
             'aging' => 'aging',
             'overpayment' => 'overpayment',
             'data' => 'data',

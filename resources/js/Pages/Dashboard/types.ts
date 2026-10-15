@@ -62,7 +62,6 @@ export type CurrentView =
   | 'roles-permissions'
   | 'audit-trail'
   | 'directory'
-  | 'manual'
   | 'Inquiry'
   | 'inquiry'
   | 'open'

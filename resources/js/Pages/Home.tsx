@@ -7,7 +7,6 @@ import { initialRecords, officeTabs, statusTabs } from './Dashboard/data';
 import type { CurrentView, DashboardMetrics, EmvDatabaseRecord, GranteeRecord, PayrollRecord, RecordItem } from './Dashboard/types';
 import { formatAmount } from './Dashboard/utils';
 import { DashboardView } from './Dashboard/views/DashboardView';
-import { UserManualView } from './Dashboard/views/UserManualView';
 import { UsersView, type UserListItem } from './Dashboard/views/UsersView';
 import { EmvDatabaseView } from './References/EmvDatabaseView';
 import { EmvPayrollView } from './References/EmvPayrollView';
@@ -29,7 +28,6 @@ const pageTitles: Record<CurrentView, string> = {
   'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
   directory: 'Directory',
-  manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
   open: 'Data',
@@ -55,7 +53,6 @@ const headTitles: Record<CurrentView, string> = {
   'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
   directory: 'Directory',
-  manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
   open: 'Data',
@@ -81,7 +78,6 @@ const VIEW_TO_PATH: Record<CurrentView, string> = {
   'roles-permissions': '/roles-and-permissions',
   'audit-trail': '/audit-trails',
   directory: '/directory',
-  manual: '/user-manual',
   Inquiry: '/inquiry',
   inquiry: '/inquiry',
   open: '/data',
@@ -119,8 +115,6 @@ const PATH_TO_VIEW: Record<string, CurrentView> = {
   '/roles-permissions': 'roles-permissions',
   '/audit-trails': 'audit-trail',
   '/audit-trail': 'audit-trail',
-  '/user-manual': 'manual',
-  '/manual': 'manual',
   '/aging': 'aging',
   '/overpayment': 'overpayment',
   '/data': 'data',
@@ -202,6 +196,16 @@ export default function Home({
   const [records, setRecords] = useState<RecordItem[]>(initialRecords);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inquirySearchHhId, setInquirySearchHhId] = useState<string>('');
+  const [liveUsers, setLiveUsers] = useState<UserListItem[]>(users);
+
+  useEffect(() => {
+    setLiveUsers(users);
+  }, [users]);
+
+  const pendingUsersCount = useMemo(
+    () => liveUsers.filter((u) => !u.isApproved).length,
+    [liveUsers],
+  );
 
   const [liveModuleCounts, setLiveModuleCounts] = useState<Record<string, number>>(() => {
     return moduleCounts || dashboardMetrics?.moduleCounts || {};
@@ -456,7 +460,6 @@ export default function Home({
       grantee: 'Grantee opened',
       overpayment: 'Overpayment opened',
       users: 'Users opened',
-      manual: 'User manual opened',
       Inquiry: 'Inquiry opened',
       inquiry: 'Inquiry opened',
       open: 'Data opened',
@@ -510,7 +513,8 @@ export default function Home({
         payrollCount={livePayrollCount}
         incomingCount={records.length}
         moduleCounts={liveModuleCounts}
-        usersCount={users.length}
+        usersCount={liveUsers.length}
+        pendingUsersCount={pendingUsersCount}
         auditTrailCount={liveAuditTrailCount}
         sidebarOpen={sidebarOpen}
         title={pageTitles[currentView]}
@@ -629,16 +633,16 @@ export default function Home({
           />
         </div>
 
-        <div className={currentView === 'manual' ? 'block' : 'hidden'}>
-          <UserManualView notice={notice} onOpenIncoming={openEmvDatabase} />
-        </div>
-
         <div className={currentView === 'users' ? 'block' : 'hidden'}>
-          <UsersView users={users} />
+          <UsersView users={liveUsers} />
         </div>
 
         {currentView === 'roles-permissions' && (
-          <RolesPermissionsView initialUsers={users} onSetNotice={setNotice} />
+          <RolesPermissionsView
+            initialUsers={liveUsers}
+            onSetNotice={setNotice}
+            onUsersUpdated={setLiveUsers}
+          />
         )}
 
         {currentView === 'audit-trail' && (
