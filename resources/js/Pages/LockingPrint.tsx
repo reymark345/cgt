@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
   ArrowLeft,
   Bold,
@@ -125,6 +125,10 @@ export default function LockingPrint({
   dswdLogoUrl,
   bagongPilipinasLogoUrl,
 }: LockingPrintProps) {
+  const { auth } = usePage<{ auth?: { user?: { role?: string; permissions?: Record<string, boolean> } } }>().props;
+  const canEditLetterDetails =
+    auth?.user?.role === 'Admin' || Boolean(auth?.user?.permissions?.edit_print_forms);
+
   // Document customization state (prefilled exactly matching the official sample)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
@@ -205,6 +209,7 @@ export default function LockingPrint({
   };
 
   const focusIntroEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsCustomizing(true);
     setTimeout(() => {
       introInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -213,6 +218,7 @@ export default function LockingPrint({
   };
 
   const focusClosingEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsCustomizing(true);
     setTimeout(() => {
       closingInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -486,18 +492,20 @@ export default function LockingPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
-              <button
-                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
-                  isCustomizing
-                    ? 'border-rose-500 bg-rose-50 text-rose-700 dark:border-rose-500/50 dark:bg-rose-950/40 dark:text-rose-300'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                } cursor-pointer`}
-                onClick={() => setIsCustomizing((prev) => !prev)}
-                type="button"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-                <span>{isCustomizing ? 'Hide Details' : 'Edit Letter Details'}</span>
-              </button>
+              {canEditLetterDetails && (
+                <button
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
+                    isCustomizing
+                      ? 'border-rose-500 bg-rose-50 text-rose-700 dark:border-rose-500/50 dark:bg-rose-950/40 dark:text-rose-300'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  } cursor-pointer`}
+                  onClick={() => setIsCustomizing((prev) => !prev)}
+                  type="button"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>{isCustomizing ? 'Hide Details' : 'Edit Letter Details'}</span>
+                </button>
+              )}
 
               <button
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-rose-700 active:scale-98 dark:bg-rose-600 dark:hover:bg-rose-500 cursor-pointer"
@@ -511,7 +519,7 @@ export default function LockingPrint({
           </div>
 
           {/* Form Customization Drawer */}
-          {isCustomizing && (
+          {canEditLetterDetails && isCustomizing && (
             <div className="mx-auto mt-3 max-w-6xl rounded-xl border border-rose-200 bg-rose-50/50 p-4 shadow-inner dark:border-rose-900/50 dark:bg-rose-950/20">
               <div className="flex items-center justify-between border-b border-rose-200/80 pb-2.5 dark:border-rose-900/50">
                 <div className="flex items-center gap-2">
@@ -802,14 +810,20 @@ export default function LockingPrint({
 
                         {/* Introductory Body Message (Editable) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-rose-50/70 hover:ring-1 hover:ring-rose-300 dark:hover:bg-rose-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusIntroEditor}
-                          title="Click to edit introductory message"
+                          className={`group relative mt-5 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-rose-50/70 hover:ring-1 hover:ring-rose-300 dark:hover:bg-rose-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusIntroEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit introductory message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(introMessage, 'space-y-3 print:space-y-2')}
                         </div>
                       </>
@@ -885,14 +899,20 @@ export default function LockingPrint({
                       <>
                         {/* Closing Request Statements (Editable) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-rose-50/70 hover:ring-1 hover:ring-rose-300 dark:hover:bg-rose-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusClosingEditor}
-                          title="Click to edit closing request message"
+                          className={`group relative mt-5 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-rose-50/70 hover:ring-1 hover:ring-rose-300 dark:hover:bg-rose-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusClosingEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit closing request message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Request Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Request Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(closingMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
 

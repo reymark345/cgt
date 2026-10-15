@@ -58,8 +58,12 @@ class EmvRecordController extends Controller
             'locking' => 'locking',
             'lifting' => 'lifting',
             'users' => 'users',
+            'roles-and-permissions' => 'roles-permissions',
+            'roles-permissions' => 'roles-permissions',
             'audit-trails' => 'audit-trail',
             'audit-trail' => 'audit-trail',
+            'directory' => 'directory',
+            'libraries/directory' => 'directory',
             'user-manual' => 'manual',
             'manual' => 'manual',
             'aging' => 'aging',
@@ -73,6 +77,8 @@ class EmvRecordController extends Controller
         GranteeList::ensureTableExists();
         PayrollRecord::ensureTableExists();
         AuditTrail::ensureTableExists();
+        User::ensureRoleAndApprovalColumnsExist();
+        \App\Models\RolePermission::ensureTableExists();
 
         // 1. Check live database counts
         $emvTotal = EmvRecord::count();
@@ -713,23 +719,7 @@ class EmvRecordController extends Controller
      */
     private function toFrontendUser(User $user): array
     {
-        return [
-            'id' => $user->id,
-            'employeeId' => $user->employee_id,
-            'idNumber' => $user->id_number,
-            'name' => $user->name,
-            'email' => $user->email,
-            'username' => $user->username,
-            'avatar' => $user->avatar,
-            'position' => $user->position,
-            'employmentStatus' => $user->empstatus,
-            'portalStatus' => $user->portal_status,
-            'division' => $user->division,
-            'section' => $user->section,
-            'areaOfAssignment' => $user->area_of_assignment,
-            'contactNumber' => $user->contact_number,
-            'lastLogin' => optional($user->updated_at)->format('M d, Y h:i A'),
-        ];
+        return RolePermissionController::formatUser($user);
     }
 
     /**

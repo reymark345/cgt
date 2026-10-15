@@ -6,6 +6,7 @@ import {
   Banknote,
   Bell,
   BookOpen,
+  Building2,
   CalendarClock,
   CheckCircle2,
   ChevronDown,
@@ -77,6 +78,11 @@ type SharedPageProps = {
       avatar?: string | null;
       division?: string | null;
       section?: string | null;
+      role?: string | null;
+      is_admin?: boolean;
+      is_approved?: boolean;
+      approval_status?: string | null;
+      permissions?: Record<string, boolean>;
     } | null;
   };
 };
@@ -89,7 +95,9 @@ const viewMeta: Record<string, { section: string; icon: typeof LayoutDashboard }
   aging: { section: 'References', icon: CalendarClock },
   overpayment: { section: 'References', icon: Scale },
   users: { section: 'System', icon: UserCog },
+  'roles-permissions': { section: 'System', icon: ShieldCheck },
   'audit-trail': { section: 'System', icon: History },
+  directory: { section: 'Libraries', icon: Building2 },
   manual: { section: 'System', icon: BookOpen },
   Inquiry: { section: 'Transactions', icon: UserCog },
   inquiry: { section: 'Transactions', icon: UserCog },
@@ -190,6 +198,7 @@ export function AppShell({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [referencesCollapsed, setReferencesCollapsed] = useState(false);
   const [dataCollapsed, setDataCollapsed] = useState(false);
+  const [librariesCollapsed, setLibrariesCollapsed] = useState(false);
 
   // Desktop sidebar collapse/unhide state with persistence
   const [desktopSidebarVisible, setDesktopSidebarVisible] = useState(() => {
@@ -216,6 +225,10 @@ export function AppShell({
   const user = auth?.user;
   const displayName = user?.name ?? 'Reymark N. Valdehueza';
   const displayPosition = user?.position ?? user?.email ?? 'COMPUTER PROGRAMMER III';
+  const userRole = user?.role || (user?.is_admin ? 'Admin' : 'Grants Staff');
+  const isAdmin = Boolean(user?.is_admin || userRole === 'Admin');
+  const canAccessLibraries = Boolean(isAdmin || user?.permissions?.access_libraries);
+  const canAccessSystem = Boolean(isAdmin || user?.permissions?.access_system);
 
   const initials = useMemo(() => {
     return displayName
@@ -301,7 +314,7 @@ export function AppShell({
           <span className="text-[11px] font-semibold text-foreground/90">Caraga Network</span>
         </div>
         <span className="rounded bg-background px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-2xs dark:bg-card">
-          Admin
+          {userRole}
         </span>
       </div>
 
@@ -498,36 +511,76 @@ export function AppShell({
           )}
         </div>
 
-        <div>
-          <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
-            System
+        {canAccessLibraries && (
+          <div>
+            <div className="flex items-center justify-between px-2 pb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
+                Libraries
+              </span>
+              <button
+                className="rounded p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                onClick={() => setLibrariesCollapsed((c) => !c)}
+                type="button"
+              >
+                <ChevronDown
+                  className={cn('h-3 w-3 transition-transform duration-200', librariesCollapsed && '-rotate-90')}
+                />
+              </button>
+            </div>
+
+            {!librariesCollapsed && (
+              <div className="space-y-1">
+                <NavItem
+                  active={currentView === 'directory'}
+                  icon={Building2}
+                  onClick={() => onOpenView('directory')}
+                >
+                  Directory
+                </NavItem>
+              </div>
+            )}
           </div>
-          <div className="space-y-1">
-            <NavItem
-              active={currentView === 'users'}
-              badge={usersCount}
-              badgeColor="default"
-              icon={UserCog}
-              onClick={() => onOpenView('users')}
-            >
-              Users
-            </NavItem>
-            <NavItem
-              active={currentView === 'audit-trail'}
-              icon={History}
-              onClick={() => onOpenView('audit-trail')}
-            >
-              Audit Trails
-            </NavItem>
-            <NavItem
-              active={currentView === 'manual'}
-              icon={BookOpen}
-              onClick={() => onOpenView('manual')}
-            >
-              User Manual
-            </NavItem>
+        )}
+
+        {canAccessSystem && (
+          <div>
+            <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
+              System
+            </div>
+            <div className="space-y-1">
+              <NavItem
+                active={currentView === 'roles-permissions'}
+                icon={ShieldCheck}
+                onClick={() => onOpenView('roles-permissions')}
+              >
+                Roles and Permissions
+              </NavItem>
+              <NavItem
+                active={currentView === 'users'}
+                badge={usersCount}
+                badgeColor="default"
+                icon={UserCog}
+                onClick={() => onOpenView('users')}
+              >
+                Users
+              </NavItem>
+              <NavItem
+                active={currentView === 'audit-trail'}
+                icon={History}
+                onClick={() => onOpenView('audit-trail')}
+              >
+                Audit Trails
+              </NavItem>
+              <NavItem
+                active={currentView === 'manual'}
+                icon={BookOpen}
+                onClick={() => onOpenView('manual')}
+              >
+                User Manual
+              </NavItem>
+            </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* User Footer Profile Card */}
@@ -539,21 +592,23 @@ export function AppShell({
               <div className="text-[11px] text-muted-foreground truncate">{displayPosition}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Active Caraga Connect SSO
+                {userRole} • Active SSO
               </div>
             </div>
-            <button
-              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary"
-              onClick={() => {
-                setProfileOpen(false);
-                onOpenView('users');
-                onSetNotice('Opened user profile');
-              }}
-              type="button"
-            >
-              <UserRound className="h-4 w-4 text-muted-foreground" />
-              Account Settings
-            </button>
+            {canAccessSystem && (
+              <button
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary"
+                onClick={() => {
+                  setProfileOpen(false);
+                  onOpenView('users');
+                  onSetNotice('Opened user profile');
+                }}
+                type="button"
+              >
+                <UserRound className="h-4 w-4 text-muted-foreground" />
+                Account Settings
+              </button>
+            )}
             <button
               className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"
               onClick={logout}

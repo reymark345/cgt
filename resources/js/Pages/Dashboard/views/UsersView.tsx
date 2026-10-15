@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -17,11 +17,13 @@ import {
   Download,
   Eye,
   Filter,
+  Loader2,
   Mail,
   MapPin,
   Phone,
   RotateCcw,
   Search,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   UserCheck,
@@ -49,6 +51,11 @@ export type UserListItem = {
   areaOfAssignment?: string | null;
   contactNumber?: string | null;
   lastLogin?: string | null;
+  role?: string | null;
+  isApproved?: boolean;
+  approvalStatus?: string | null;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
 };
 
 type UsersViewProps = {
@@ -57,6 +64,11 @@ type UsersViewProps = {
 
 type SortField = 'name' | 'employeeId' | 'position' | 'division' | 'status';
 type SortOrder = 'asc' | 'desc';
+
+function getCsrfToken(): string {
+  if (typeof document === 'undefined') return '';
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
 
 function getInitials(name: string) {
   return name
@@ -86,6 +98,12 @@ function getAvatarColor(name: string) {
 }
 
 export function UsersView({ users = [] }: UsersViewProps) {
+  const [userList, setUserList] = useState<UserListItem[]>(users);
+
+  useEffect(() => {
+    setUserList(users);
+  }, [users]);
+
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [divisionFilter, setDivisionFilter] = useState('ALL');
@@ -106,31 +124,31 @@ export function UsersView({ users = [] }: UsersViewProps) {
 
   // Unique options for filter dropdowns
   const uniqueDivisions = useMemo(() => {
-    const list = users
+    const list = userList
       .map((u) => u.division?.trim())
       .filter((d): d is string => Boolean(d));
     return Array.from(new Set(list)).sort();
-  }, [users]);
+  }, [userList]);
 
   const uniqueEmploymentStatuses = useMemo(() => {
-    const list = users
+    const list = userList
       .map((u) => u.employmentStatus?.trim())
       .filter((s): s is string => Boolean(s));
     return Array.from(new Set(list)).sort();
-  }, [users]);
+  }, [userList]);
 
   // Compute KPI metrics
-  const totalCount = users.length;
-  const activeCount = users.filter((u) => (u.portalStatus?.toLowerCase() || 'active') === 'active').length;
+  const totalCount = userList.length;
+  const activeCount = userList.filter((u) => (u.portalStatus?.toLowerCase() || 'active') === 'active').length;
   const totalDivisions = uniqueDivisions.length;
   const totalPositions = useMemo(() => {
-    const positions = users.map((u) => u.position?.trim()).filter(Boolean);
+    const positions = userList.map((u) => u.position?.trim()).filter(Boolean);
     return new Set(positions).size;
-  }, [users]);
+  }, [userList]);
 
   // Filter and sort users
   const filteredUsers = useMemo(() => {
-    let result = [...users];
+    let result = [...userList];
 
     // Search filter
     if (searchTerm.trim()) {
@@ -200,7 +218,7 @@ export function UsersView({ users = [] }: UsersViewProps) {
     });
 
     return result;
-  }, [users, searchTerm, divisionFilter, employmentFilter, statusFilter, sortField, sortOrder]);
+  }, [userList, searchTerm, divisionFilter, employmentFilter, statusFilter, sortField, sortOrder]);
 
   // Pagination calculation
   const totalItems = filteredUsers.length;
@@ -736,7 +754,7 @@ export function UsersView({ users = [] }: UsersViewProps) {
                     {/* Status */}
                     <td className="px-4 py-3.5">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
                           isActive
                             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                             : 'border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300'
@@ -754,7 +772,7 @@ export function UsersView({ users = [] }: UsersViewProps) {
                     {/* Action */}
                     <td className="px-4 py-3.5 text-right">
                       <Button
-                        className="h-8 gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                        className="h-7 gap-1 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedUser(user);

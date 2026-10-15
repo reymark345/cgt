@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
   ArrowLeft,
   Bold,
@@ -131,6 +131,11 @@ export default function TransferOfFundPrint({
   dswdLogoUrl,
   bagongPilipinasLogoUrl,
 }: TransferOfFundPrintProps) {
+  const { props } = usePage<{ auth?: { user?: { is_admin?: boolean; permissions?: Record<string, boolean> } | null } }>();
+  const canEditLetterDetails = Boolean(
+    props?.auth?.user?.is_admin || props?.auth?.user?.permissions?.edit_print_forms
+  );
+
   // Document customization state (prefilled exactly matching the official sample)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
@@ -197,6 +202,7 @@ export default function TransferOfFundPrint({
   };
 
   const focusIntroEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       introInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -205,6 +211,7 @@ export default function TransferOfFundPrint({
   };
 
   const focusClosingEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       closingInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -561,18 +568,20 @@ export default function TransferOfFundPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
-              <button
-                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
-                  isEditorOpen
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/60 dark:text-indigo-300'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                }`}
-                onClick={() => setIsEditorOpen((o) => !o)}
-                type="button"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-                <span>{isEditorOpen ? 'Hide Editor' : 'Edit Letter Details'}</span>
-              </button>
+              {canEditLetterDetails && (
+                <button
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
+                    isEditorOpen
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/60 dark:text-indigo-300'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                  onClick={() => setIsEditorOpen((o) => !o)}
+                  type="button"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>{isEditorOpen ? 'Hide Editor' : 'Edit Letter Details'}</span>
+                </button>
+              )}
 
               <button
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95 cursor-pointer dark:bg-indigo-600 dark:hover:bg-indigo-500"
@@ -586,7 +595,7 @@ export default function TransferOfFundPrint({
           </div>
 
           {/* Collapsible Document Metadata & Customization Drawer */}
-          {isEditorOpen && (
+          {canEditLetterDetails && isEditorOpen && (
             <div className="mx-auto mt-3 max-w-6xl rounded-xl border border-slate-200 bg-slate-50/70 p-4 shadow-inner dark:border-slate-800 dark:bg-slate-950/60 animate-in fade-in slide-in-from-top-2">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
@@ -963,14 +972,20 @@ export default function TransferOfFundPrint({
 
                         {/* Introductory Body Message (Editable) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-indigo-50/70 hover:ring-1 hover:ring-indigo-300 dark:hover:bg-indigo-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusIntroEditor}
-                          title="Click to edit introductory message"
+                          className={`group relative mt-5 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-indigo-50/70 hover:ring-1 hover:ring-indigo-300 dark:hover:bg-indigo-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusIntroEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit introductory message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(introMessage, 'space-y-3 print:space-y-2')}
                         </div>
                       </>
@@ -1058,14 +1073,20 @@ export default function TransferOfFundPrint({
                       <>
                         {/* Closing Request Statements (Editable) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-indigo-50/70 hover:ring-1 hover:ring-indigo-300 dark:hover:bg-indigo-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusClosingEditor}
-                          title="Click to edit closing request message"
+                          className={`group relative mt-5 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-indigo-50/70 hover:ring-1 hover:ring-indigo-300 dark:hover:bg-indigo-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusClosingEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit closing request message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Request Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Request Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(closingMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
 

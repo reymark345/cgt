@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
   ArrowLeft,
   Bold,
@@ -131,6 +131,11 @@ export default function DistributionPrint({
   dswdLogoUrl,
   bagongPilipinasLogoUrl,
 }: DistributionPrintProps) {
+  const { props } = usePage<{ auth?: { user?: { is_admin?: boolean; permissions?: Record<string, boolean> } | null } }>();
+  const canEditLetterDetails = Boolean(
+    props?.auth?.user?.is_admin || props?.auth?.user?.permissions?.edit_print_forms
+  );
+
   // Document customization state (prefilled exactly matching the official sample)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
@@ -200,6 +205,7 @@ export default function DistributionPrint({
   };
 
   const focusIntroEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       introInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -208,6 +214,7 @@ export default function DistributionPrint({
   };
 
   const focusClosingEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       closingInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -552,14 +559,16 @@ export default function DistributionPrint({
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
-                onClick={() => setIsEditorOpen((v) => !v)}
-                type="button"
-              >
-                <Edit3 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                <span>{isEditorOpen ? 'Hide Customizer' : 'Edit Letter Details'}</span>
-              </button>
+              {canEditLetterDetails && (
+                <button
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  onClick={() => setIsEditorOpen((v) => !v)}
+                  type="button"
+                >
+                  <Edit3 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                  <span>{isEditorOpen ? 'Hide Customizer' : 'Edit Letter Details'}</span>
+                </button>
+              )}
 
               <button
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-xs font-bold text-white shadow-md shadow-cyan-500/25 transition hover:bg-cyan-700 active:scale-95 cursor-pointer"
@@ -573,7 +582,7 @@ export default function DistributionPrint({
           </div>
 
           {/* Collapsible Form Editor Panel */}
-          {isEditorOpen && (
+          {canEditLetterDetails && isEditorOpen && (
             <div className="mx-auto mt-3 max-w-6xl rounded-xl border border-cyan-200 bg-cyan-50/70 p-4 text-xs dark:border-cyan-900/50 dark:bg-cyan-950/30">
               <div className="mb-2.5 flex items-center justify-between font-bold text-cyan-950 dark:text-cyan-200">
                 <span className="flex items-center gap-1.5">
@@ -887,14 +896,20 @@ export default function DistributionPrint({
 
                         {/* Introductory Paragraphs (Editable) */}
                         <div
-                          className="group relative mt-4 cursor-pointer rounded-xs p-1 transition-colors hover:bg-cyan-50/70 hover:ring-1 hover:ring-cyan-300 dark:hover:bg-cyan-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusIntroEditor}
-                          title="Click to edit intro message"
+                          className={`group relative mt-4 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-cyan-50/70 hover:ring-1 hover:ring-cyan-300 dark:hover:bg-cyan-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusIntroEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit intro message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-cyan-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-cyan-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(introMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
                       </>
@@ -982,14 +997,20 @@ export default function DistributionPrint({
                       <>
                         {/* Closing Request Statements (Editable) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-cyan-50/70 hover:ring-1 hover:ring-cyan-300 dark:hover:bg-cyan-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusClosingEditor}
-                          title="Click to edit closing request message"
+                          className={`group relative mt-5 rounded-xs p-1 transition-colors ${
+                            canEditLetterDetails
+                              ? 'cursor-pointer hover:bg-cyan-50/70 hover:ring-1 hover:ring-cyan-300 dark:hover:bg-cyan-900/20'
+                              : ''
+                          } print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3`}
+                          onClick={canEditLetterDetails ? focusClosingEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit closing request message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-cyan-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Request Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-cyan-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Request Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(closingMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
 

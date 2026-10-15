@@ -15,6 +15,8 @@ import { GranteeView } from './References/GranteeView';
 import { InquiryView } from './References/InquiryView';
 import { DataModuleView } from './Dashboard/views/DataModuleView';
 import { AuditTrailView } from './Dashboard/views/AuditTrailView';
+import { RolesPermissionsView } from './Dashboard/views/RolesPermissionsView';
+import { DirectoryView } from './Libraries/DirectoryView';
 
 const pageTitles: Record<CurrentView, string> = {
   aging: 'Aging',
@@ -24,7 +26,9 @@ const pageTitles: Record<CurrentView, string> = {
   grantee: 'Grantee',
   overpayment: 'Overpayment',
   users: 'Users',
+  'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
+  directory: 'Directory',
   manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
@@ -48,7 +52,9 @@ const headTitles: Record<CurrentView, string> = {
   grantee: 'Grantee',
   overpayment: 'Overpayment',
   users: 'Users',
+  'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
+  directory: 'Directory',
   manual: 'User Manual',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
@@ -72,7 +78,9 @@ const VIEW_TO_PATH: Record<CurrentView, string> = {
   grantee: '/grantee-list',
   overpayment: '/overpayment',
   users: '/users',
+  'roles-permissions': '/roles-and-permissions',
   'audit-trail': '/audit-trails',
+  directory: '/directory',
   manual: '/user-manual',
   Inquiry: '/inquiry',
   inquiry: '/inquiry',
@@ -91,6 +99,8 @@ const VIEW_TO_PATH: Record<CurrentView, string> = {
 const PATH_TO_VIEW: Record<string, CurrentView> = {
   '/dashboard': 'dashboard',
   '/inquiry': 'inquiry',
+  '/directory': 'directory',
+  '/libraries/directory': 'directory',
   '/grantee-list': 'grantee',
   '/grantee': 'grantee',
   '/emv-database': 'emv-database',
@@ -105,6 +115,8 @@ const PATH_TO_VIEW: Record<string, CurrentView> = {
   '/locking': 'locking',
   '/lifting': 'lifting',
   '/users': 'users',
+  '/roles-and-permissions': 'roles-permissions',
+  '/roles-permissions': 'roles-permissions',
   '/audit-trails': 'audit-trail',
   '/audit-trail': 'audit-trail',
   '/user-manual': 'manual',
@@ -457,6 +469,9 @@ export default function Home({
       'force-pin': 'Force PIN opened',
       locking: 'Locking opened',
       lifting: 'Lifting opened',
+      'audit-trail': 'Audit Trails opened',
+      directory: 'Directory opened',
+      'roles-permissions': 'Roles & Permissions opened',
     };
     setNotice(notices[view] ?? `${view} opened`);
   }
@@ -622,8 +637,16 @@ export default function Home({
           <UsersView users={users} />
         </div>
 
+        {currentView === 'roles-permissions' && (
+          <RolesPermissionsView initialUsers={users} onSetNotice={setNotice} />
+        )}
+
         {currentView === 'audit-trail' && (
           <AuditTrailView onCountChange={setLiveAuditTrailCount} />
+        )}
+
+        {currentView === 'directory' && (
+          <DirectoryView onSetNotice={setNotice} />
         )}
 
         {(currentView === 'Inquiry' || currentView === 'inquiry') && (

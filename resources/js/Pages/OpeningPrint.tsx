@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
   ArrowLeft,
   Bold,
@@ -135,6 +135,11 @@ export default function OpeningPrint({
   dswdLogoUrl,
   bagongPilipinasLogoUrl,
 }: OpeningPrintProps) {
+  const { props } = usePage<{ auth?: { user?: { is_admin?: boolean; permissions?: Record<string, boolean> } | null } }>();
+  const canEditLetterDetails = Boolean(
+    props?.auth?.user?.is_admin || props?.auth?.user?.permissions?.edit_print_forms
+  );
+
   // Document customization state (prefilled exactly matching the official sample)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
@@ -204,6 +209,7 @@ export default function OpeningPrint({
   };
 
   const focusIntroEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       introInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -212,6 +218,7 @@ export default function OpeningPrint({
   };
 
   const focusClosingEditor = () => {
+    if (!canEditLetterDetails) return;
     setIsEditorOpen(true);
     setTimeout(() => {
       closingInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -558,14 +565,16 @@ export default function OpeningPrint({
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                onClick={() => setIsEditorOpen((v) => !v)}
-                type="button"
-              >
-                <Edit3 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                <span>{isEditorOpen ? 'Hide Customizer' : 'Edit Letter Details'}</span>
-              </button>
+              {canEditLetterDetails && (
+                <button
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  onClick={() => setIsEditorOpen((v) => !v)}
+                  type="button"
+                >
+                  <Edit3 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{isEditorOpen ? 'Hide Customizer' : 'Edit Letter Details'}</span>
+                </button>
+              )}
 
               <button
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-95"
@@ -579,7 +588,7 @@ export default function OpeningPrint({
           </div>
 
           {/* Collapsible Form Editor Panel */}
-          {isEditorOpen && (
+          {canEditLetterDetails && isEditorOpen && (
             <div className="mx-auto mt-3 max-w-6xl rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-xs dark:border-blue-900/50 dark:bg-blue-950/30">
               <div className="mb-2.5 flex items-center justify-between font-bold text-blue-900 dark:text-blue-200">
                 <span className="flex items-center gap-1.5">
@@ -902,16 +911,22 @@ export default function OpeningPrint({
                           Dear <span className="font-bold">{salutationName}</span>:
                         </div>
 
-                        {/* Introductory Body Message (Editable) */}
+                        {/* Introductory Body Message (Editable for Admin only) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusIntroEditor}
-                          title="Click to edit introductory message"
+                          className={
+                            canEditLetterDetails
+                              ? 'group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3'
+                              : 'relative mt-5 print:m-0 print:mt-3'
+                          }
+                          onClick={canEditLetterDetails ? focusIntroEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit introductory message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(introMessage, 'space-y-3 print:space-y-2')}
                         </div>
                       </>
@@ -991,16 +1006,22 @@ export default function OpeningPrint({
                     {/* Request Statements and Signatory on the Last Page */}
                     {pageItem.isLastPage && (
                       <>
-                        {/* Closing Request Statements (Editable) */}
+                        {/* Closing Request Statements (Editable for Admin only) */}
                         <div
-                          className="group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3"
-                          onClick={focusClosingEditor}
-                          title="Click to edit closing request message"
+                          className={
+                            canEditLetterDetails
+                              ? 'group relative mt-5 cursor-pointer rounded-xs p-1 transition-colors hover:bg-blue-50/70 hover:ring-1 hover:ring-blue-300 dark:hover:bg-blue-900/20 print:m-0 print:cursor-default print:p-0 print:hover:bg-transparent print:hover:ring-0 print:mt-3'
+                              : 'relative mt-5 print:m-0 print:mt-3'
+                          }
+                          onClick={canEditLetterDetails ? focusClosingEditor : undefined}
+                          title={canEditLetterDetails ? 'Click to edit closing request message' : undefined}
                         >
-                          <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
-                            <Edit3 className="h-2.5 w-2.5" />
-                            <span>Edit Request Message</span>
-                          </div>
+                          {canEditLetterDetails && (
+                            <div className="absolute right-1 top-1 hidden items-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs group-hover:flex print:hidden">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              <span>Edit Request Message</span>
+                            </div>
+                          )}
                           {renderFormattedMessage(closingMessage, 'space-y-3 print:space-y-1.5')}
                         </div>
 

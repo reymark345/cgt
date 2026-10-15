@@ -56,6 +56,12 @@ class SSOController extends Controller
             $request->session()->regenerate();
             $request->session()->put('sso_user_id', $user->id);
 
+            if (! $user->isApprovedAccount()) {
+                return redirect()
+                    ->route('pending.approval')
+                    ->with('message', 'Signed in with Caraga Connect SSO. Your account is awaiting administrator approval.');
+            }
+
             return redirect()
                 ->route('dashboard')
                 ->with('message', 'Signed in with Caraga Connect SSO.');

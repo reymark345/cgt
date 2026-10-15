@@ -29,6 +29,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import type { CurrentView } from '../types';
 
 type OpeningRecord = {
@@ -370,7 +371,23 @@ type DataModuleViewProps = {
   view: CurrentView;
 };
 
+type SharedAuthPageProps = {
+  auth?: {
+    user?: {
+      role?: string | null;
+      is_admin?: boolean;
+      permissions?: Record<string, boolean>;
+    } | null;
+  };
+};
+
 export function DataModuleView({ view }: DataModuleViewProps) {
+  const { auth } = usePage<SharedAuthPageProps>().props;
+  const canEditPrintForms = Boolean(
+    auth?.user?.is_admin ||
+    auth?.user?.role === 'Admin' ||
+    auth?.user?.permissions?.edit_print_forms
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [openingRecords, setOpeningRecords] = useState<OpeningRecord[]>([]);

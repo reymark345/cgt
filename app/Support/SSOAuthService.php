@@ -75,6 +75,8 @@ class SSOAuthService
      */
     public function syncUser(array $profile, array $token): User
     {
+        User::ensureRoleAndApprovalColumnsExist();
+
         $profile = $profile['data'] ?? $profile['user'] ?? $profile;
         $ssoId = (string) ($profile['id'] ?? $profile['sub'] ?? $profile['user_id'] ?? '');
         $email = $profile['email'] ?? null;
@@ -90,7 +92,10 @@ class SSOAuthService
             throw new RuntimeException('SSO profile did not include a usable id, email, or username.');
         }
 
-        return User::query()->updateOrCreate($lookup, [
+        $existingUser = User::query()->where($lookup)->first();
+        $isFirstUser = User::query()->count() === 0;
+
+        $attributes = [
             'sso_id' => $ssoId ?: null,
             'name' => $profile['name']
                 ?? trim(($profile['first_name'] ?? '').' '.($profile['last_name'] ?? ''))
@@ -107,7 +112,22 @@ class SSOAuthService
             'token_expires_at' => isset($token['expires_in'])
                 ? Carbon::now()->addSeconds((int) $token['expires_in'])
                 : null,
-        ]);
+        ];
+
+        if (! $existingUser) {
+            $attributes['role'] = $isFirstUser ? 'Admin' : 'Grants Staff';
+            $attributes['is_approved'] = $isFirstUser;
+            $attributes['approval_status'] = $isFirstUser ? 'approved' : 'pending';
+            $attributes['approved_at'] = $isFirstUser ? Carbon::now() : null;
+            $attributes['approved_by'] = $isFirstUser ? 'System Initialization' : null;
+        } elseif (empty($existingUser->role)) {
+            $isAdminAccount = $existingUser->id === 1 || strcasecmp((string) $existingUser->username, 'rnvaldehueza') === 0;
+            $attributes['role'] = $isAdminAccount ? 'Admin' : 'Grants Staff';
+            $attributes['is_approved'] = $isAdminAccount;
+            $attributes['approval_status'] = $isAdminAccount ? 'approved' : 'pending';
+        }
+
+        return User::query()->updateOrCreate($lookup, $attributes);
     }
 
     public function logout(string $accessToken): void

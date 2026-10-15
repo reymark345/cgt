@@ -107,6 +107,7 @@ class RecordAuditTrail
             'force-pin' => 'Force PIN',
             'locking' => 'Locking',
             'lifting' => 'Lifting',
+            'libraries' => 'Directory',
             'sso' => 'Authentication',
         ];
 

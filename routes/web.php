@@ -6,12 +6,14 @@ use App\Http\Controllers\EmvRecordController;
 use App\Http\Controllers\ForcePinController;
 use App\Http\Controllers\GranteeListController;
 use App\Http\Controllers\InquiryController;
+use App\Http\Controllers\LibraryDirectoryController;
 use App\Http\Controllers\LiftingController;
 use App\Http\Controllers\LockingController;
 use App\Http\Controllers\OpeningController;
 use App\Http\Controllers\OtcWithdrawalController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReplacementController;
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\TransferOfFundController;
 use Illuminate\Support\Facades\Route;
@@ -32,8 +34,12 @@ Route::get('/sso/callback', [SSOController::class, 'callback']);
 Route::post('/sso/logout', [SSOController::class, 'logout'])->name('sso.logout');
 
 Route::middleware('sso.auth')->group(function () {
+    Route::get('/pending-approval', [RolePermissionController::class, 'pendingApproval'])->name('pending.approval');
+
     Route::get('/dashboard', [EmvRecordController::class, 'dashboard'])->name('dashboard');
     Route::get('/inquiry', [EmvRecordController::class, 'dashboard'])->name('inquiry');
+    Route::get('/directory', [EmvRecordController::class, 'dashboard'])->name('directory');
+    Route::get('/libraries/directory', [EmvRecordController::class, 'dashboard']);
     Route::get('/grantee-list', [EmvRecordController::class, 'dashboard'])->name('grantee-list');
     Route::get('/grantee', [EmvRecordController::class, 'dashboard']);
     Route::get('/emv-database', [EmvRecordController::class, 'dashboard'])->name('emv-database');
@@ -48,6 +54,8 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/locking', [EmvRecordController::class, 'dashboard'])->name('locking');
     Route::get('/lifting', [EmvRecordController::class, 'dashboard'])->name('lifting');
     Route::get('/users', [EmvRecordController::class, 'dashboard'])->name('users');
+    Route::get('/roles-and-permissions', [EmvRecordController::class, 'dashboard'])->name('roles-and-permissions');
+    Route::get('/roles-permissions', [EmvRecordController::class, 'dashboard']);
     Route::get('/audit-trails', [EmvRecordController::class, 'dashboard'])->name('audit-trails');
     Route::get('/audit-trail', [EmvRecordController::class, 'dashboard']);
     Route::get('/user-manual', [EmvRecordController::class, 'dashboard'])->name('user-manual');
@@ -56,8 +64,20 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/overpayment', [EmvRecordController::class, 'dashboard'])->name('overpayment');
     Route::get('/data', [EmvRecordController::class, 'dashboard'])->name('data');
 
+    Route::get('/roles-permissions/data', [RolePermissionController::class, 'index'])->name('roles-permissions.data');
+    Route::post('/roles-permissions/roles', [RolePermissionController::class, 'storeRole'])->name('roles-permissions.roles.store');
+    Route::post('/roles-permissions/roles/{id}', [RolePermissionController::class, 'updateRole'])->name('roles-permissions.roles.update');
+    Route::post('/roles-permissions/users/{id}/approve', [RolePermissionController::class, 'approveUser'])->name('roles-permissions.users.approve');
+    Route::post('/roles-permissions/users/{id}/role', [RolePermissionController::class, 'updateUserRole'])->name('roles-permissions.users.role');
+
     Route::get('/audit-trails/search', [AuditTrailController::class, 'search'])->name('audit-trails.search');
     Route::get('/audit-trails/export', [AuditTrailController::class, 'export'])->name('audit-trails.export');
+
+    Route::get('/libraries/directory/data', [LibraryDirectoryController::class, 'index'])->name('libraries.directory.data');
+    Route::post('/libraries/directory/municipalities/store', [LibraryDirectoryController::class, 'storeMunicipality'])->name('libraries.directory.municipalities.store');
+    Route::post('/libraries/directory/municipalities/{id}/destroy', [LibraryDirectoryController::class, 'destroyMunicipality'])->name('libraries.directory.municipalities.destroy');
+    Route::post('/libraries/directory/branches/store', [LibraryDirectoryController::class, 'storeBranch'])->name('libraries.directory.branches.store');
+    Route::post('/libraries/directory/branches/{id}/destroy', [LibraryDirectoryController::class, 'destroyBranch'])->name('libraries.directory.branches.destroy');
 
     Route::get('/emv-records/import', fn () => redirect()->route('emv-database'));
     Route::post('/emv-records/import', [EmvRecordController::class, 'import'])->name('emv-records.import');

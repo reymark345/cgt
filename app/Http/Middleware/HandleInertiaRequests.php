@@ -17,6 +17,9 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
+        User::ensureRoleAndApprovalColumnsExist();
+        \App\Models\RolePermission::ensureTableExists();
+
         $user = $request->session()->get('sso_user_id')
             ? User::find($request->session()->get('sso_user_id'))
             : null;
@@ -33,6 +36,11 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => $user->avatar,
                     'division' => $user->division,
                     'section' => $user->section,
+                    'role' => $user->role ?: 'Grants Staff',
+                    'is_admin' => $user->isAdmin(),
+                    'is_approved' => $user->isApprovedAccount(),
+                    'approval_status' => $user->approval_status ?: ($user->isApprovedAccount() ? 'approved' : 'pending'),
+                    'permissions' => $user->effectivePermissions(),
                 ] : null,
             ],
             'flash' => [
