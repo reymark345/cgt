@@ -91,7 +91,7 @@ class RolePermissionController extends Controller
             ];
         }
 
-        $users = User::query()
+        $users = User::with(['approver:id,name', 'rolePermission:id,name,slug'])
             ->orderByRaw('CASE WHEN is_approved = 0 THEN 0 ELSE 1 END')
             ->orderBy('id')
             ->get()
@@ -219,7 +219,10 @@ class RolePermissionController extends Controller
         ]);
 
         if ($oldRoleName !== $newRoleName) {
-            User::where('role', $oldRoleName)->update(['role' => $newRoleName]);
+            User::where('role', $oldRoleName)->orWhere('role_id', $role->id)->update([
+                'role' => $newRoleName,
+                'role_id' => $role->id,
+            ]);
         }
 
         return response()->json([
@@ -248,9 +251,10 @@ class RolePermissionController extends Controller
         RolePermission::ensureTableExists();
 
         $targetUser = User::findOrFail($id);
-        $adminUser = $request->session()->get('sso_user_id')
-            ? User::find($request->session()->get('sso_user_id'))
-            : null;
+        $adminUserId = $request->session()->get('sso_user_id')
+            ? (int) $request->session()->get('sso_user_id')
+            : User::resolveCurrentUserId($request);
+        $adminUser = $adminUserId ? User::find($adminUserId) : null;
 
         $validated = $request->validate([
             'approved' => ['nullable', 'boolean'],
@@ -276,12 +280,17 @@ class RolePermissionController extends Controller
             ? trim($validated['role'])
             : ($targetUser->role ?: 'Grants Staff');
 
+        $roleModel = RolePermission::whereRaw('LOWER(name) = ?', [strtolower($roleName)])
+            ->orWhere('slug', Str::slug($roleName))
+            ->first();
+
         $targetUser->update([
-            'role' => $roleName,
+            'role_id' => $roleModel?->id ?? $targetUser->role_id,
+            'role' => $roleModel?->name ?? $roleName,
             'is_approved' => $approved,
             'approval_status' => $approved ? 'approved' : 'pending',
             'approved_at' => $approved ? now() : null,
-            'approved_by' => $approved ? ($adminUser?->name ?? 'System Admin') : null,
+            'approved_by' => $approved ? ($adminUser?->id ?? 1) : null,
         ]);
 
         $statusLabel = $approved ? 'approved for login' : 'set to pending approval';
@@ -289,7 +298,7 @@ class RolePermissionController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$targetUser->name} has been {$statusLabel} ({$targetUser->role}).",
-            'user' => self::formatUser($targetUser->fresh()),
+            'user' => self::formatUser($targetUser->fresh(['approver:id,name', 'rolePermission:id,name,slug'])),
         ]);
     }
 
@@ -302,9 +311,10 @@ class RolePermissionController extends Controller
         RolePermission::ensureTableExists();
 
         $targetUser = User::findOrFail($id);
-        $adminUser = $request->session()->get('sso_user_id')
-            ? User::find($request->session()->get('sso_user_id'))
-            : null;
+        $adminUserId = $request->session()->get('sso_user_id')
+            ? (int) $request->session()->get('sso_user_id')
+            : User::resolveCurrentUserId($request);
+        $adminUser = $adminUserId ? User::find($adminUserId) : null;
 
         $validated = $request->validate([
             'role' => ['required', 'string', 'max:100'],
@@ -325,19 +335,23 @@ class RolePermissionController extends Controller
 
         // If promoted to Admin, automatically approve login as well
         $isPromotedToAdmin = strtolower($newRole) === 'admin';
+        $roleModel = RolePermission::whereRaw('LOWER(name) = ?', [strtolower($newRole)])
+            ->orWhere('slug', Str::slug($newRole))
+            ->first();
 
         $targetUser->update([
-            'role' => $newRole,
+            'role_id' => $roleModel?->id ?? $targetUser->role_id,
+            'role' => $roleModel?->name ?? $newRole,
             'is_approved' => $isPromotedToAdmin ? true : $targetUser->is_approved,
             'approval_status' => $isPromotedToAdmin ? 'approved' : $targetUser->approval_status,
             'approved_at' => ($isPromotedToAdmin && ! $targetUser->approved_at) ? now() : $targetUser->approved_at,
-            'approved_by' => ($isPromotedToAdmin && ! $targetUser->approved_by) ? ($adminUser?->name ?? 'System Admin') : $targetUser->approved_by,
+            'approved_by' => ($isPromotedToAdmin && ! $targetUser->approved_by) ? ($adminUser?->id ?? 1) : $targetUser->approved_by,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "{$targetUser->name}'s role has been updated to {$newRole}.",
-            'user' => self::formatUser($targetUser->fresh()),
+            'message' => "{$targetUser->name}'s role has been updated to {$targetUser->role}.",
+            'user' => self::formatUser($targetUser->fresh(['approver:id,name', 'rolePermission:id,name,slug'])),
         ]);
     }
 
@@ -349,6 +363,9 @@ class RolePermissionController extends Controller
     public static function formatUser(User $user): array
     {
         $isApproved = $user->isApprovedAccount();
+        $approvedByName = $user->relationLoaded('approver') && $user->approver
+            ? $user->approver->name
+            : ($user->approved_by ? User::resolveUserNameById($user->approved_by) : null);
 
         return [
             'id' => $user->id,
@@ -365,11 +382,13 @@ class RolePermissionController extends Controller
             'section' => $user->section,
             'areaOfAssignment' => $user->area_of_assignment,
             'contactNumber' => $user->contact_number,
+            'roleId' => $user->role_id,
             'role' => $user->role ?: 'Grants Staff',
             'isApproved' => $isApproved,
             'approvalStatus' => $user->approval_status ?: ($isApproved ? 'approved' : 'pending'),
             'approvedAt' => optional($user->approved_at)->format('M d, Y h:i A'),
-            'approvedBy' => $user->approved_by,
+            'approvedBy' => $approvedByName,
+            'approvedById' => $user->approved_by,
             'lastLogin' => optional($user->updated_at)->format('M d, Y h:i A'),
         ];
     }

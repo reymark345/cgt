@@ -20,7 +20,7 @@ class DistributionController extends Controller
     {
         Distribution::ensureTableExists();
 
-        $query = Distribution::query();
+        $query = Distribution::with('creator:id,name');
 
         if ($search = trim((string) $request->input('search', ''))) {
             $query->where(function ($q) use ($search) {
@@ -31,16 +31,27 @@ class DistributionController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('card_number', 'like', "%{$search}%")
                     ->orWhere('schedule', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%");
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereHas('creator', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
         $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
 
+        $items = collect($paginator->items())->map(function (Distribution $row) {
+            $arr = $row->toArray();
+            $arr['created_by_id'] = $row->created_by;
+            $arr['created_by'] = $row->creator?->name ?? User::resolveUserNameById($row->created_by);
+
+            return $arr;
+        })->all();
+
         return response()->json([
             'success' => true,
-            'data' => $paginator->items(),
+            'data' => $items,
             'total' => $paginator->total(),
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -55,7 +66,7 @@ class DistributionController extends Controller
     {
         Distribution::ensureTableExists();
 
-        $records = Distribution::orderBy('id', 'asc')->get();
+        $records = Distribution::with('creator:id,name')->orderBy('id', 'asc')->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -72,6 +83,7 @@ class DistributionController extends Controller
                 'Name',
                 'Card Number',
                 'Schedule',
+                'Added By',
                 'Status',
                 'Created At',
             ]);
@@ -85,6 +97,7 @@ class DistributionController extends Controller
                     $row->name,
                     $row->card_number,
                     $row->schedule,
+                    $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     optional($row->created_at)->format('Y-m-d H:i:s'),
                 ]);
@@ -117,14 +130,18 @@ class DistributionController extends Controller
             $validated['item_no'] = (string) ((Distribution::max('id') ?? 0) + 1);
         }
 
-        $validated['created_by'] = $this->resolveCurrentUserName($request);
+        $validated['created_by'] = User::resolveCurrentUserId($request);
 
         $record = Distribution::create($validated);
+        $record->load('creator:id,name');
+        $data = $record->toArray();
+        $data['created_by_id'] = $record->created_by;
+        $data['created_by'] = $record->creator?->name ?? User::resolveUserNameById($record->created_by);
 
         return response()->json([
             'success' => true,
             'message' => 'Distribution record successfully created.',
-            'data' => $record,
+            'data' => $data,
         ]);
     }
 
@@ -181,18 +198,20 @@ class DistributionController extends Controller
         }
 
         $hhId = $record->household_id_number;
+        $hhRequestId = $record->household_request_id;
 
-        // If this was added via Inquiry request, also clean up the corresponding household request
-        if (! empty($hhId)) {
-            HouseholdRequest::ensureTableExists();
+        $record->delete();
+
+        HouseholdRequest::ensureTableExists();
+        if (! empty($hhRequestId)) {
+            HouseholdRequest::where('id', $hhRequestId)->delete();
+        } elseif (! empty($hhId)) {
             HouseholdRequest::where('hh_id', $hhId)
                 ->where('request_name', 'distribution')
                 ->latest('id')
                 ->first()
                 ?->delete();
         }
-
-        $record->delete();
 
         return response()->json([
             'success' => true,
@@ -202,45 +221,6 @@ class DistributionController extends Controller
             'id' => $id,
             'module_counts' => \App\Http\Controllers\InquiryController::getModuleCounts(),
         ]);
-    }
-
-    /**
-     * Resolve the current authenticated user's full name.
-     */
-    protected function resolveCurrentUserName(Request $request): string
-    {
-        $passed = trim((string) $request->input('created_by', ''));
-        if ($passed !== '' && $passed !== 'Authorized User') {
-            return $passed;
-        }
-
-        $ssoUserId = $request->session()->get('sso_user_id');
-        if ($ssoUserId) {
-            $user = User::find($ssoUserId);
-            if ($user && ! empty($user->name)) {
-                return $user->name;
-            }
-        }
-
-        $sessionUser = session('user');
-        if (is_object($sessionUser) && ! empty($sessionUser->name)) {
-            return $sessionUser->name;
-        }
-        if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
-            return $sessionUser['name'];
-        }
-
-        $authUser = auth()->user();
-        if ($authUser && ! empty($authUser->name)) {
-            return $authUser->name;
-        }
-
-        $firstUser = User::first();
-        if ($firstUser && ! empty($firstUser->name)) {
-            return $firstUser->name;
-        }
-
-        return 'Authorized User';
     }
 }
 

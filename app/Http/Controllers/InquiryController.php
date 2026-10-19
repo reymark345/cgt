@@ -334,8 +334,9 @@ class InquiryController extends Controller
         // Load all requested type rows
         $typeRows = DB::table('request')->whereIn('name', $requestNames)->get()->keyBy('name');
 
-        // Get creator info from session / auth / input
-        $creator = $this->resolveCurrentUserName($request);
+        // Get creator ID and display name from session / auth / input
+        $creatorId = $this->resolveCurrentUserId($request);
+        $creatorName = User::resolveUserNameById($creatorId);
 
         // Resolve candidate HH_IDs to handle any prefixes (e.g., HHID)
         $strippedHhId = preg_replace('/^hhid[-\s]*/i', '', $hhId);
@@ -376,12 +377,13 @@ class InquiryController extends Controller
 
             $record = HouseholdRequest::create([
                 'hh_id' => $hhId,
+                'request_id' => $typeRow ? (int) $typeRow->id : null,
                 'request_name' => $reqName,
                 'request_label' => $label,
                 'beneficiary_name' => $beneficiaryName ?: null,
                 'remarks' => $remarks ?: null,
                 'status' => 'Pending',
-                'created_by' => $creator,
+                'created_by' => $creatorId,
             ]);
 
             // Resolve Address Parts
@@ -435,6 +437,7 @@ class InquiryController extends Controller
                 $nextItemNo = (Opening::max('id') ?? 0) + 1;
 
                 Opening::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -444,7 +447,7 @@ class InquiryController extends Controller
                     'status_of_old_grantee' => $oldStatus,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -456,6 +459,7 @@ class InquiryController extends Controller
                 $nextItemNo = (Distribution::max('id') ?? 0) + 1;
 
                 Distribution::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -465,7 +469,7 @@ class InquiryController extends Controller
                     'schedule' => $schedule,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -478,6 +482,7 @@ class InquiryController extends Controller
                     : null;
 
                 OtcWithdrawal::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -487,7 +492,7 @@ class InquiryController extends Controller
                     'account_balance' => $payrollBalance,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -497,6 +502,7 @@ class InquiryController extends Controller
                 $nextItemNo = (Replacement::max('id') ?? 0) + 1;
 
                 Replacement::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -505,7 +511,7 @@ class InquiryController extends Controller
                     'reason_of_request' => $remarks ?: 'Damaged / Defective / Lost cash card replacement',
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -516,6 +522,7 @@ class InquiryController extends Controller
                 $newCardNumber = $payroll->new_account_number ?? null;
 
                 TransferOfFund::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -525,7 +532,7 @@ class InquiryController extends Controller
                     'new_cardholder_name' => $resolvedName,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -535,6 +542,7 @@ class InquiryController extends Controller
                 $nextItemNo = (ForcePin::max('id') ?? 0) + 1;
 
                 ForcePin::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -542,7 +550,7 @@ class InquiryController extends Controller
                     'card_number' => $resolvedCardNumber,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -552,6 +560,7 @@ class InquiryController extends Controller
                 $nextItemNo = (Locking::max('id') ?? 0) + 1;
 
                 Locking::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -559,7 +568,7 @@ class InquiryController extends Controller
                     'card_number' => $resolvedCardNumber,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
@@ -569,6 +578,7 @@ class InquiryController extends Controller
                 $nextItemNo = (Lifting::max('id') ?? 0) + 1;
 
                 Lifting::create([
+                    'household_request_id' => $record->id,
                     'item_no' => (string) $nextItemNo,
                     'address' => $resolvedAddress,
                     'household_id_number' => $hhId,
@@ -576,19 +586,21 @@ class InquiryController extends Controller
                     'card_number' => $resolvedCardNumber,
                     'status' => 'Pending',
                     'remarks' => $remarks ?: null,
-                    'created_by' => $creator,
+                    'created_by' => $creatorId,
                 ]);
             }
 
             $createdRecords[] = [
                 'id' => $record->id,
                 'hh_id' => $record->hh_id,
+                'request_id' => $record->request_id,
                 'request_name' => $record->request_name,
                 'request_label' => $record->request_label,
                 'beneficiary_name' => $record->beneficiary_name,
                 'remarks' => $record->remarks,
                 'status' => $record->status,
-                'created_by' => $record->created_by,
+                'created_by' => $creatorName,
+                'created_by_id' => $creatorId,
                 'created_at' => optional($record->created_at)->format('M d, Y h:i A'),
             ];
         }
@@ -623,24 +635,25 @@ class InquiryController extends Controller
         HouseholdRequest::ensureTableExists();
 
         $defaultCreator = $this->resolveCurrentUserName($request);
-        $requests = HouseholdRequest::where('hh_id', $hhId)
+        $requests = HouseholdRequest::with('creator:id,name,email')
+            ->where('hh_id', $hhId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($req) use ($defaultCreator) {
-                $creator = $req->created_by;
-                if (empty($creator) || $creator === 'Authorized User') {
-                    $creator = $defaultCreator;
-                }
+                $creatorName = $req->creator?->name
+                    ?: ($req->created_by ? User::resolveUserNameById($req->created_by) : $defaultCreator);
 
                 return [
                     'id' => $req->id,
                     'hh_id' => $req->hh_id,
+                    'request_id' => $req->request_id,
                     'request_name' => $req->request_name,
                     'request_label' => $req->request_label,
                     'beneficiary_name' => $req->beneficiary_name,
                     'remarks' => $req->remarks,
                     'status' => $req->status,
-                    'created_by' => $creator,
+                    'created_by' => $creatorName,
+                    'created_by_id' => $req->created_by,
                     'created_at' => optional($req->created_at)->format('M d, Y h:i A'),
                 ];
             });
@@ -652,44 +665,45 @@ class InquiryController extends Controller
     }
 
     /**
-     * Resolve the current authenticated user's full name.
+     * Resolve the current authenticated user's integer ID (`users.id`).
      */
-    protected function resolveCurrentUserName(Request $request): string
+    protected function resolveCurrentUserId(Request $request): ?int
     {
         $passed = trim((string) $request->input('created_by', ''));
         if ($passed !== '' && $passed !== 'Authorized User') {
-            return $passed;
+            if (ctype_digit($passed)) {
+                $u = User::find((int) $passed);
+                if ($u) {
+                    return (int) $u->id;
+                }
+            }
+            $uByName = User::where('name', $passed)->orWhere('email', $passed)->first();
+            if ($uByName) {
+                return (int) $uByName->id;
+            }
         }
 
         if ($request->hasSession()) {
             $ssoUserId = $request->session()->get('sso_user_id');
-            if ($ssoUserId) {
-                $user = User::find($ssoUserId);
-                if ($user && ! empty($user->name)) {
-                    return $user->name;
+            if ($ssoUserId && is_numeric($ssoUserId)) {
+                $user = User::find((int) $ssoUserId);
+                if ($user) {
+                    return (int) $user->id;
                 }
             }
-
-            $sessionUser = session('user');
-            if (is_object($sessionUser) && ! empty($sessionUser->name)) {
-                return $sessionUser->name;
-            }
-            if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
-                return $sessionUser['name'];
-            }
         }
 
-        $authUser = auth()->user();
-        if ($authUser && ! empty($authUser->name)) {
-            return $authUser->name;
-        }
+        return User::resolveCurrentUserId($request);
+    }
 
-        $firstUser = User::first();
-        if ($firstUser && ! empty($firstUser->name)) {
-            return $firstUser->name;
-        }
+    /**
+     * Resolve the current authenticated user's full name.
+     */
+    protected function resolveCurrentUserName(Request $request): string
+    {
+        $uid = $this->resolveCurrentUserId($request);
 
-        return 'Authorized User';
+        return $uid ? User::resolveUserNameById($uid) : 'Authorized User';
     }
 
     /**

@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class User extends Model
@@ -39,6 +42,7 @@ class User extends Model
         'birthdate',
         'avatar',
         'portal_status',
+        'role_id',
         'course',
         'address',
         'official_email',
@@ -85,9 +89,97 @@ class User extends Model
             'access_token' => 'encrypted',
             'refresh_token' => 'encrypted',
             'token_expires_at' => 'datetime',
+            'role_id' => 'integer',
             'is_approved' => 'boolean',
             'approved_at' => 'datetime',
+            'approved_by' => 'integer',
         ];
+    }
+
+    public function rolePermission(): BelongsTo
+    {
+        return $this->belongsTo(RolePermission::class, 'role_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'approved_by');
+    }
+
+    /**
+     * Resolve the integer `users.id` for the currently authenticated or SSO session user.
+     */
+    public static function resolveCurrentUserId(?Request $request = null): ?int
+    {
+        $authId = Auth::id();
+        if ($authId && is_numeric($authId)) {
+            return (int) $authId;
+        }
+
+        $request = $request ?? request();
+        if ($request && $request->hasSession()) {
+            $ssoUser = $request->session()->get('sso_user');
+            if (is_array($ssoUser)) {
+                if (! empty($ssoUser['local_user_id']) && is_numeric($ssoUser['local_user_id'])) {
+                    return (int) $ssoUser['local_user_id'];
+                }
+                if (! empty($ssoUser['id'])) {
+                    $foundBySso = static::query()->where('sso_id', (string) $ssoUser['id'])->value('id');
+                    if ($foundBySso) {
+                        return (int) $foundBySso;
+                    }
+                    if (is_numeric($ssoUser['id'])) {
+                        $foundById = static::query()->where('id', (int) $ssoUser['id'])->value('id');
+                        if ($foundById) {
+                            return (int) $foundById;
+                        }
+                    }
+                }
+                if (! empty($ssoUser['email'])) {
+                    $foundByEmail = static::query()->where('email', (string) $ssoUser['email'])->value('id');
+                    if ($foundByEmail) {
+                        return (int) $foundByEmail;
+                    }
+                }
+                if (! empty($ssoUser['username'])) {
+                    $foundByUsername = static::query()->where('username', (string) $ssoUser['username'])->value('id');
+                    if ($foundByUsername) {
+                        return (int) $foundByUsername;
+                    }
+                }
+                if (! empty($ssoUser['name'])) {
+                    $foundByName = static::query()->where('name', (string) $ssoUser['name'])->value('id');
+                    if ($foundByName) {
+                        return (int) $foundByName;
+                    }
+                }
+            }
+        }
+
+        $fallbackId = static::query()->orderBy('id')->value('id');
+
+        return $fallbackId ? (int) $fallbackId : null;
+    }
+
+    /**
+     * Resolve a display name from a user ID or existing string name.
+     */
+    public static function resolveUserNameById($idOrName): string
+    {
+        if ($idOrName instanceof self) {
+            return $idOrName->name ?: ($idOrName->email ?: 'Authorized User');
+        }
+        if ($idOrName === null || $idOrName === '') {
+            return '—';
+        }
+        if (is_numeric($idOrName)) {
+            $user = static::query()->select('id', 'name', 'email')->find((int) $idOrName);
+            if ($user) {
+                return $user->name ?: ($user->email ?: 'User #' . $user->id);
+            }
+        }
+
+        return (string) $idOrName;
     }
 
     /**
@@ -99,14 +191,20 @@ class User extends Model
             return;
         }
 
+        RolePermission::ensureTableExists();
+
         if (! Schema::hasColumn('users', 'role')) {
             Schema::table('users', function (Blueprint $table) {
-                $table->string('role', 100)->default('Grants Staff')->after('portal_status');
+                $table->unsignedBigInteger('role_id')->nullable()->after('portal_status');
+                $table->string('role', 100)->default('Grants Staff')->after('role_id');
                 $table->boolean('is_approved')->default(false)->after('role');
                 $table->string('approval_status', 40)->default('pending')->after('is_approved');
                 $table->timestamp('approved_at')->nullable()->after('approval_status');
-                $table->string('approved_by', 150)->nullable()->after('approved_at');
+                $table->unsignedBigInteger('approved_by')->nullable()->after('approved_at');
             });
+
+            $adminRoleId = RolePermission::query()->where('slug', 'admin')->value('id');
+            $staffRoleId = RolePermission::query()->where('slug', 'grants-staff')->value('id');
 
             // Ensure the primary Admin (id = 1 / rnvaldehueza) is set as Admin and Approved
             $adminUser = static::query()
@@ -116,11 +214,12 @@ class User extends Model
 
             if ($adminUser) {
                 $adminUser->update([
+                    'role_id' => $adminRoleId,
                     'role' => 'Admin',
                     'is_approved' => true,
                     'approval_status' => 'approved',
                     'approved_at' => now(),
-                    'approved_by' => 'System Initialization',
+                    'approved_by' => $adminUser->id,
                 ]);
             }
 
@@ -128,13 +227,12 @@ class User extends Model
             static::query()
                 ->where('id', '!=', $adminUser?->id ?? 0)
                 ->update([
+                    'role_id' => $staffRoleId,
                     'role' => 'Grants Staff',
                     'is_approved' => false,
                     'approval_status' => 'pending',
                 ]);
         }
-
-        RolePermission::ensureTableExists();
     }
 
     public function isAdmin(): bool

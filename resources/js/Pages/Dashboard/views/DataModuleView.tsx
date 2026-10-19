@@ -43,6 +43,7 @@ type OpeningRecord = {
   status_of_old_grantee: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -57,6 +58,7 @@ type DistributionRecord = {
   schedule: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -71,6 +73,7 @@ type OtcWithdrawalRecord = {
   account_balance: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -84,6 +87,7 @@ type ReplacementRecord = {
   reason_of_request: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -98,6 +102,7 @@ type TransferOfFundRecord = {
   new_cardholder_name: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -110,6 +115,7 @@ type ForcePinRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -122,6 +128,7 @@ type LockingRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -134,6 +141,7 @@ type LiftingRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  created_by?: string | null;
   created_at: string | null;
 };
 
@@ -170,6 +178,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name of Old Grantee',
       'Card Number of Old',
       'Status of Old Grantee',
+      'Added By',
       'Action',
     ],
   },
@@ -187,6 +196,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name',
       'Card Number',
       'Schedule',
+      'Added By',
       'Action',
     ],
   },
@@ -204,6 +214,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Card Number',
       'Reason of Request',
       'Account Balance',
+      'Added By',
       'Action',
     ],
   },
@@ -220,6 +231,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name/ Updated Name',
       'Card Number',
       'Reason of Request',
+      'Added By',
       'Action',
     ],
   },
@@ -237,6 +249,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Old Cardholder Name',
       'New Card Number',
       'New Cardholder Name',
+      'Added By',
       'Action',
     ],
   },
@@ -252,6 +265,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'Added By',
       'Action',
     ],
   },
@@ -267,6 +281,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'Added By',
       'Action',
     ],
   },
@@ -282,6 +297,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'Added By',
       'Action',
     ],
   },
@@ -1076,6 +1092,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                           {item.status_of_old_grantee || 'Active'}
                         </span>
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
@@ -1172,6 +1191,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                           <span className="text-muted-foreground italic">Pending schedule</span>
                         )}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
@@ -1262,6 +1284,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       <td className="px-4 py-3 font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {item.account_balance || '-'}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
@@ -1348,6 +1373,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="max-w-[250px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
                         {item.reason_of_request || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -1439,6 +1467,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       <td className="px-4 py-3 font-medium text-foreground">
                         {item.new_cardholder_name || '-'}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
@@ -1522,6 +1553,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
                         {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -1607,6 +1641,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
                         {item.card_number || '-'}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
@@ -1690,6 +1727,9 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
                         {item.card_number || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {item.created_by || '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">

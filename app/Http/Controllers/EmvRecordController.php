@@ -160,10 +160,16 @@ class EmvRecordController extends Controller
         $moduleCounts = InquiryController::getModuleCounts();
         $dashboardMetrics['moduleCounts'] = $moduleCounts;
 
-        // Query recent requests from household_requests
+        // Query recent requests from household_requests with creator name resolved via users foreign key
         $dashboardMetrics['recentRequests'] = Schema::hasTable('household_requests')
             ? DB::table('household_requests')
-                ->orderByDesc('id')
+                ->leftJoin('users', 'household_requests.created_by', '=', 'users.id')
+                ->select(
+                    'household_requests.*',
+                    DB::raw('COALESCE(users.name, household_requests.created_by) as created_by'),
+                    'household_requests.created_by as created_by_id'
+                )
+                ->orderByDesc('household_requests.id')
                 ->limit(8)
                 ->get()
             : [];

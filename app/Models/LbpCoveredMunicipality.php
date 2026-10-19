@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -16,8 +17,21 @@ class LbpCoveredMunicipality extends Model
     protected $fillable = [
         'province',
         'municipality',
+        'lbp_branch_id',
         'covered_lbp_branch',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'lbp_branch_id' => 'integer',
+        ];
+    }
+
+    public function branchDirectory(): BelongsTo
+    {
+        return $this->belongsTo(LbpBranchDirectory::class, 'lbp_branch_id');
+    }
 
     /**
      * Ensure the lbp_covered_municipalities table exists and is seeded with default Caraga data.
@@ -29,6 +43,7 @@ class LbpCoveredMunicipality extends Model
                 $table->id();
                 $table->string('province')->index();
                 $table->string('municipality')->index();
+                $table->unsignedBigInteger('lbp_branch_id')->nullable()->index();
                 $table->string('covered_lbp_branch')->index();
                 $table->timestamps();
             });

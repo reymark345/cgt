@@ -20,7 +20,7 @@ class ReplacementController extends Controller
     {
         Replacement::ensureTableExists();
 
-        $query = Replacement::query();
+        $query = Replacement::with('creator:id,name');
 
         if ($search = trim((string) $request->input('search', ''))) {
             $query->where(function ($q) use ($search) {
@@ -30,16 +30,27 @@ class ReplacementController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('card_number', 'like', "%{$search}%")
                     ->orWhere('reason_of_request', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%");
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereHas('creator', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
         $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
 
+        $items = collect($paginator->items())->map(function (Replacement $row) {
+            $arr = $row->toArray();
+            $arr['created_by_id'] = $row->created_by;
+            $arr['created_by'] = $row->creator?->name ?? User::resolveUserNameById($row->created_by);
+
+            return $arr;
+        })->all();
+
         return response()->json([
             'success' => true,
-            'data' => $paginator->items(),
+            'data' => $items,
             'total' => $paginator->total(),
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -54,7 +65,7 @@ class ReplacementController extends Controller
     {
         Replacement::ensureTableExists();
 
-        $records = Replacement::orderBy('id', 'asc')->get();
+        $records = Replacement::with('creator:id,name')->orderBy('id', 'asc')->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -70,6 +81,7 @@ class ReplacementController extends Controller
                 'Name/ Updated Name',
                 'Card Number',
                 'Reason of Request',
+                'Added By',
                 'Status',
                 'Created At',
             ]);
@@ -82,6 +94,7 @@ class ReplacementController extends Controller
                     $row->name,
                     $row->card_number,
                     $row->reason_of_request,
+                    $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     optional($row->created_at)->format('Y-m-d H:i:s'),
                 ]);
@@ -113,14 +126,18 @@ class ReplacementController extends Controller
             $validated['item_no'] = (string) ((Replacement::max('id') ?? 0) + 1);
         }
 
-        $validated['created_by'] = $this->resolveCurrentUserName($request);
+        $validated['created_by'] = User::resolveCurrentUserId($request);
 
         $record = Replacement::create($validated);
+        $record->load('creator:id,name');
+        $data = $record->toArray();
+        $data['created_by_id'] = $record->created_by;
+        $data['created_by'] = $record->creator?->name ?? User::resolveUserNameById($record->created_by);
 
         return response()->json([
             'success' => true,
             'message' => 'Replacement record successfully created.',
-            'data' => $record,
+            'data' => $data,
         ]);
     }
 
@@ -176,17 +193,20 @@ class ReplacementController extends Controller
         }
 
         $hhId = $record->household_id_number;
+        $hhRequestId = $record->household_request_id;
 
-        if (! empty($hhId)) {
-            HouseholdRequest::ensureTableExists();
+        $record->delete();
+
+        HouseholdRequest::ensureTableExists();
+        if (! empty($hhRequestId)) {
+            HouseholdRequest::where('id', $hhRequestId)->delete();
+        } elseif (! empty($hhId)) {
             HouseholdRequest::where('hh_id', $hhId)
                 ->whereIn('request_name', ['replacement', 'replacement-series', 'replacement_series'])
                 ->latest('id')
                 ->first()
                 ?->delete();
         }
-
-        $record->delete();
 
         return response()->json([
             'success' => true,
@@ -196,45 +216,6 @@ class ReplacementController extends Controller
             'id' => $id,
             'module_counts' => \App\Http\Controllers\InquiryController::getModuleCounts(),
         ]);
-    }
-
-    /**
-     * Resolve the current authenticated user's full name.
-     */
-    protected function resolveCurrentUserName(Request $request): string
-    {
-        $passed = trim((string) $request->input('created_by', ''));
-        if ($passed !== '' && $passed !== 'Authorized User') {
-            return $passed;
-        }
-
-        $ssoUserId = $request->session()->get('sso_user_id');
-        if ($ssoUserId) {
-            $user = User::find($ssoUserId);
-            if ($user && ! empty($user->name)) {
-                return $user->name;
-            }
-        }
-
-        $sessionUser = session('user');
-        if (is_object($sessionUser) && ! empty($sessionUser->name)) {
-            return $sessionUser->name;
-        }
-        if (is_array($sessionUser) && ! empty($sessionUser['name'])) {
-            return $sessionUser['name'];
-        }
-
-        $authUser = auth()->user();
-        if ($authUser && ! empty($authUser->name)) {
-            return $authUser->name;
-        }
-
-        $firstUser = User::first();
-        if ($firstUser && ! empty($firstUser->name)) {
-            return $firstUser->name;
-        }
-
-        return 'Authorized User';
     }
 }
 

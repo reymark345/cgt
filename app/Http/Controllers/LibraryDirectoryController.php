@@ -39,27 +39,40 @@ class LibraryDirectoryController extends Controller
     public function storeMunicipality(Request $request): JsonResponse
     {
         LbpCoveredMunicipality::ensureTableExists();
+        LbpBranchDirectory::ensureTableExists();
 
         $validated = $request->validate([
             'id' => ['nullable', 'integer'],
             'province' => ['required', 'string', 'max:255'],
             'municipality' => ['required', 'string', 'max:255'],
+            'lbp_branch_id' => ['nullable', 'integer'],
             'covered_lbp_branch' => ['required', 'string', 'max:255'],
         ]);
+
+        $branchName = trim($validated['covered_lbp_branch']);
+        $branchId = ! empty($validated['lbp_branch_id'])
+            ? (int) $validated['lbp_branch_id']
+            : LbpBranchDirectory::whereRaw('LOWER(TRIM(branch)) = ?', [mb_strtolower($branchName)])->value('id');
+
+        if (! $branchId && str_contains(mb_strtolower($branchName), 'surigao')) {
+            $branchId = LbpBranchDirectory::whereRaw('LOWER(TRIM(branch)) = ?', ['surigao - luna'])->value('id');
+        }
 
         if (! empty($validated['id'])) {
             $record = LbpCoveredMunicipality::findOrFail($validated['id']);
             $record->update([
                 'province' => trim($validated['province']),
                 'municipality' => trim($validated['municipality']),
-                'covered_lbp_branch' => trim($validated['covered_lbp_branch']),
+                'lbp_branch_id' => $branchId ? (int) $branchId : null,
+                'covered_lbp_branch' => $branchName,
             ]);
             $message = 'Covered Municipality updated successfully.';
         } else {
             $record = LbpCoveredMunicipality::create([
                 'province' => trim($validated['province']),
                 'municipality' => trim($validated['municipality']),
-                'covered_lbp_branch' => trim($validated['covered_lbp_branch']),
+                'lbp_branch_id' => $branchId ? (int) $branchId : null,
+                'covered_lbp_branch' => $branchName,
             ]);
             $message = 'Covered Municipality added successfully.';
         }
