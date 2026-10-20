@@ -389,7 +389,7 @@ class RolePermissionController extends Controller
             'approvedAt' => optional($user->approved_at)->format('M d, Y h:i A'),
             'approvedBy' => $approvedByName,
             'approvedById' => $user->approved_by,
-            'lastLogin' => optional($user->updated_at)->format('M d, Y h:i A'),
+            'lastLogin' => optional($user->last_login_at ?? $user->updated_at)->format('M d, Y h:i A'),
         ];
     }
 }

@@ -223,9 +223,11 @@ export default function Landing() {
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/92 backdrop-blur">
           <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <Link className="flex items-center gap-3" href="/">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-                <PackageCheck className="h-7 w-7" />
-              </div>
+              <img
+                alt="GRANTS Logo"
+                className="h-11 w-11 object-contain"
+                src="/images/grants_logo_light.png"
+              />
               <div>
                 <div className="text-lg font-extrabold leading-5 tracking-normal text-slate-900">GRANTS</div>
                 <div className="text-xs font-semibold uppercase tracking-normal text-slate-500">

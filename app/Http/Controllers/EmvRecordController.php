@@ -82,7 +82,10 @@ class EmvRecordController extends Controller
         $emvTotal = EmvRecord::count();
         $granteeTotal = GranteeList::count();
         $payrollTotal = PayrollRecord::count();
-        $auditTrailTotal = AuditTrail::where('method', 'POST')->count();
+        $auditTrailTotal = AuditTrail::where('method', 'POST')
+            ->where('url', '!=', '/sso/logout')
+            ->where('action', '!=', 'Signed Out of Portal (SSO)')
+            ->count();
 
         // 2. Validate cache against live counts - if database changed (e.g. truncated or imported), purge stale cache immediately
         $cachedMetrics = Cache::get('dashboard_system_metrics_v3');

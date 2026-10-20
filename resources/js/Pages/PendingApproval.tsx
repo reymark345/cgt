@@ -64,9 +64,11 @@ export default function PendingApproval({ account }: PendingApprovalProps) {
         <div className="relative z-10 w-full max-w-xl">
           {/* Top Brand Header */}
           <div className="mb-6 flex items-center justify-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
-              <PackageCheck className="h-6 w-6" />
-            </div>
+            <img
+              alt="GRANTS Logo"
+              className="h-11 w-11 object-contain"
+              src="/images/grants_logo_dark.png"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black tracking-tight text-white">GRANTS</span>

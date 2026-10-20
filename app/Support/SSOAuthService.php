@@ -112,6 +112,7 @@ class SSOAuthService
             'token_expires_at' => isset($token['expires_in'])
                 ? Carbon::now()->addSeconds((int) $token['expires_in'])
                 : null,
+            'last_login_at' => Carbon::now(),
         ];
 
         if (! $existingUser) {
@@ -119,7 +120,7 @@ class SSOAuthService
             $attributes['is_approved'] = $isFirstUser;
             $attributes['approval_status'] = $isFirstUser ? 'approved' : 'pending';
             $attributes['approved_at'] = $isFirstUser ? Carbon::now() : null;
-            $attributes['approved_by'] = $isFirstUser ? 'System Initialization' : null;
+            $attributes['approved_by'] = $isFirstUser ? 1 : null;
         } elseif (empty($existingUser->role)) {
             $isAdminAccount = $existingUser->id === 1 || strcasecmp((string) $existingUser->username, 'rnvaldehueza') === 0;
             $attributes['role'] = $isAdminAccount ? 'Admin' : 'Grants Staff';
@@ -127,7 +128,10 @@ class SSOAuthService
             $attributes['approval_status'] = $isAdminAccount ? 'approved' : 'pending';
         }
 
-        return User::query()->updateOrCreate($lookup, $attributes);
+        $user = User::query()->updateOrCreate($lookup, $attributes);
+        $user->touch();
+
+        return $user;
     }
 
     public function logout(string $accessToken): void

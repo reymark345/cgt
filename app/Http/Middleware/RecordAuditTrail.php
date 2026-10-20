@@ -26,12 +26,24 @@ class RecordAuditTrail
             return $response;
         }
 
+        $path = trim($request->path(), '/');
+        $lowerPath = strtolower($path);
+        $routeName = $request->route()?->getName();
+
+        // Exclude SSO sign-out / authentication routes from Audit Trail
+        if (
+            $lowerPath === 'sso/logout'
+            || str_starts_with($lowerPath, 'sso/')
+            || str_starts_with($lowerPath, 'login-sso')
+            || $routeName === 'sso.logout'
+        ) {
+            return $response;
+        }
+
         try {
             AuditTrail::ensureTableExists();
 
             $user = $userBefore ?? $this->resolveUser($request);
-            $path = trim($request->path(), '/');
-            $routeName = $request->route()?->getName();
 
             [$module, $action] = $this->resolveModuleAndAction($request, $path, $routeName);
             $targetId = $this->resolveTargetId($request);

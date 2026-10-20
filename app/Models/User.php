@@ -64,6 +64,7 @@ class User extends Model
         'approval_status',
         'approved_at',
         'approved_by',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -93,6 +94,7 @@ class User extends Model
             'is_approved' => 'boolean',
             'approved_at' => 'datetime',
             'approved_by' => 'integer',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -232,6 +234,12 @@ class User extends Model
                     'is_approved' => false,
                     'approval_status' => 'pending',
                 ]);
+        }
+
+        if (! Schema::hasColumn('users', 'last_login_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('last_login_at')->nullable()->after('token_expires_at');
+            });
         }
     }
 

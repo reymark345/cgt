@@ -274,9 +274,11 @@ export function AppShell({
     <aside className="flex h-full w-64 flex-col border-r border-border/80 bg-card p-3 shadow-xs dark:border-border dark:bg-card">
       {/* Brand Header with Collapse Toggle */}
       <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-2.5 transition-colors">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-          <PackageCheck className="h-5 w-5" />
-        </div>
+        <img
+          alt="GRANTS Logo"
+          className="h-10 w-10 shrink-0 rounded-lg object-contain p-0.5 transition-all"
+          src={darkMode ? '/images/grants_logo_dark.png' : '/images/grants_logo_light.png'}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-extrabold tracking-tight text-foreground">GRANTS</span>

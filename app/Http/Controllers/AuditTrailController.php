@@ -39,7 +39,12 @@ class AuditTrailController extends Controller
             $sortKey = 'id';
         }
 
-        $query = AuditTrail::query()->where('method', 'POST');
+        $baseQuery = AuditTrail::query()
+            ->where('method', 'POST')
+            ->where('url', '!=', '/sso/logout')
+            ->where('action', '!=', 'Signed Out of Portal (SSO)');
+
+        $query = clone $baseQuery;
 
         if ($q !== '') {
             $query->where(function ($builder) use ($q) {
@@ -61,8 +66,8 @@ class AuditTrailController extends Controller
             $query->where('user_name', $user);
         }
 
-        $totalInDb = AuditTrail::where('method', 'POST')->count();
-        $todayCount = AuditTrail::where('method', 'POST')
+        $totalInDb = (clone $baseQuery)->count();
+        $todayCount = (clone $baseQuery)
             ->whereDate('created_at', now()->toDateString())
             ->count();
 
@@ -77,7 +82,7 @@ class AuditTrailController extends Controller
             ->get()
             ->map(fn (AuditTrail $item) => $this->toFrontendRecord($item));
 
-        $modules = AuditTrail::where('method', 'POST')
+        $modules = (clone $baseQuery)
             ->whereNotNull('module')
             ->where('module', '!=', '')
             ->distinct()
@@ -85,7 +90,7 @@ class AuditTrailController extends Controller
             ->pluck('module')
             ->values();
 
-        $users = AuditTrail::where('method', 'POST')
+        $users = (clone $baseQuery)
             ->whereNotNull('user_name')
             ->where('user_name', '!=', '')
             ->distinct()
@@ -122,7 +127,10 @@ class AuditTrailController extends Controller
         $module = trim((string) $request->input('module', 'ALL'));
         $user = trim((string) $request->input('user', 'ALL'));
 
-        $query = AuditTrail::query()->where('method', 'POST');
+        $query = AuditTrail::query()
+            ->where('method', 'POST')
+            ->where('url', '!=', '/sso/logout')
+            ->where('action', '!=', 'Signed Out of Portal (SSO)');
 
         if ($q !== '') {
             $query->where(function ($builder) use ($q) {
