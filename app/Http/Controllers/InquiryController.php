@@ -434,7 +434,7 @@ class InquiryController extends Controller
                 Opening::ensureTableExists();
 
                 $oldStatus = $grantee->client_status ?? $grantee->old_client_status ?? 'Active';
-                $nextItemNo = (Opening::max('id') ?? 0) + 1;
+                $nextItemNo = Opening::count() + 1;
 
                 Opening::create([
                     'household_request_id' => $record->id,
@@ -456,7 +456,7 @@ class InquiryController extends Controller
 
                 $runDate = EmvSpreadsheetImporter::normalizeDateValue($emv->run_date ?? null) ?? ($emv->run_date ?? null);
                 $schedule = EmvSpreadsheetImporter::normalizeDateValue($emv->agreed_distribution_date ?? null) ?? ($emv->agreed_distribution_date ?? null);
-                $nextItemNo = (Distribution::max('id') ?? 0) + 1;
+                $nextItemNo = Distribution::count() + 1;
 
                 Distribution::create([
                     'household_request_id' => $record->id,
@@ -476,7 +476,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['otc-withdrawal', 'otc_withdrawal', 'otc'])) {
                 OtcWithdrawal::ensureTableExists();
 
-                $nextItemNo = (OtcWithdrawal::max('id') ?? 0) + 1;
+                $nextItemNo = OtcWithdrawal::count() + 1;
                 $payrollBalance = ($payroll && ! empty($payroll->net_amount) && (float) $payroll->net_amount > 0)
                     ? number_format((float) $payroll->net_amount, 2)
                     : null;
@@ -499,7 +499,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['replacement', 'replacement-series', 'replacement_series'])) {
                 Replacement::ensureTableExists();
 
-                $nextItemNo = (Replacement::max('id') ?? 0) + 1;
+                $nextItemNo = Replacement::count() + 1;
 
                 Replacement::create([
                     'household_request_id' => $record->id,
@@ -518,7 +518,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['transfer-of-fund', 'transfer_of_fund', 'tof', 'tof-branch'])) {
                 TransferOfFund::ensureTableExists();
 
-                $nextItemNo = (TransferOfFund::max('id') ?? 0) + 1;
+                $nextItemNo = TransferOfFund::count() + 1;
                 $newCardNumber = $payroll->new_account_number ?? null;
 
                 TransferOfFund::create([
@@ -539,7 +539,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['force-pin', 'force_pin', 'force pin', 'forcepin'])) {
                 ForcePin::ensureTableExists();
 
-                $nextItemNo = (ForcePin::max('id') ?? 0) + 1;
+                $nextItemNo = ForcePin::count() + 1;
 
                 ForcePin::create([
                     'household_request_id' => $record->id,
@@ -557,7 +557,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['locking', 'lock', 'card-locking', 'card_locking', 'card locking'])) {
                 Locking::ensureTableExists();
 
-                $nextItemNo = (Locking::max('id') ?? 0) + 1;
+                $nextItemNo = Locking::count() + 1;
 
                 Locking::create([
                     'household_request_id' => $record->id,
@@ -575,7 +575,7 @@ class InquiryController extends Controller
             if (in_array(strtolower($reqName), ['lifting', 'lift', 'card-lifting', 'card_lifting', 'card lifting', 'unfreeze'])) {
                 Lifting::ensureTableExists();
 
-                $nextItemNo = (Lifting::max('id') ?? 0) + 1;
+                $nextItemNo = Lifting::count() + 1;
 
                 Lifting::create([
                     'household_request_id' => $record->id,
@@ -764,6 +764,8 @@ class InquiryController extends Controller
     /**
      * Return live record counts across the 8 standard service request modules.
      */
+    public static function resequenceTable(string $table): void { if (! \Illuminate\Support\Facades\Schema::hasTable($table)) { return; } $rows = \Illuminate\Support\Facades\DB::table($table)->orderBy('id', 'asc')->get(['id', 'item_no']); foreach ($rows as $idx => $r) { $expected = (string) ($idx + 1); if ((string) $r->item_no !== $expected) { \Illuminate\Support\Facades\DB::table($table)->where('id', $r->id)->update(['item_no' => $expected]); } } }
+
     public static function getModuleCounts(): array
     {
         $moduleTableMap = [
@@ -780,7 +782,7 @@ class InquiryController extends Controller
         $counts = [];
         foreach ($moduleTableMap as $slug => $tbl) {
             if (\Illuminate\Support\Facades\Schema::hasTable($tbl)) {
-                $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table($tbl)->count();
+                self::resequenceTable($tbl); $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table($tbl)->count();
             } elseif (\Illuminate\Support\Facades\Schema::hasTable('household_requests')) {
                 $counts[$slug] = (int) \Illuminate\Support\Facades\DB::table('household_requests')->where('request_name', $slug)->count();
             } else {

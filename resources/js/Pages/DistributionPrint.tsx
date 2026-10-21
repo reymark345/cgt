@@ -961,7 +961,7 @@ export default function DistributionPrint({
                         </thead>
                         <tbody>
                           {pageItem.rows.map((row, idx) => {
-                            const itemNo = row.item_no || String(pageItem.globalStartIdx + idx + 1);
+                            const itemNo = String(pageItem.globalStartIdx + idx + 1);
                             return (
                               <tr key={row.id || idx} className="border-b border-black">
                                 <td className="border-r border-black px-2 py-1.5 font-medium">

@@ -652,9 +652,6 @@ export function GranteeView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-extrabold tracking-tight text-foreground">Grantee Masterlist</h1>
-                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-mono font-bold text-primary dark:text-cyan-300">
-                  table: grantee_list
-                </span>
                 <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                   39 Reference Columns
                 </span>

@@ -877,11 +877,8 @@ export function EmvPayrollView({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight text-foreground">EMV Payroll Database</h1>
-                <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
-                  table: payroll
-                </span>
                 <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                  {payrollColumns.length} Columns
+                  {payrollColumns.length} Reference Columns
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
@@ -922,7 +919,7 @@ export function EmvPayrollView({
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span>
-                  Visible Columns ({visibleColumnKeys.length}/{payrollColumns.length})
+                  Columns ({visibleColumnKeys.length}/{payrollColumns.length})
                 </span>
                 <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showColumnPicker && 'rotate-180')} />
               </Button>
@@ -1053,7 +1050,7 @@ export function EmvPayrollView({
             <div>
               <div className="text-[10px] uppercase font-bold text-muted-foreground">Coverage Scope</div>
               <div className="text-lg font-extrabold text-foreground">
-                {municipalities.length} Towns • {periods.length || 0} Periods
+                {municipalities.length} Areas • {periods.length || 0} Periods
               </div>
             </div>
           </div>

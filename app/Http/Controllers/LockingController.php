@@ -18,7 +18,7 @@ class LockingController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        Locking::ensureTableExists();
+        Locking::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('locking');
 
         $query = Locking::with('creator:id,name');
 
@@ -37,7 +37,7 @@ class LockingController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (Locking $row) {
             $arr = $row->toArray();
@@ -62,7 +62,7 @@ class LockingController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        Locking::ensureTableExists();
+        Locking::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('locking');
 
         $records = Locking::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -108,7 +108,7 @@ class LockingController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        Locking::ensureTableExists();
+        Locking::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('locking');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -121,7 +121,7 @@ class LockingController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((Locking::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (Locking::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -144,7 +144,7 @@ class LockingController extends Controller
      */
     public function print(Request $request): Response
     {
-        Locking::ensureTableExists();
+        Locking::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('locking');
 
         $query = Locking::query();
 
@@ -177,7 +177,7 @@ class LockingController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        Locking::ensureTableExists();
+        Locking::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('locking');
 
         $record = Locking::find($id);
 

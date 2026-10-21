@@ -634,9 +634,6 @@ export function EmvDatabaseView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-extrabold tracking-tight text-foreground">EMV Database</h1>
-                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-mono font-bold text-primary dark:text-cyan-300">
-                  table: emv_database
-                </span>
                 <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                   21 Reference Columns
                 </span>

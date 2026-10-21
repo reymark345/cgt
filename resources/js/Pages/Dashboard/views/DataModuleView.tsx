@@ -1062,7 +1062,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1165,7 +1165,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1264,7 +1264,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1357,7 +1357,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1447,7 +1447,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1540,7 +1540,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1627,7 +1627,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}
@@ -1714,7 +1714,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       className="border-b border-border/50 transition-colors hover:bg-muted/40"
                     >
                       <td className="px-4 py-3 font-semibold text-foreground">
-                        {item.item_no || idx + 1}
+                        {(currentPage - 1) * 15 + idx + 1}
                       </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
                         {item.address || '-'}

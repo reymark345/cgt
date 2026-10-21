@@ -18,7 +18,7 @@ class ForcePinController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        ForcePin::ensureTableExists();
+        ForcePin::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('force_pin');
 
         $query = ForcePin::with('creator:id,name');
 
@@ -37,7 +37,7 @@ class ForcePinController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (ForcePin $row) {
             $arr = $row->toArray();
@@ -62,7 +62,7 @@ class ForcePinController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        ForcePin::ensureTableExists();
+        ForcePin::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('force_pin');
 
         $records = ForcePin::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -108,7 +108,7 @@ class ForcePinController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        ForcePin::ensureTableExists();
+        ForcePin::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('force_pin');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -121,7 +121,7 @@ class ForcePinController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((ForcePin::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (ForcePin::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -144,7 +144,7 @@ class ForcePinController extends Controller
      */
     public function print(Request $request): Response
     {
-        ForcePin::ensureTableExists();
+        ForcePin::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('force_pin');
 
         $query = ForcePin::query();
 
@@ -177,7 +177,7 @@ class ForcePinController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        ForcePin::ensureTableExists();
+        ForcePin::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('force_pin');
 
         $record = ForcePin::find($id);
 

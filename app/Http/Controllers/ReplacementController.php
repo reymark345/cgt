@@ -18,7 +18,7 @@ class ReplacementController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        Replacement::ensureTableExists();
+        Replacement::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('replacement');
 
         $query = Replacement::with('creator:id,name');
 
@@ -38,7 +38,7 @@ class ReplacementController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (Replacement $row) {
             $arr = $row->toArray();
@@ -63,7 +63,7 @@ class ReplacementController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        Replacement::ensureTableExists();
+        Replacement::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('replacement');
 
         $records = Replacement::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -109,7 +109,7 @@ class ReplacementController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        Replacement::ensureTableExists();
+        Replacement::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('replacement');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -123,7 +123,7 @@ class ReplacementController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((Replacement::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (Replacement::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -146,7 +146,7 @@ class ReplacementController extends Controller
      */
     public function print(Request $request): Response
     {
-        Replacement::ensureTableExists();
+        Replacement::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('replacement');
 
         $query = Replacement::query();
 
@@ -181,7 +181,7 @@ class ReplacementController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        Replacement::ensureTableExists();
+        Replacement::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('replacement');
 
         $record = Replacement::find($id);
 

@@ -18,7 +18,7 @@ class DistributionController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        Distribution::ensureTableExists();
+        Distribution::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('distribution');
 
         $query = Distribution::with('creator:id,name');
 
@@ -39,7 +39,7 @@ class DistributionController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (Distribution $row) {
             $arr = $row->toArray();
@@ -64,7 +64,7 @@ class DistributionController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        Distribution::ensureTableExists();
+        Distribution::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('distribution');
 
         $records = Distribution::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -112,7 +112,7 @@ class DistributionController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        Distribution::ensureTableExists();
+        Distribution::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('distribution');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -127,7 +127,7 @@ class DistributionController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((Distribution::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (Distribution::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -150,7 +150,7 @@ class DistributionController extends Controller
      */
     public function print(Request $request): Response
     {
-        Distribution::ensureTableExists();
+        Distribution::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('distribution');
 
         $query = Distribution::query();
 
@@ -186,7 +186,7 @@ class DistributionController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        Distribution::ensureTableExists();
+        Distribution::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('distribution');
 
         $record = Distribution::find($id);
 

@@ -18,7 +18,7 @@ class TransferOfFundController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        TransferOfFund::ensureTableExists();
+        TransferOfFund::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('transfer_of_fund');
 
         $query = TransferOfFund::with('creator:id,name');
 
@@ -38,7 +38,7 @@ class TransferOfFundController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (TransferOfFund $row) {
             $arr = $row->toArray();
@@ -63,7 +63,7 @@ class TransferOfFundController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        TransferOfFund::ensureTableExists();
+        TransferOfFund::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('transfer_of_fund');
 
         $records = TransferOfFund::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -113,7 +113,7 @@ class TransferOfFundController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        TransferOfFund::ensureTableExists();
+        TransferOfFund::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('transfer_of_fund');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -128,7 +128,7 @@ class TransferOfFundController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((TransferOfFund::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (TransferOfFund::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -151,7 +151,7 @@ class TransferOfFundController extends Controller
      */
     public function print(Request $request): Response
     {
-        TransferOfFund::ensureTableExists();
+        TransferOfFund::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('transfer_of_fund');
 
         $query = TransferOfFund::query();
 
@@ -186,7 +186,7 @@ class TransferOfFundController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        TransferOfFund::ensureTableExists();
+        TransferOfFund::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('transfer_of_fund');
 
         $record = TransferOfFund::find($id);
 

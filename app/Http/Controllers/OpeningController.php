@@ -18,7 +18,7 @@ class OpeningController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        Opening::ensureTableExists();
+        Opening::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('opening');
 
         $query = Opening::with('creator:id,name');
 
@@ -38,7 +38,7 @@ class OpeningController extends Controller
         }
 
         $perPage = max(5, min(100, (int) $request->input('per_page', 15)));
-        $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+        $paginator = $query->orderBy('id', 'asc')->paginate($perPage);
 
         $items = collect($paginator->items())->map(function (Opening $row) {
             $arr = $row->toArray();
@@ -63,7 +63,7 @@ class OpeningController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        Opening::ensureTableExists();
+        Opening::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('opening');
 
         $records = Opening::with('creator:id,name')->orderBy('id', 'asc')->get();
 
@@ -111,7 +111,7 @@ class OpeningController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        Opening::ensureTableExists();
+        Opening::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('opening');
 
         $validated = $request->validate([
             'item_no' => 'nullable|string',
@@ -126,7 +126,7 @@ class OpeningController extends Controller
         ]);
 
         if (empty($validated['item_no'])) {
-            $validated['item_no'] = (string) ((Opening::max('id') ?? 0) + 1);
+            $validated['item_no'] = (string) (Opening::count() + 1);
         }
 
         $validated['created_by'] = User::resolveCurrentUserId($request);
@@ -149,7 +149,7 @@ class OpeningController extends Controller
      */
     public function print(Request $request): Response
     {
-        Opening::ensureTableExists();
+        Opening::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('opening');
 
         $query = Opening::query();
 
@@ -184,7 +184,7 @@ class OpeningController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        Opening::ensureTableExists();
+        Opening::ensureTableExists(); \App\Http\Controllers\InquiryController::resequenceTable('opening');
 
         $record = Opening::find($id);
 
