@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'inquiry_display_fields' => fn () => \App\Http\Controllers\InquiryController::getDisplayFieldsSetting(),
         ];
     }
 }

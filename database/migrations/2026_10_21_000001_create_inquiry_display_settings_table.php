@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasTable('inquiry_display_settings')) {
+            Schema::create('inquiry_display_settings', function (Blueprint $table) {
+                $table->id();
+                $table->longText('grantee_fields')->nullable();
+                $table->longText('emv_fields')->nullable();
+                $table->longText('payroll_fields')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('inquiry_display_settings');
+    }
+};
+

@@ -101,6 +101,8 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/inquiry/search', [InquiryController::class, 'search'])->name('inquiry.search');
     Route::get('/inquiry/samples', [InquiryController::class, 'samples'])->name('inquiry.samples');
     Route::get('/inquiry/request-options', [InquiryController::class, 'requestOptions'])->name('inquiry.request-options');
+    Route::get('/inquiry/display-fields', [InquiryController::class, 'displayFields'])->name('inquiry.display-fields');
+    Route::post('/inquiry/display-fields', [InquiryController::class, 'saveDisplayFields'])->name('inquiry.display-fields.save');
     Route::post('/inquiry/add-request', [InquiryController::class, 'addRequest'])->name('inquiry.add-request');
     Route::get('/inquiry/household-requests', [InquiryController::class, 'householdRequests'])->name('inquiry.household-requests');
     Route::get('/module-counts', [InquiryController::class, 'moduleCounts'])->name('module-counts');

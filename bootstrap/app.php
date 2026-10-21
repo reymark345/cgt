@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'grantees/import',
             'grantees/import/*',
+            'inquiry/display-fields',
         ]);
         $middleware->web(append: [
             HandleInertiaRequests::class,

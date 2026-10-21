@@ -325,7 +325,12 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       } | null;
     };
   }>();
-  const currentUserName = page?.props?.auth?.user?.name || '';
+  const authUser = page?.props?.auth?.user as { id?: number; name?: string; role?: string | null; is_admin?: boolean } | null | undefined;
+  const currentUserName = authUser?.name || '';
+  const isAdmin = Boolean(
+    authUser?.is_admin ||
+      (typeof authUser?.role === 'string' && authUser.role.trim().toLowerCase() === 'admin')
+  );
 
   const [searchInput, setSearchInput] = useState(initialQuery || '');
   const [loading, setLoading] = useState(false);
@@ -383,10 +388,39 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   };
 
   // 1. Grantee Master Details Field Customization
+  const initialServerDisplayFields = (page?.props as any)?.inquiry_display_fields as
+    | { grantee_fields?: string[] | null; emv_fields?: string[] | null; payroll_fields?: string[] | null }
+    | undefined;
+
+  const saveGlobalDisplayFields = useCallback(
+    async (payload: { grantee_fields?: string[]; emv_fields?: string[]; payroll_fields?: string[] }) => {
+      if (!isAdmin) return;
+      try {
+        await fetch('/inquiry/display-fields', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: JSON.stringify({
+            ...payload,
+            user_id: authUser?.id,
+          }),
+        });
+      } catch {
+        // ignore network errors
+      }
+    },
+    [isAdmin, authUser?.id]
+  );
   const [selectedGranteeFields, setSelectedGranteeFields] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_GRANTEE_FIELDS);
+        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_GRANTEE_FIELDS) : null;
+        if (Array.isArray(initialServerDisplayFields?.grantee_fields)) {
+          return initialServerDisplayFields.grantee_fields.filter((key: string) => ALL_GRANTEE_FIELD_KEYS.includes(key));
+        }
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -440,12 +474,17 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   };
 
   const isGranteeFieldVisible = (key: string) => selectedGranteeFields.includes(key);
+  const hasLoadedServerFieldsRef = useRef(false);
+  const isApplyingServerFieldsRef = useRef(false);
 
   // 2. EMV Database Field Customization
   const [selectedEmvFields, setSelectedEmvFields] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_EMV_FIELDS);
+        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_EMV_FIELDS) : null;
+        if (Array.isArray(initialServerDisplayFields?.emv_fields)) {
+          return initialServerDisplayFields.emv_fields.filter((key: string) => ALL_EMV_FIELD_KEYS.includes(key));
+        }
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -502,7 +541,10 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const [selectedPayrollFields, setSelectedPayrollFields] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_PAYROLL_FIELDS);
+        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_PAYROLL_FIELDS) : null;
+        if (Array.isArray(initialServerDisplayFields?.payroll_fields)) {
+          return initialServerDisplayFields.payroll_fields.filter((key: string) => ALL_PAYROLL_FIELD_KEYS.includes(key));
+        }
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -529,6 +571,90 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       }
     }
   }, [selectedPayrollFields]);
+
+  const applyServerDisplayFields = useCallback(
+    (df?: { grantee_fields?: string[] | null; emv_fields?: string[] | null; payroll_fields?: string[] | null } | null) => {
+      if (!df) return;
+      isApplyingServerFieldsRef.current = true;
+
+      if (Array.isArray(df.grantee_fields)) {
+        setSelectedGranteeFields(df.grantee_fields.filter((k: string) => ALL_GRANTEE_FIELD_KEYS.includes(k)));
+      } else if (!isAdmin) {
+        setSelectedGranteeFields(ALL_GRANTEE_FIELD_KEYS);
+      }
+
+      if (Array.isArray(df.emv_fields)) {
+        setSelectedEmvFields(df.emv_fields.filter((k: string) => ALL_EMV_FIELD_KEYS.includes(k)));
+      } else if (!isAdmin) {
+        setSelectedEmvFields(ALL_EMV_FIELD_KEYS);
+      }
+
+      if (Array.isArray(df.payroll_fields)) {
+        setSelectedPayrollFields(df.payroll_fields.filter((k: string) => ALL_PAYROLL_FIELD_KEYS.includes(k)));
+      } else if (!isAdmin) {
+        setSelectedPayrollFields(ALL_PAYROLL_FIELD_KEYS);
+      }
+
+      hasLoadedServerFieldsRef.current = true;
+      setTimeout(() => {
+        isApplyingServerFieldsRef.current = false;
+      }, 50);
+    },
+    [isAdmin]
+  );
+
+  // Immediately sync initial server props or non-admin state on mount, and poll/focus-sync for non-admin roles
+  useEffect(() => {
+    if (initialServerDisplayFields) {
+      applyServerDisplayFields(initialServerDisplayFields);
+    }
+    const fetchLatestDisplayFields = () => {
+      fetch('/inquiry/display-fields', { cache: 'no-store' })
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((data) => {
+          if (data?.success && data.display_fields) {
+            const df = data.display_fields;
+            const hasDbSettings =
+              Array.isArray(df.grantee_fields) ||
+              Array.isArray(df.emv_fields) ||
+              Array.isArray(df.payroll_fields);
+            if (hasDbSettings) {
+              applyServerDisplayFields(df);
+            } else if (isAdmin) {
+              // Seed database from Admin's current selection if DB table is still empty
+              saveGlobalDisplayFields({
+                grantee_fields: selectedGranteeFields,
+                emv_fields: selectedEmvFields,
+                payroll_fields: selectedPayrollFields,
+              });
+            }
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchLatestDisplayFields();
+
+    if (!isAdmin && typeof window !== 'undefined') {
+      const onFocus = () => fetchLatestDisplayFields();
+      window.addEventListener('focus', onFocus);
+      const interval = window.setInterval(fetchLatestDisplayFields, 4000);
+      return () => {
+        window.removeEventListener('focus', onFocus);
+        window.clearInterval(interval);
+      };
+    }
+  }, [isAdmin]);
+
+  // Persist every Admin display field change directly to the database
+  useEffect(() => {
+    if (!isAdmin || isApplyingServerFieldsRef.current) return;
+    saveGlobalDisplayFields({
+      grantee_fields: selectedGranteeFields,
+      emv_fields: selectedEmvFields,
+      payroll_fields: selectedPayrollFields,
+    });
+  }, [isAdmin, selectedGranteeFields, selectedEmvFields, selectedPayrollFields, saveGlobalDisplayFields]);
 
   const togglePayrollField = (key: string) => {
     setSelectedPayrollFields((prev) =>
@@ -648,6 +774,9 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         if (data.success && Array.isArray(data.options) && data.options.length > 0) {
           setRequestOptions(data.options);
         }
+        if (data.display_fields) {
+          applyServerDisplayFields(data.display_fields);
+        }
       })
       .catch((err) => {
         console.error('Failed to load request options from database:', err);
@@ -681,6 +810,9 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
         const json = await res.json();
 
         if (json.success) {
+          if (json.display_fields) {
+            applyServerDisplayFields(json.display_fields);
+          }
           startTransition(() => {
             setResult(json);
             setActiveEmvIndex(0);
@@ -1611,13 +1743,14 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                         </div>
                         <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
                         <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                          All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                          {isAdmin ? 'All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.' : 'No fields are currently enabled for display by the administrator.'}
                         </p>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           className="mt-4 gap-1.5 text-xs"
+                          style={!isAdmin ? { display: 'none' } : undefined}
                           onClick={selectAllGranteeFields}
                         >
                           <Check className="h-3.5 w-3.5" />
@@ -1881,13 +2014,14 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     </div>
                     <p className="mt-3 text-sm font-semibold text-foreground">No Fields Selected</p>
                     <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                      All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.
+                      {isAdmin ? 'All fields are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which fields to show.' : 'No fields are currently enabled for display by the administrator.'}
                     </p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       className="mt-4 gap-1.5 text-xs"
+                      style={!isAdmin ? { display: 'none' } : undefined}
                       onClick={selectAllEmvFields}
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -2104,13 +2238,14 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
                     </div>
                     <p className="mt-3 text-sm font-semibold text-foreground">No Columns Selected</p>
                     <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                      All columns are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which columns to show.
+                      {isAdmin ? 'All columns are currently hidden based on your display preferences. Use the "Display Fields" menu above to select which columns to show.' : 'No columns are currently enabled for display by the administrator.'}
                     </p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       className="mt-4 gap-1.5 text-xs"
+                      style={!isAdmin ? { display: 'none' } : undefined}
                       onClick={selectAllPayrollFields}
                     >
                       <Check className="h-3.5 w-3.5" />
@@ -2630,6 +2765,20 @@ function FieldCustomizerDropdown({
   dropdownRef,
   buttonLabel = 'Display Fields',
 }: FieldCustomizerDropdownProps) {
+  const page = usePage<{
+    auth?: {
+      user?: {
+        role?: string | null;
+        is_admin?: boolean;
+      } | null;
+    };
+  }>();
+  const authUser = page?.props?.auth?.user;
+  const isAdmin = Boolean(
+    authUser?.is_admin ||
+      (typeof authUser?.role === 'string' && authUser.role.trim().toLowerCase() === 'admin')
+  );
+  if (!isAdmin) return null;
   return (
     <div className="relative" ref={dropdownRef}>
       <Button

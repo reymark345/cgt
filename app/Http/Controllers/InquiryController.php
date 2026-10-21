@@ -282,6 +282,7 @@ class InquiryController extends Controller
             'emv_records' => $emvRecords,
             'payroll_records' => $payrollRecords,
             'requests' => $requests,
+            'display_fields' => self::getDisplayFieldsSetting(),
         ]);
     }
 
@@ -301,6 +302,7 @@ class InquiryController extends Controller
         return response()->json([
             'success' => true,
             'options' => $options,
+            'display_fields' => self::getDisplayFieldsSetting(),
         ]);
     }
 
@@ -661,6 +663,7 @@ class InquiryController extends Controller
         return response()->json([
             'success' => true,
             'requests' => $requests,
+            'display_fields' => self::getDisplayFieldsSetting(),
         ]);
     }
 
@@ -821,6 +824,97 @@ class InquiryController extends Controller
     /**
      * Dedicated endpoint to fetch live reference counts.
      */
+    public static function ensureDisplaySettingsTableExists(): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('inquiry_display_settings')) {
+            \Illuminate\Support\Facades\Schema::create('inquiry_display_settings', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->longText('grantee_fields')->nullable();
+                $table->longText('emv_fields')->nullable();
+                $table->longText('payroll_fields')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
+            });
+        }
+    }
+
+    public static function getDisplayFieldsSetting(): array
+    {
+        self::ensureDisplaySettingsTableExists();
+
+        $row = DB::table('inquiry_display_settings')->where('id', 1)->first();
+
+        return [
+            'grantee_fields' => $row && $row->grantee_fields !== null ? json_decode($row->grantee_fields, true) : null,
+            'emv_fields' => $row && $row->emv_fields !== null ? json_decode($row->emv_fields, true) : null,
+            'payroll_fields' => $row && $row->payroll_fields !== null ? json_decode($row->payroll_fields, true) : null,
+        ];
+    }
+
+    public function displayFields(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'display_fields' => self::getDisplayFieldsSetting(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function saveDisplayFields(Request $request): JsonResponse
+    {
+        User::ensureRoleAndApprovalColumnsExist();
+        $sessionUid = $request->session()->get('sso_user_id');
+        $uid = $sessionUid ?: $this->resolveCurrentUserId($request) ?: $request->input('user_id');
+        $user = $uid ? User::find($uid) : null;
+
+        if ($user && ! $user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Admin users can modify Inquiry display fields.',
+            ], 403);
+        }
+
+        self::ensureDisplaySettingsTableExists();
+
+        $existing = DB::table('inquiry_display_settings')->where('id', 1)->first();
+
+        $granteeFields = $request->has('grantee_fields') && is_array($request->input('grantee_fields'))
+            ? json_encode(array_values($request->input('grantee_fields')))
+            : ($existing ? $existing->grantee_fields : null);
+
+        $emvFields = $request->has('emv_fields') && is_array($request->input('emv_fields'))
+            ? json_encode(array_values($request->input('emv_fields')))
+            : ($existing ? $existing->emv_fields : null);
+
+        $payrollFields = $request->has('payroll_fields') && is_array($request->input('payroll_fields'))
+            ? json_encode(array_values($request->input('payroll_fields')))
+            : ($existing ? $existing->payroll_fields : null);
+
+        if ($existing) {
+            DB::table('inquiry_display_settings')->where('id', 1)->update([
+                'grantee_fields' => $granteeFields,
+                'emv_fields' => $emvFields,
+                'payroll_fields' => $payrollFields,
+                'updated_by' => $user ? $user->id : null,
+                'updated_at' => now(),
+            ]);
+        } else {
+            DB::table('inquiry_display_settings')->insert([
+                'id' => 1,
+                'grantee_fields' => $granteeFields,
+                'emv_fields' => $emvFields,
+                'payroll_fields' => $payrollFields,
+                'updated_by' => $user ? $user->id : null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'display_fields' => self::getDisplayFieldsSetting(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
     public function referenceCounts(): JsonResponse
     {
         return response()->json([
