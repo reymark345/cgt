@@ -30,12 +30,14 @@ class RecordAuditTrail
         $lowerPath = strtolower($path);
         $routeName = $request->route()?->getName();
 
-        // Exclude SSO sign-out / authentication routes from Audit Trail
+        // Exclude SSO sign-out / authentication routes and display field UI preferences from Audit Trail
         if (
             $lowerPath === 'sso/logout'
             || str_starts_with($lowerPath, 'sso/')
             || str_starts_with($lowerPath, 'login-sso')
             || $routeName === 'sso.logout'
+            || $lowerPath === 'inquiry/display-fields'
+            || $routeName === 'inquiry.save-display-fields'
         ) {
             return $response;
         }

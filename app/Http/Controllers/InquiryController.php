@@ -283,7 +283,7 @@ class InquiryController extends Controller
             'payroll_records' => $payrollRecords,
             'requests' => $requests,
             'display_fields' => self::getDisplayFieldsSetting(),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     /**
@@ -303,7 +303,7 @@ class InquiryController extends Controller
             'success' => true,
             'options' => $options,
             'display_fields' => self::getDisplayFieldsSetting(),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     /**

@@ -415,22 +415,8 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
     [isAdmin, authUser?.id]
   );
   const [selectedGranteeFields, setSelectedGranteeFields] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_GRANTEE_FIELDS) : null;
-        if (Array.isArray(initialServerDisplayFields?.grantee_fields)) {
-          return initialServerDisplayFields.grantee_fields.filter((key: string) => ALL_GRANTEE_FIELD_KEYS.includes(key));
-        }
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const valid = parsed.filter((key: string) => ALL_GRANTEE_FIELD_KEYS.includes(key));
-            if (valid.length > 0) return valid;
-          }
-        }
-      } catch {
-        // fallback
-      }
+    if (Array.isArray(initialServerDisplayFields?.grantee_fields)) {
+      return initialServerDisplayFields.grantee_fields.filter((key: string) => ALL_GRANTEE_FIELD_KEYS.includes(key));
     }
     return ALL_GRANTEE_FIELD_KEYS;
   });
@@ -438,63 +424,42 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const [granteeFieldSearch, setGranteeFieldSearch] = useState('');
   const granteeFieldDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY_GRANTEE_FIELDS, JSON.stringify(selectedGranteeFields));
-      } catch {
-        // ignore
-      }
-    }
-  }, [selectedGranteeFields]);
-
   const toggleGranteeField = (key: string) => {
-    setSelectedGranteeFields((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    setSelectedGranteeFields((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      saveGlobalDisplayFields({ grantee_fields: next });
+      return next;
+    });
   };
 
   const toggleGranteeCategory = (categoryFields: { key: string }[]) => {
     const categoryKeys = categoryFields.map((f) => f.key);
-    const allSelected = categoryKeys.every((k) => selectedGranteeFields.includes(k));
-
-    if (allSelected) {
-      setSelectedGranteeFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
-    } else {
-      setSelectedGranteeFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
-    }
+    setSelectedGranteeFields((prev) => {
+      const allSelected = categoryKeys.every((k) => prev.includes(k));
+      const next = allSelected
+        ? prev.filter((k) => !categoryKeys.includes(k))
+        : Array.from(new Set([...prev, ...categoryKeys]));
+      saveGlobalDisplayFields({ grantee_fields: next });
+      return next;
+    });
   };
 
   const selectAllGranteeFields = () => {
     setSelectedGranteeFields(ALL_GRANTEE_FIELD_KEYS);
+    saveGlobalDisplayFields({ grantee_fields: ALL_GRANTEE_FIELD_KEYS });
   };
 
   const clearAllGranteeFields = () => {
     setSelectedGranteeFields([]);
+    saveGlobalDisplayFields({ grantee_fields: [] });
   };
 
   const isGranteeFieldVisible = (key: string) => selectedGranteeFields.includes(key);
-  const hasLoadedServerFieldsRef = useRef(false);
-  const isApplyingServerFieldsRef = useRef(false);
 
   // 2. EMV Database Field Customization
   const [selectedEmvFields, setSelectedEmvFields] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_EMV_FIELDS) : null;
-        if (Array.isArray(initialServerDisplayFields?.emv_fields)) {
-          return initialServerDisplayFields.emv_fields.filter((key: string) => ALL_EMV_FIELD_KEYS.includes(key));
-        }
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const valid = parsed.filter((key: string) => ALL_EMV_FIELD_KEYS.includes(key));
-            if (valid.length > 0) return valid;
-          }
-        }
-      } catch {
-        // fallback
-      }
+    if (Array.isArray(initialServerDisplayFields?.emv_fields)) {
+      return initialServerDisplayFields.emv_fields.filter((key: string) => ALL_EMV_FIELD_KEYS.includes(key));
     }
     return ALL_EMV_FIELD_KEYS;
   });
@@ -502,59 +467,40 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const [emvFieldSearch, setEmvFieldSearch] = useState('');
   const emvFieldDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY_EMV_FIELDS, JSON.stringify(selectedEmvFields));
-      } catch {
-        // ignore
-      }
-    }
-  }, [selectedEmvFields]);
-
   const toggleEmvField = (key: string) => {
-    setSelectedEmvFields((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    setSelectedEmvFields((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      saveGlobalDisplayFields({ emv_fields: next });
+      return next;
+    });
   };
 
   const toggleEmvCategory = (categoryFields: { key: string }[]) => {
     const categoryKeys = categoryFields.map((f) => f.key);
-    const allSelected = categoryKeys.every((k) => selectedEmvFields.includes(k));
-
-    if (allSelected) {
-      setSelectedEmvFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
-    } else {
-      setSelectedEmvFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
-    }
+    setSelectedEmvFields((prev) => {
+      const allSelected = categoryKeys.every((k) => prev.includes(k));
+      const next = allSelected
+        ? prev.filter((k) => !categoryKeys.includes(k))
+        : Array.from(new Set([...prev, ...categoryKeys]));
+      saveGlobalDisplayFields({ emv_fields: next });
+      return next;
+    });
   };
 
   const selectAllEmvFields = () => {
     setSelectedEmvFields(ALL_EMV_FIELD_KEYS);
+    saveGlobalDisplayFields({ emv_fields: ALL_EMV_FIELD_KEYS });
   };
 
   const clearAllEmvFields = () => {
     setSelectedEmvFields([]);
+    saveGlobalDisplayFields({ emv_fields: [] });
   };
 
   // 3. Payroll Disbursals Field Customization
   const [selectedPayrollFields, setSelectedPayrollFields] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = isAdmin ? localStorage.getItem(STORAGE_KEY_PAYROLL_FIELDS) : null;
-        if (Array.isArray(initialServerDisplayFields?.payroll_fields)) {
-          return initialServerDisplayFields.payroll_fields.filter((key: string) => ALL_PAYROLL_FIELD_KEYS.includes(key));
-        }
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const valid = parsed.filter((key: string) => ALL_PAYROLL_FIELD_KEYS.includes(key));
-            if (valid.length > 0) return valid;
-          }
-        }
-      } catch {
-        // fallback
-      }
+    if (Array.isArray(initialServerDisplayFields?.payroll_fields)) {
+      return initialServerDisplayFields.payroll_fields.filter((key: string) => ALL_PAYROLL_FIELD_KEYS.includes(key));
     }
     return ALL_PAYROLL_FIELD_KEYS;
   });
@@ -562,72 +508,49 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
   const [payrollFieldSearch, setPayrollFieldSearch] = useState('');
   const payrollFieldDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY_PAYROLL_FIELDS, JSON.stringify(selectedPayrollFields));
-      } catch {
-        // ignore
-      }
-    }
-  }, [selectedPayrollFields]);
-
   const applyServerDisplayFields = useCallback(
     (df?: { grantee_fields?: string[] | null; emv_fields?: string[] | null; payroll_fields?: string[] | null } | null) => {
       if (!df) return;
-      isApplyingServerFieldsRef.current = true;
 
       if (Array.isArray(df.grantee_fields)) {
         setSelectedGranteeFields(df.grantee_fields.filter((k: string) => ALL_GRANTEE_FIELD_KEYS.includes(k)));
-      } else if (!isAdmin) {
+      } else {
         setSelectedGranteeFields(ALL_GRANTEE_FIELD_KEYS);
       }
 
       if (Array.isArray(df.emv_fields)) {
         setSelectedEmvFields(df.emv_fields.filter((k: string) => ALL_EMV_FIELD_KEYS.includes(k)));
-      } else if (!isAdmin) {
+      } else {
         setSelectedEmvFields(ALL_EMV_FIELD_KEYS);
       }
 
       if (Array.isArray(df.payroll_fields)) {
         setSelectedPayrollFields(df.payroll_fields.filter((k: string) => ALL_PAYROLL_FIELD_KEYS.includes(k)));
-      } else if (!isAdmin) {
+      } else {
         setSelectedPayrollFields(ALL_PAYROLL_FIELD_KEYS);
       }
-
-      hasLoadedServerFieldsRef.current = true;
-      setTimeout(() => {
-        isApplyingServerFieldsRef.current = false;
-      }, 50);
     },
-    [isAdmin]
+    []
   );
 
-  // Immediately sync initial server props or non-admin state on mount, and poll/focus-sync for non-admin roles
+  // Always load the latest Admin display fields from the database on mount / reload
   useEffect(() => {
-    if (initialServerDisplayFields) {
-      applyServerDisplayFields(initialServerDisplayFields);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY_GRANTEE_FIELDS);
+        localStorage.removeItem(STORAGE_KEY_EMV_FIELDS);
+        localStorage.removeItem(STORAGE_KEY_PAYROLL_FIELDS);
+      } catch {
+        // ignore
+      }
     }
+
     const fetchLatestDisplayFields = () => {
-      fetch('/inquiry/display-fields', { cache: 'no-store' })
+      fetch(`/inquiry/display-fields?_t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
           if (data?.success && data.display_fields) {
-            const df = data.display_fields;
-            const hasDbSettings =
-              Array.isArray(df.grantee_fields) ||
-              Array.isArray(df.emv_fields) ||
-              Array.isArray(df.payroll_fields);
-            if (hasDbSettings) {
-              applyServerDisplayFields(df);
-            } else if (isAdmin) {
-              // Seed database from Admin's current selection if DB table is still empty
-              saveGlobalDisplayFields({
-                grantee_fields: selectedGranteeFields,
-                emv_fields: selectedEmvFields,
-                payroll_fields: selectedPayrollFields,
-              });
-            }
+            applyServerDisplayFields(data.display_fields);
           }
         })
         .catch(() => {});
@@ -638,47 +561,40 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
     if (!isAdmin && typeof window !== 'undefined') {
       const onFocus = () => fetchLatestDisplayFields();
       window.addEventListener('focus', onFocus);
-      const interval = window.setInterval(fetchLatestDisplayFields, 4000);
       return () => {
         window.removeEventListener('focus', onFocus);
-        window.clearInterval(interval);
       };
     }
-  }, [isAdmin]);
-
-  // Persist every Admin display field change directly to the database
-  useEffect(() => {
-    if (!isAdmin || isApplyingServerFieldsRef.current) return;
-    saveGlobalDisplayFields({
-      grantee_fields: selectedGranteeFields,
-      emv_fields: selectedEmvFields,
-      payroll_fields: selectedPayrollFields,
-    });
-  }, [isAdmin, selectedGranteeFields, selectedEmvFields, selectedPayrollFields, saveGlobalDisplayFields]);
+  }, [isAdmin, applyServerDisplayFields]);
 
   const togglePayrollField = (key: string) => {
-    setSelectedPayrollFields((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    setSelectedPayrollFields((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      saveGlobalDisplayFields({ payroll_fields: next });
+      return next;
+    });
   };
 
   const togglePayrollCategory = (categoryFields: { key: string }[]) => {
     const categoryKeys = categoryFields.map((f) => f.key);
-    const allSelected = categoryKeys.every((k) => selectedPayrollFields.includes(k));
-
-    if (allSelected) {
-      setSelectedPayrollFields((prev) => prev.filter((k) => !categoryKeys.includes(k)));
-    } else {
-      setSelectedPayrollFields((prev) => Array.from(new Set([...prev, ...categoryKeys])));
-    }
+    setSelectedPayrollFields((prev) => {
+      const allSelected = categoryKeys.every((k) => prev.includes(k));
+      const next = allSelected
+        ? prev.filter((k) => !categoryKeys.includes(k))
+        : Array.from(new Set([...prev, ...categoryKeys]));
+      saveGlobalDisplayFields({ payroll_fields: next });
+      return next;
+    });
   };
 
   const selectAllPayrollFields = () => {
     setSelectedPayrollFields(ALL_PAYROLL_FIELD_KEYS);
+    saveGlobalDisplayFields({ payroll_fields: ALL_PAYROLL_FIELD_KEYS });
   };
 
   const clearAllPayrollFields = () => {
     setSelectedPayrollFields([]);
+    saveGlobalDisplayFields({ payroll_fields: [] });
   };
 
   // 4. Payroll Card Width Expansion & Fullscreen State
@@ -768,7 +684,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
 
   // Fetch request options dynamically from database table 'request'
   useEffect(() => {
-    fetch('/inquiry/request-options')
+    fetch(`/inquiry/request-options?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then((data) => {
         if (data.success && Array.isArray(data.options) && data.options.length > 0) {
@@ -781,7 +697,7 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       .catch((err) => {
         console.error('Failed to load request options from database:', err);
       });
-  }, []);
+  }, [applyServerDisplayFields]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -806,7 +722,9 @@ export function InquiryView({ onSetNotice, initialQuery }: InquiryViewProps) {
       setRequestDropdownOpen(false);
 
       try {
-        const res = await fetch(`/inquiry/search?hh_id=${encodeURIComponent(term)}`);
+        const res = await fetch(`/inquiry/search?hh_id=${encodeURIComponent(term)}&_t=${Date.now()}`, {
+          cache: 'no-store',
+        });
         const json = await res.json();
 
         if (json.success) {
