@@ -15,6 +15,16 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  PrintBranchToolbarControls,
+  PrintFormEditorSelector,
+  PrintFormScreenBanner,
+} from '../Components/PrintBranchGroupingControls';
+import {
+  LbpBranchDirectoryEntry,
+  PrintRecordWithBranch,
+  useMultiBranchPrintForms,
+} from '../utils/lbpPrintDirectory';
 
 const DEFAULT_INTRO_MESSAGE = `This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on June 7, 2022.
 
@@ -72,7 +82,7 @@ function renderFormattedMessage(rawText: string, containerClassName = '') {
   );
 }
 
-type OpeningRecord = {
+type OpeningRecord = PrintRecordWithBranch & {
   id: number;
   item_no: string | null;
   address: string | null;
@@ -87,6 +97,7 @@ type OpeningRecord = {
 
 type OpeningPrintProps = {
   records?: OpeningRecord[];
+  branchDirectories?: LbpBranchDirectoryEntry[];
   defaultDate?: string;
   search?: string;
   dswdLogoUrl?: string;
@@ -130,6 +141,7 @@ function SmartImage({
 
 export default function OpeningPrint({
   records = [],
+  branchDirectories,
   defaultDate,
   search,
   dswdLogoUrl,
@@ -149,12 +161,6 @@ export default function OpeningPrint({
         year: 'numeric',
       })
   );
-  const [recipientName, setRecipientName] = useState('MS. EMELITA I. ESCALANTE');
-  const [recipientTitle, setRecipientTitle] = useState('Branch Head');
-  const [bankBranch, setBankBranch] = useState('Land Bank of the Philippines - Butuan Branch');
-  const [bankAddressLine1, setBankAddressLine1] = useState('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
-  const [bankAddressLine2, setBankAddressLine2] = useState('Butuan City');
-  const [salutationName, setSalutationName] = useState('Ms. Escalante');
   const [signatoryName, setSignatoryName] = useState('MARI-FLOR A. DOLLAGA-LIBANG');
   const [signatoryTitle, setSignatoryTitle] = useState('Regional Director');
 
@@ -310,76 +316,55 @@ export default function OpeningPrint({
     window.print();
   };
 
-  // Only display the available data. If no records are present, provide a single blank row.
-  const displayRows =
-    records.length > 0
-      ? records
-      : [
-          {
-            id: -1,
-            item_no: '1',
-            address: null,
-            household_id_number: null,
-            name_of_new_grantee: null,
-            name_of_old_grantee: null,
-            card_number_of_old: null,
-            status_of_old_grantee: null,
-            status: null,
-            remarks: null,
-          },
-        ];
+  const fallbackBlankRows: OpeningRecord[] = useMemo(
+    () => [
+      {
+        id: -1,
+        item_no: '1',
+        address: null,
+        household_id_number: null,
+        name_of_new_grantee: null,
+        name_of_old_grantee: null,
+        card_number_of_old: null,
+        status_of_old_grantee: null,
+        status: null,
+        remarks: null,
+      },
+    ],
+    []
+  );
 
-  // Chunk displayRows into pages calibrated strictly for A4 format
-  const pagesData = useMemo(() => {
-    // If all records fit comfortably on Page 1 along with the signatory block (<= 5 rows), single page
-    const SINGLE_PAGE_MAX = 5;
-    if (displayRows.length <= SINGLE_PAGE_MAX) {
-      return [
-        {
-          pageIndex: 0,
-          rows: displayRows,
-          globalStartIdx: 0,
-          isFirstPage: true,
-          isLastPage: true,
-        },
-      ];
-    }
-
-    const pages = [];
-    // For multi-page, Page 1 has no signatory, so it can hold up to rowsPerPageFirst (default 7)
-    // Ensure the last page has at least 1 table row (so it's never an orphan signature-only page)
-    const firstPageLimit = Math.min(rowsPerPageFirst, Math.max(1, displayRows.length - 1));
-
-    // Page 1
-    pages.push({
-      pageIndex: 0,
-      rows: displayRows.slice(0, firstPageLimit),
-      globalStartIdx: 0,
-      isFirstPage: true,
-      isLastPage: false,
-    });
-
-    let currentIdx = firstPageLimit;
-    let pageNum = 1;
-
-    while (currentIdx < displayRows.length) {
-      const nextChunk = displayRows.slice(currentIdx, currentIdx + rowsPerPageOther);
-      const isLast = currentIdx + rowsPerPageOther >= displayRows.length;
-      pages.push({
-        pageIndex: pageNum,
-        rows: nextChunk,
-        globalStartIdx: currentIdx,
-        isFirstPage: false,
-        isLastPage: isLast,
-      });
-      currentIdx += rowsPerPageOther;
-      pageNum++;
-    }
-
-    return pages;
-  }, [displayRows, rowsPerPageFirst, rowsPerPageOther]);
-
-  const totalPages = pagesData.length;
+  const {
+    directories,
+    groupMode,
+    setGroupMode,
+    groupedForms,
+    activeFormKey,
+    setActiveFormKey,
+    pagesData,
+    totalPages,
+    totalForms,
+    recipientName,
+    setRecipientName,
+    recipientTitle,
+    setRecipientTitle,
+    bankBranch,
+    setBankBranch,
+    bankAddressLine1,
+    setBankAddressLine1,
+    bankAddressLine2,
+    setBankAddressLine2,
+    salutationName,
+    setSalutationName,
+    applyBranchDirectoryToActiveForm,
+  } = useMultiBranchPrintForms({
+    records,
+    fallbackBlankRows,
+    branchDirectories,
+    singlePageMaxRows: 5,
+    rowsPerPageFirst,
+    rowsPerPageOther,
+  });
 
   const getPageInfo = (currentPage: number, total: number) => {
     return `PAGE ${currentPage} of ${total}`;
@@ -565,6 +550,13 @@ export default function OpeningPrint({
             </div>
 
             <div className="flex items-center gap-2">
+              <PrintBranchToolbarControls
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                recordsCount={records.length}
+                totalForms={totalForms}
+              />
+
               {canEditLetterDetails && (
                 <button
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -603,6 +595,15 @@ export default function OpeningPrint({
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              <PrintFormEditorSelector
+                activeFormKey={activeFormKey}
+                currentBranchName={bankBranch}
+                directories={directories}
+                groupedForms={groupedForms}
+                onSelectBranchDirectory={applyBranchDirectoryToActiveForm}
+                onSelectFormKey={setActiveFormKey}
+              />
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                 <div>
@@ -824,13 +825,23 @@ export default function OpeningPrint({
             }}
           >
             {pagesData.map((pageItem) => {
-              const currentPageNum = pageItem.pageIndex + 1;
+              const currentPageNum = pageItem.formPageNum;
+              const pageHeader = pageItem.headerDetails;
 
               return (
-                <div
-                  key={pageItem.pageIndex}
-                  className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
-                >
+                <React.Fragment key={pageItem.pageIndex}>
+                  <PrintFormScreenBanner
+                    bankBranch={pageHeader.bankBranch}
+                    formIndex={pageItem.formIndex}
+                    formLabel={pageItem.formLabel}
+                    isFirstPage={pageItem.isFirstPage}
+                    recipientName={pageHeader.recipientName}
+                    rowsCount={groupedForms[pageItem.formIndex]?.records.length || pageItem.rows.length}
+                    totalForms={pageItem.totalForms}
+                  />
+                  <div
+                    className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
+                  >
                   <div className="flex-1">
                     {pageItem.isFirstPage ? (
                       <>
@@ -899,16 +910,16 @@ export default function OpeningPrint({
 
                         {/* Addressee */}
                         <div className="mt-7 text-sm font-normal leading-relaxed text-black print:mt-4">
-                          <div className="font-bold tracking-tight">{recipientName}</div>
-                          <div>{recipientTitle}</div>
-                          <div>{bankBranch}</div>
-                          <div>{bankAddressLine1}</div>
-                          <div>{bankAddressLine2}</div>
+                          <div className="font-bold tracking-tight">{pageHeader.recipientName}</div>
+                          <div>{pageHeader.recipientTitle}</div>
+                          <div>{pageHeader.bankBranch}</div>
+                          <div>{pageHeader.bankAddressLine1}</div>
+                          <div>{pageHeader.bankAddressLine2}</div>
                         </div>
 
                         {/* Salutation */}
                         <div className="mt-6 text-sm text-black print:mt-3">
-                          Dear <span className="font-bold">{salutationName}</span>:
+                          Dear <span className="font-bold">{pageHeader.salutationName}</span>:
                         </div>
 
                         {/* Introductory Body Message (Editable for Admin only) */}
@@ -1041,7 +1052,7 @@ export default function OpeningPrint({
                   {/* Dynamic Footer with Page & DSWD Contact Info */}
                   <footer className="paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="font-bold tracking-wider">
-                      {getPageInfo(currentPageNum, totalPages)}
+                      {getPageInfo(currentPageNum, pageItem.formTotalPages)}
                     </div>
                     <div className="mt-1 leading-tight">
                       DSWD Field Office Caraga, R. Palma St., Butuan City, Philippines, 8600
@@ -1060,6 +1071,7 @@ export default function OpeningPrint({
                     </div>
                   </footer>
                 </div>
+                </React.Fragment>
               );
             })}
           </div>

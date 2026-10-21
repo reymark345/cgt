@@ -9,7 +9,17 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  PrintBranchToolbarControls,
+  PrintFormEditorSelector,
+  PrintFormScreenBanner,
+} from '../Components/PrintBranchGroupingControls';
+import {
+  LbpBranchDirectoryItem,
+  PrintRecordWithBranch,
+  useMultiBranchPrintForms,
+} from '../utils/lbpPrintDirectory';
 
 const DEFAULT_INTRO_MESSAGE = `This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on June 7, 2022.
 
@@ -61,7 +71,7 @@ function renderFormattedMessage(rawText: string, containerClassName = '') {
   );
 }
 
-type LiftingRecord = {
+type LiftingRecord = PrintRecordWithBranch & {
   id: number;
   item_no: string | null;
   address: string | null;
@@ -74,6 +84,7 @@ type LiftingRecord = {
 
 type LiftingPrintProps = {
   records?: LiftingRecord[];
+  branchDirectories?: LbpBranchDirectoryItem[];
   defaultDate?: string;
   search?: string;
   dswdLogoUrl?: string;
@@ -117,6 +128,7 @@ function SmartImage({
 
 export default function LiftingPrint({
   records = [],
+  branchDirectories = [],
   defaultDate,
   search,
   dswdLogoUrl,
@@ -126,7 +138,7 @@ export default function LiftingPrint({
   const canEditLetterDetails =
     auth?.user?.role === 'Admin' || Boolean(auth?.user?.permissions?.edit_print_forms);
 
-  // Document customization state (prefilled exactly matching the official sample)
+  // Document customization state (prefilled & automatically resolved per LBP Branch Directory)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
       new Date().toLocaleDateString('en-US', {
@@ -135,12 +147,6 @@ export default function LiftingPrint({
         year: 'numeric',
       })
   );
-  const [recipientName, setRecipientName] = useState('MS. EMELITA I. ESCALANTE');
-  const [recipientTitle, setRecipientTitle] = useState('Branch Head');
-  const [bankBranch, setBankBranch] = useState('Land Bank of the Philippines - Butuan Branch');
-  const [bankAddressLine1, setBankAddressLine1] = useState('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
-  const [bankAddressLine2, setBankAddressLine2] = useState('Butuan City');
-  const [salutationName, setSalutationName] = useState('Ms. Escalante');
   const [signatoryName, setSignatoryName] = useState('MARI-FLOR A. DOLLAGA-LIBANG');
   const [signatoryTitle, setSignatoryTitle] = useState('Regional Director');
 
@@ -192,15 +198,59 @@ export default function LiftingPrint({
     setClosingMessage(DEFAULT_CLOSING_MESSAGE);
   };
 
+  // Pagination calculation: Page 1 holds up to 10 rows (with header & intro).
+  // Subsequent continuation pages hold up to 16 rows.
+  const FIRST_PAGE_ROWS = 10;
+  const CONTINUATION_PAGE_ROWS = 16;
+
+  // Multi-branch / Multi-address automated form grouping & pagination
+  const {
+    directories,
+    groupMode,
+    setGroupMode,
+    groupedForms,
+    activeFormKey,
+    setActiveFormKey,
+    pagesData,
+    totalPages,
+    totalForms,
+    recipientName,
+    setRecipientName,
+    recipientTitle,
+    setRecipientTitle,
+    bankBranch,
+    setBankBranch,
+    bankAddressLine1,
+    setBankAddressLine1,
+    bankAddressLine2,
+    setBankAddressLine2,
+    salutationName,
+    setSalutationName,
+    applyBranchDirectoryToActiveForm,
+    resetHeaderOverrides,
+  } = useMultiBranchPrintForms<LiftingRecord>({
+    records,
+    branchDirectories,
+    blankRowFactory: () => ({
+      id: 1,
+      item_no: '1',
+      address: '',
+      household_id_number: '',
+      name: '',
+      card_number: '',
+      status: '',
+      remarks: '',
+    }),
+    rowsPerPageFirst: FIRST_PAGE_ROWS,
+    rowsPerPageOther: CONTINUATION_PAGE_ROWS,
+    singlePageMax: FIRST_PAGE_ROWS,
+    storageKeyPrefix: 'cgt_lifting_print',
+  });
+
   const handleResetAll = () => {
     setIntroMessage(DEFAULT_INTRO_MESSAGE);
     setClosingMessage(DEFAULT_CLOSING_MESSAGE);
-    setRecipientName('MS. EMELITA I. ESCALANTE');
-    setRecipientTitle('Branch Head');
-    setBankBranch('Land Bank of the Philippines - Butuan Branch');
-    setBankAddressLine1('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
-    setBankAddressLine2('Butuan City');
-    setSalutationName('Ms. Escalante');
+    resetHeaderOverrides();
     setSignatoryName('MARI-FLOR A. DOLLAGA-LIBANG');
     setSignatoryTitle('Regional Director');
   };
@@ -222,95 +272,6 @@ export default function LiftingPrint({
       closingInputRef.current?.focus();
     }, 120);
   };
-
-  // Provide blank rows if no records exist so form renders like official template
-  const rowsToDisplay: LiftingRecord[] = useMemo(() => {
-    if (records && records.length > 0) {
-      return records;
-    }
-    return [
-      {
-        id: 1,
-        item_no: '1',
-        address: '',
-        household_id_number: '',
-        name: '',
-        card_number: '',
-        status: '',
-        remarks: '',
-      },
-      {
-        id: 2,
-        item_no: '2',
-        address: '',
-        household_id_number: '',
-        name: '',
-        card_number: '',
-        status: '',
-        remarks: '',
-      },
-      {
-        id: 3,
-        item_no: '3',
-        address: '',
-        household_id_number: '',
-        name: '',
-        card_number: '',
-        status: '',
-        remarks: '',
-      },
-    ];
-  }, [records]);
-
-  // Pagination calculation: Page 1 holds up to 10 rows (with header & intro).
-  // Subsequent continuation pages hold up to 16 rows.
-  const FIRST_PAGE_ROWS = 10;
-  const CONTINUATION_PAGE_ROWS = 16;
-
-  const pagesData = useMemo(() => {
-    if (rowsToDisplay.length <= FIRST_PAGE_ROWS) {
-      return [
-        {
-          pageIndex: 0,
-          rows: rowsToDisplay,
-          isFirstPage: true,
-          isLastPage: true,
-          globalStartIdx: 0,
-        },
-      ];
-    }
-
-    const pages = [];
-    const firstPageRows = rowsToDisplay.slice(0, FIRST_PAGE_ROWS);
-    pages.push({
-      pageIndex: 0,
-      rows: firstPageRows,
-      isFirstPage: true,
-      isLastPage: false,
-      globalStartIdx: 0,
-    });
-
-    let currentIdx = FIRST_PAGE_ROWS;
-    let pageCount = 1;
-
-    while (currentIdx < rowsToDisplay.length) {
-      const remainingRows = rowsToDisplay.slice(currentIdx, currentIdx + CONTINUATION_PAGE_ROWS);
-      const isLast = currentIdx + CONTINUATION_PAGE_ROWS >= rowsToDisplay.length;
-      pages.push({
-        pageIndex: pageCount,
-        rows: remainingRows,
-        isFirstPage: false,
-        isLastPage: isLast,
-        globalStartIdx: currentIdx,
-      });
-      currentIdx += CONTINUATION_PAGE_ROWS;
-      pageCount++;
-    }
-
-    return pages;
-  }, [rowsToDisplay]);
-
-  const totalPages = pagesData.length;
 
   const handlePrint = () => {
     window.print();
@@ -489,6 +450,14 @@ export default function LiftingPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
+              <PrintBranchToolbarControls
+                accentColor="teal"
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                totalForms={totalForms}
+                totalRecords={records.length}
+              />
+
               {canEditLetterDetails && (
                 <button
                   className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
@@ -543,6 +512,17 @@ export default function LiftingPrint({
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+              </div>
+
+              <div className="mt-3">
+                <PrintFormEditorSelector
+                  accentColor="teal"
+                  activeFormKey={activeFormKey}
+                  directories={directories}
+                  groupedForms={groupedForms}
+                  onApplyBranchDirectory={applyBranchDirectoryToActiveForm}
+                  onSelectFormKey={setActiveFormKey}
+                />
               </div>
 
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -601,6 +581,20 @@ export default function LiftingPrint({
                       placeholder="Branch name"
                       type="text"
                       value={bankBranch}
+                    />
+                    <input
+                      className="mt-1 h-8 w-full rounded-md border border-slate-300 bg-white px-2.5 font-sans text-xs text-slate-900 shadow-2xs focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      onChange={(e) => setBankAddressLine1(e.target.value)}
+                      placeholder="Address Line 1"
+                      type="text"
+                      value={bankAddressLine1}
+                    />
+                    <input
+                      className="mt-1 h-8 w-full rounded-md border border-slate-300 bg-white px-2.5 font-sans text-xs text-slate-900 shadow-2xs focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      onChange={(e) => setBankAddressLine2(e.target.value)}
+                      placeholder="Address Line 2 (City/Province)"
+                      type="text"
+                      value={bankAddressLine2}
                     />
                   </div>
                 </div>
@@ -719,13 +713,31 @@ export default function LiftingPrint({
           >
             {pagesData.map((pageItem) => {
               const currentPageNum = pageItem.pageIndex + 1;
+              const pageHeader = pageItem.header;
 
               return (
                 <div
-                  key={pageItem.pageIndex}
+                  key={`${pageItem.formKey}-p-${pageItem.pageIndex}`}
                   className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
                 >
                   <div className="flex-1">
+                    {pageItem.isFirstPage && (
+                      <PrintFormScreenBanner
+                        accentColor="teal"
+                        canEdit={canEditLetterDetails}
+                        formIndex={pageItem.formIndex}
+                        formLabel={pageItem.formLabel}
+                        header={pageHeader}
+                        isActive={activeFormKey === pageItem.formKey}
+                        onSelectForm={() => {
+                          setActiveFormKey(pageItem.formKey);
+                          if (canEditLetterDetails) {
+                            setIsCustomizing(true);
+                          }
+                        }}
+                        totalForms={pageItem.totalForms}
+                      />
+                    )}
                     {pageItem.isFirstPage ? (
                       <>
                         {/* Top Logos Header */}
@@ -793,16 +805,16 @@ export default function LiftingPrint({
 
                         {/* Addressee */}
                         <div className="mt-7 text-sm font-normal leading-relaxed text-black print:mt-4">
-                          <div className="font-bold tracking-tight">{recipientName}</div>
-                          <div>{recipientTitle}</div>
-                          <div>{bankBranch}</div>
-                          <div>{bankAddressLine1}</div>
-                          <div>{bankAddressLine2}</div>
+                          <div className="font-bold tracking-tight">{pageHeader.recipientName}</div>
+                          <div>{pageHeader.recipientTitle}</div>
+                          <div>{pageHeader.bankBranch}</div>
+                          <div>{pageHeader.bankAddressLine1}</div>
+                          <div>{pageHeader.bankAddressLine2}</div>
                         </div>
 
                         {/* Salutation */}
                         <div className="mt-6 text-sm text-black print:mt-3">
-                          Dear <span className="font-bold">{salutationName}</span>:
+                          Dear <span className="font-bold">{pageHeader.salutationName}</span>:
                         </div>
 
                         {/* Introductory Body Message (Editable) */}
@@ -929,7 +941,7 @@ export default function LiftingPrint({
                   {/* Dynamic Footer with Page & DSWD Contact Info (Strictly without any JSP reference code) */}
                   <footer className="paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="font-bold tracking-wider">
-                      {getPageInfo(currentPageNum, totalPages)}
+                      {getPageInfo(currentPageNum, pageItem.formTotalPages)}
                     </div>
                     <div className="mt-1 leading-tight">
                       DSWD Field Office Caraga, R. Palma St., Butuan City, Philippines, 8600

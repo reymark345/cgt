@@ -677,6 +677,99 @@ export function DataModuleView({ view }: DataModuleViewProps) {
   const [recordToUndo, setRecordToUndo] = useState<UndoTarget | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const isRequestModule = [
+    'opening',
+    'distribution',
+    'otc-withdrawal',
+    'replacement',
+    'transfer-of-fund',
+    'force-pin',
+    'locking',
+    'lifting',
+  ].includes(view);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [view]);
+
+  const currentRecords =
+    view === 'opening'
+      ? openingRecords
+      : view === 'distribution'
+      ? distributionRecords
+      : view === 'otc-withdrawal'
+      ? otcRecords
+      : view === 'replacement'
+      ? replacementRecords
+      : view === 'transfer-of-fund'
+      ? transferOfFundRecords
+      : view === 'force-pin'
+      ? forcePinRecords
+      : view === 'locking'
+      ? lockingRecords
+      : view === 'lifting'
+      ? liftingRecords
+      : [];
+
+  const currentPageIds = currentRecords.map((r) => r.id).filter((id): id is number => Boolean(id));
+  const allPageSelected = currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
+  const somePageSelected = currentPageIds.some((id) => selectedIds.includes(id)) && !allPageSelected;
+  const hasSelectedRows = selectedIds.length > 0;
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
+  const renderRowCheckbox = (id: number, idx: number) => (
+    <td className="w-10 px-4 py-3 text-center">
+      <input
+        type="checkbox"
+        checked={selectedIds.includes(id)}
+        onChange={() => toggleSelectRow(id)}
+        aria-label={`Select row ${(currentPage - 1) * 15 + idx + 1}`}
+        className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary focus:ring-primary"
+      />
+    </td>
+  );
+
+  const renderRowPrintButton = (id: number, modulePath: string, hoverClasses: string, titleText: string) => {
+    const isChecked = selectedIds.includes(id);
+    if (!isChecked) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="inline-flex h-7 cursor-not-allowed items-center gap-1 rounded-md border border-border/60 bg-card/50 px-2 text-[11px] font-medium text-muted-foreground opacity-45"
+          title="Check this row first to enable printing"
+        >
+          <Printer className="h-3 w-3" />
+          <span>Print</span>
+        </button>
+      );
+    }
+    return (
+      <a
+        href={`/${modulePath}/print?ids=${id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition ${hoverClasses}`}
+        title={titleText}
+      >
+        <Printer className="h-3 w-3" />
+        <span>Print</span>
+      </a>
+    );
+  };
 
   const handleConfirmUndo = async () => {
     if (!recordToUndo) return;
@@ -771,6 +864,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             data.message ||
             `${moduleLabel} record for Household ${recordToUndo.household_id_number} was successfully undone and removed.`,
         });
+        setSelectedIds((prev) => prev.filter((id) => id !== recordToUndo.id));
         setRecordToUndo(null);
 
         // Live update sidebar badges and dashboard metrics immediately
@@ -832,47 +926,15 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
-            {['opening', 'distribution', 'otc-withdrawal', 'replacement', 'transfer-of-fund', 'force-pin', 'locking', 'lifting'].includes(view) ? (
-              <>
-                <a
-                  href={
-                    debouncedSearch
-                      ? `/${view}/print?search=${encodeURIComponent(debouncedSearch)}`
-                      : `/${view}/print`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
-                    view === 'distribution'
-                      ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25'
-                      : view === 'otc-withdrawal'
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300 dark:hover:bg-emerald-400/25'
-                      : view === 'replacement'
-                      ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-400/30 dark:bg-purple-400/15 dark:text-purple-300 dark:hover:bg-purple-400/25'
-                      : view === 'transfer-of-fund'
-                      ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-400/15 dark:text-indigo-300 dark:hover:bg-indigo-400/25'
-                      : view === 'force-pin'
-                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300 dark:hover:bg-amber-400/25'
-                      : view === 'locking'
-                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-300 dark:hover:bg-rose-400/25'
-                      : view === 'lifting'
-                      ? 'border-teal-500/30 bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300 dark:hover:bg-teal-400/25'
-                      : 'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25'
-                  }`}
-                  title={`Open printable ${config.title} Form in new tab`}
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  <span>Print Form</span>
-                </a>
-                <a
-                  href={`/${view}/export`}
-                  download
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Export Data</span>
-                </a>
-              </>
+            {isRequestModule ? (
+              <a
+                href={`/${view}/export`}
+                download
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-secondary dark:border-border"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Data</span>
+              </a>
             ) : (
               <>
                 <button
@@ -977,15 +1039,58 @@ export function DataModuleView({ view }: DataModuleViewProps) {
       <div className="rounded-xl border border-border bg-card shadow-xs dark:border-border dark:bg-card">
         {/* Table Toolbar */}
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary dark:border-input dark:bg-background"
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`Search ${config.title} records...`}
-              type="text"
-              value={searchTerm}
-            />
+          <div className="flex flex-1 flex-wrap items-center gap-2.5">
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary dark:border-input dark:bg-background"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={`Search ${config.title} records...`}
+                type="text"
+                value={searchTerm}
+              />
+            </div>
+
+            {isRequestModule && (
+              hasSelectedRows ? (
+                <a
+                  href={`/${view}/print?ids=${selectedIds.join(',')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
+                    view === 'distribution'
+                      ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25'
+                      : view === 'otc-withdrawal'
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300 dark:hover:bg-emerald-400/25'
+                      : view === 'replacement'
+                      ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-400/30 dark:bg-purple-400/15 dark:text-purple-300 dark:hover:bg-purple-400/25'
+                      : view === 'transfer-of-fund'
+                      ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-400/15 dark:text-indigo-300 dark:hover:bg-indigo-400/25'
+                      : view === 'force-pin'
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300 dark:hover:bg-amber-400/25'
+                      : view === 'locking'
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-300 dark:hover:bg-rose-400/25'
+                      : view === 'lifting'
+                      ? 'border-teal-500/30 bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300 dark:hover:bg-teal-400/25'
+                      : 'border-blue-500/30 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25'
+                  }`}
+                  title={`Open printable ${config.title} Form for ${selectedIds.length} selected record(s)`}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Print Form ({selectedIds.length})</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border border-border bg-secondary/40 px-3 text-xs font-semibold text-muted-foreground opacity-50 shadow-2xs"
+                  title="Select at least one row to enable Print Form"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>Print Form</span>
+                </button>
+              )
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -1037,6 +1142,22 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           <table className="w-full min-w-[900px] text-left text-xs">
             <thead className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:bg-secondary/30">
               <tr>
+                {isRequestModule && (
+                  <th className="w-10 px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = somePageSelected;
+                      }}
+                      onChange={toggleSelectAll}
+                      disabled={currentPageIds.length === 0}
+                      aria-label="Select all rows on this page"
+                      title="Check All"
+                      className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </th>
+                )}
                 {config.columns.map((col, idx) => (
                   <th key={idx} className={`px-4 py-3 ${col === 'Action' ? 'text-right' : ''}`}>
                     {col}
@@ -1048,7 +1169,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               {view === 'opening' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Opening records...</span>
@@ -1059,8 +1180,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   openingRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1097,16 +1221,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/opening/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400"
-                            title="Print Endorsement Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'opening',
+                            'hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400',
+                            'Print Endorsement Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1131,7 +1251,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1151,7 +1271,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'distribution' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-cyan-600 dark:text-cyan-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Distribution records...</span>
@@ -1162,8 +1282,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   distributionRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1196,16 +1319,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/distribution/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400"
-                            title="Print Distribution Endorsement Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'distribution',
+                            'hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400',
+                            'Print Distribution Endorsement Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1230,7 +1349,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1250,7 +1369,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'otc-withdrawal' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-emerald-600 dark:text-emerald-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading OTC Withdrawal records...</span>
@@ -1261,8 +1380,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   otcRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1289,16 +1411,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/otc-withdrawal/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
-                            title="Print OTC Withdrawal Endorsement Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'otc-withdrawal',
+                            'hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400',
+                            'Print OTC Withdrawal Endorsement Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1323,7 +1441,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1343,7 +1461,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'replacement' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Replacement records...</span>
@@ -1354,8 +1472,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   replacementRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1379,16 +1500,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/replacement/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400"
-                            title="Print Replacement Endorsement Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'replacement',
+                            'hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400',
+                            'Print Replacement Endorsement Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1413,7 +1530,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1433,7 +1550,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'transfer-of-fund' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Transfer of Fund records...</span>
@@ -1444,8 +1561,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   transferOfFundRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1472,16 +1592,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/transfer-of-fund/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
-                            title="Print Transfer of Fund Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'transfer-of-fund',
+                            'hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400',
+                            'Print Transfer of Fund Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1506,7 +1622,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1526,7 +1642,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'force-pin' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Force PIN records...</span>
@@ -1537,8 +1653,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   forcePinRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1559,16 +1678,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/force-pin/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
-                            title="Print Force PIN Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'force-pin',
+                            'hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400',
+                            'Print Force PIN Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1593,7 +1708,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1613,7 +1728,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'locking' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-rose-600 dark:text-rose-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Locking records...</span>
@@ -1624,8 +1739,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   lockingRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1646,16 +1764,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/locking/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
-                            title="Print Locking Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'locking',
+                            'hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400',
+                            'Print Locking Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1680,7 +1794,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1700,7 +1814,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'lifting' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Lifting records...</span>
@@ -1711,8 +1825,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   liftingRecords.map((item, idx) => (
                     <tr
                       key={item.id || idx}
-                      className="border-b border-border/50 transition-colors hover:bg-muted/40"
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${
+                        selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                      }`}
                     >
+                      {renderRowCheckbox(item.id, idx)}
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {(currentPage - 1) * 15 + idx + 1}
                       </td>
@@ -1733,16 +1850,12 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`/lifting/print?ids=${item.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400"
-                            title="Print Lifting Form for this grantee"
-                          >
-                            <Printer className="h-3 w-3" />
-                            <span>Print</span>
-                          </a>
+                          {renderRowPrintButton(
+                            item.id,
+                            'lifting',
+                            'hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400',
+                            'Print Lifting Form for this grantee'
+                          )}
                           <button
                             type="button"
                             onClick={() =>
@@ -1767,7 +1880,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />

@@ -14,7 +14,17 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  PrintBranchToolbarControls,
+  PrintFormEditorSelector,
+  PrintFormScreenBanner,
+} from '../Components/PrintBranchGroupingControls';
+import {
+  LbpBranchDirectoryItem,
+  PrintRecordWithBranch,
+  useMultiBranchPrintForms,
+} from '../utils/lbpPrintDirectory';
 
 const DEFAULT_INTRO_MESSAGE = `This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on June 7, 2022.
 
@@ -68,7 +78,7 @@ function renderFormattedMessage(rawText: string, containerClassName = '') {
   );
 }
 
-type TransferOfFundRecord = {
+type TransferOfFundRecord = PrintRecordWithBranch & {
   id: number;
   item_no: string | null;
   address: string | null;
@@ -83,6 +93,7 @@ type TransferOfFundRecord = {
 
 type TransferOfFundPrintProps = {
   records?: TransferOfFundRecord[];
+  branchDirectories?: LbpBranchDirectoryItem[];
   defaultDate?: string;
   search?: string;
   dswdLogoUrl?: string;
@@ -126,6 +137,7 @@ function SmartImage({
 
 export default function TransferOfFundPrint({
   records = [],
+  branchDirectories = [],
   defaultDate,
   search,
   dswdLogoUrl,
@@ -136,7 +148,7 @@ export default function TransferOfFundPrint({
     props?.auth?.user?.is_admin || props?.auth?.user?.permissions?.edit_print_forms
   );
 
-  // Document customization state (prefilled exactly matching the official sample)
+  // Document customization state (prefilled & automatically resolved per LBP Branch Directory)
   const [letterDate, setLetterDate] = useState(
     defaultDate ||
       new Date().toLocaleDateString('en-US', {
@@ -145,12 +157,6 @@ export default function TransferOfFundPrint({
         year: 'numeric',
       })
   );
-  const [recipientName, setRecipientName] = useState('MS. EMELITA I. ESCALANTE');
-  const [recipientTitle, setRecipientTitle] = useState('Branch Head');
-  const [bankBranch, setBankBranch] = useState('Land Bank of the Philippines - Butuan Branch');
-  const [bankAddressLine1, setBankAddressLine1] = useState('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
-  const [bankAddressLine2, setBankAddressLine2] = useState('Butuan City');
-  const [salutationName, setSalutationName] = useState('Ms. Escalante');
   const [signatoryName, setSignatoryName] = useState('MARI-FLOR A. DOLLAGA-LIBANG');
   const [signatoryTitle, setSignatoryTitle] = useState('Regional Director');
 
@@ -303,83 +309,50 @@ export default function TransferOfFundPrint({
     window.print();
   };
 
-  // Only display the available data. If no records are present, provide a single blank row.
-  const displayRows =
-    records.length > 0
-      ? records
-      : [
-          {
-            id: -1,
-            item_no: '1',
-            address: null,
-            household_id_number: null,
-            old_card_number: null,
-            old_cardholder_name: null,
-            new_card_number: null,
-            new_cardholder_name: null,
-            status: null,
-            remarks: null,
-          },
-        ];
-
-  // Chunk displayRows into pages calibrated strictly for A4 format
-  const pagesData = useMemo(() => {
-    const SINGLE_PAGE_MAX = 5;
-    if (displayRows.length <= SINGLE_PAGE_MAX) {
-      return [
-        {
-          pageIndex: 0,
-          rows: displayRows,
-          globalStartIdx: 0,
-          isFirstPage: true,
-          isLastPage: true,
-        },
-      ];
-    }
-
-    const pages = [];
-    const firstPageLimit = Math.min(rowsPerPageFirst, Math.max(1, displayRows.length - 1));
-
-    // Page 1
-    pages.push({
-      pageIndex: 0,
-      rows: displayRows.slice(0, firstPageLimit),
-      globalStartIdx: 0,
-      isFirstPage: true,
-      isLastPage: false,
-    });
-
-    let currentOffset = firstPageLimit;
-    let pageNum = 1;
-
-    while (currentOffset < displayRows.length) {
-      const remainingRows = displayRows.length - currentOffset;
-      const isNextLast = remainingRows <= rowsPerPageOther;
-
-      let chunkSize = rowsPerPageOther;
-      if (isNextLast) {
-        chunkSize = remainingRows;
-      } else if (remainingRows - rowsPerPageOther < 1) {
-        chunkSize = Math.max(1, rowsPerPageOther - 1);
-      }
-
-      const chunk = displayRows.slice(currentOffset, currentOffset + chunkSize);
-      pages.push({
-        pageIndex: pageNum,
-        rows: chunk,
-        globalStartIdx: currentOffset,
-        isFirstPage: false,
-        isLastPage: currentOffset + chunkSize >= displayRows.length,
-      });
-
-      currentOffset += chunkSize;
-      pageNum++;
-    }
-
-    return pages;
-  }, [displayRows, rowsPerPageFirst, rowsPerPageOther]);
-
-  const totalPages = pagesData.length;
+  // Multi-branch / Multi-address automated form grouping & pagination
+  const {
+    directories,
+    groupMode,
+    setGroupMode,
+    groupedForms,
+    activeFormKey,
+    setActiveFormKey,
+    pagesData,
+    totalPages,
+    totalForms,
+    recipientName,
+    setRecipientName,
+    recipientTitle,
+    setRecipientTitle,
+    bankBranch,
+    setBankBranch,
+    bankAddressLine1,
+    setBankAddressLine1,
+    bankAddressLine2,
+    setBankAddressLine2,
+    salutationName,
+    setSalutationName,
+    applyBranchDirectoryToActiveForm,
+  } = useMultiBranchPrintForms<TransferOfFundRecord>({
+    records,
+    branchDirectories,
+    blankRowFactory: () => ({
+      id: -1,
+      item_no: '1',
+      address: null,
+      household_id_number: null,
+      old_card_number: null,
+      old_cardholder_name: null,
+      new_card_number: null,
+      new_cardholder_name: null,
+      status: null,
+      remarks: null,
+    }),
+    rowsPerPageFirst,
+    rowsPerPageOther,
+    singlePageMax: 5,
+    storageKeyPrefix: 'cgt_tof_print',
+  });
 
   const getPageInfo = (pageNum: number, total: number) => {
     return `PAGE ${pageNum} of ${total}`;
@@ -568,6 +541,14 @@ export default function TransferOfFundPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
+              <PrintBranchToolbarControls
+                accentColor="indigo"
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                totalForms={totalForms}
+                totalRecords={records.length}
+              />
+
               {canEditLetterDetails && (
                 <button
                   className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
@@ -606,9 +587,18 @@ export default function TransferOfFundPrint({
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Changes take effect live and persist in this browser.
+                    Headers auto-populate from LBP Branch Directory per address.
                   </span>
                 </div>
+
+                <PrintFormEditorSelector
+                  accentColor="indigo"
+                  activeFormKey={activeFormKey}
+                  directories={directories}
+                  groupedForms={groupedForms}
+                  onApplyBranchDirectory={applyBranchDirectoryToActiveForm}
+                  onSelectFormKey={setActiveFormKey}
+                />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Date Input */}
@@ -884,13 +874,31 @@ export default function TransferOfFundPrint({
           >
             {pagesData.map((pageItem) => {
               const currentPageNum = pageItem.pageIndex + 1;
+              const pageHeader = pageItem.header;
 
               return (
                 <div
-                  key={pageItem.pageIndex}
+                  key={`${pageItem.formKey}-p-${pageItem.pageIndex}`}
                   className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
                 >
                   <div className="flex-1">
+                    {pageItem.isFirstPage && (
+                      <PrintFormScreenBanner
+                        accentColor="indigo"
+                        canEdit={canEditLetterDetails}
+                        formIndex={pageItem.formIndex}
+                        formLabel={pageItem.formLabel}
+                        header={pageHeader}
+                        isActive={activeFormKey === pageItem.formKey}
+                        onSelectForm={() => {
+                          setActiveFormKey(pageItem.formKey);
+                          if (canEditLetterDetails) {
+                            setIsEditorOpen(true);
+                          }
+                        }}
+                        totalForms={pageItem.totalForms}
+                      />
+                    )}
                     {pageItem.isFirstPage ? (
                       <>
                         {/* Top Logos Header */}
@@ -958,16 +966,16 @@ export default function TransferOfFundPrint({
 
                         {/* Addressee */}
                         <div className="mt-7 text-sm font-normal leading-relaxed text-black print:mt-4">
-                          <div className="font-bold tracking-tight">{recipientName}</div>
-                          <div>{recipientTitle}</div>
-                          <div>{bankBranch}</div>
-                          <div>{bankAddressLine1}</div>
-                          <div>{bankAddressLine2}</div>
+                          <div className="font-bold tracking-tight">{pageHeader.recipientName}</div>
+                          <div>{pageHeader.recipientTitle}</div>
+                          <div>{pageHeader.bankBranch}</div>
+                          <div>{pageHeader.bankAddressLine1}</div>
+                          <div>{pageHeader.bankAddressLine2}</div>
                         </div>
 
                         {/* Salutation */}
                         <div className="mt-6 text-sm text-black print:mt-3">
-                          Dear <span className="font-bold">{salutationName}</span>:
+                          Dear <span className="font-bold">{pageHeader.salutationName}</span>:
                         </div>
 
                         {/* Introductory Body Message (Editable) */}
@@ -1106,7 +1114,7 @@ export default function TransferOfFundPrint({
                   {/* Dynamic Footer with Page & DSWD Contact Info */}
                   <footer className="paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="font-bold tracking-wider">
-                      {getPageInfo(currentPageNum, totalPages)}
+                      {getPageInfo(currentPageNum, pageItem.formTotalPages)}
                     </div>
                     <div className="mt-1 leading-tight">
                       DSWD Field Office Caraga, R. Palma St., Butuan City, Philippines, 8600

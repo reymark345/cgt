@@ -164,7 +164,8 @@ class LiftingController extends Controller
         $records = $query->orderBy('id', 'asc')->get();
 
         return Inertia::render('LiftingPrint', [
-            'records' => $records,
+            'records' => \App\Models\LbpBranchDirectory::resolveRecordsForPrint($records),
+            'branchDirectories' => \App\Models\LbpBranchDirectory::getAllForPrint(),
             'defaultDate' => now()->format('F d, Y'),
             'search' => $request->input('search'),
             'dswdLogoUrl' => asset('images/dswd_caraga_logo.png'),

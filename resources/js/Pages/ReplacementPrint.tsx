@@ -15,6 +15,16 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  PrintBranchToolbarControls,
+  PrintFormEditorSelector,
+  PrintFormScreenBanner,
+} from '../Components/PrintBranchGroupingControls';
+import {
+  LbpBranchDirectoryEntry,
+  PrintRecordWithBranch,
+  useMultiBranchPrintForms,
+} from '../utils/lbpPrintDirectory';
 
 const DEFAULT_INTRO_MESSAGE = `This is in connection with the implementation of the Pantawid Pamilyang Pilipino Program for the distribution of cash grants and in accordance with the new guidelines signed on June 7, 2022.
 
@@ -70,7 +80,7 @@ function renderFormattedMessage(rawText: string, containerClassName = '') {
   );
 }
 
-type ReplacementRecord = {
+type ReplacementRecord = PrintRecordWithBranch & {
   id: number;
   item_no: string | null;
   address: string | null;
@@ -84,6 +94,7 @@ type ReplacementRecord = {
 
 type ReplacementPrintProps = {
   records?: ReplacementRecord[];
+  branchDirectories?: LbpBranchDirectoryEntry[];
   defaultDate?: string;
   search?: string;
   dswdLogoUrl?: string;
@@ -133,6 +144,7 @@ function SmartImage({
 
 export default function ReplacementPrint({
   records = [],
+  branchDirectories,
   defaultDate = 'October 10, 2026',
   search = '',
   dswdLogoUrl,
@@ -149,12 +161,6 @@ export default function ReplacementPrint({
 
   // Editable Letter & Header Details
   const [letterDate, setLetterDate] = useState(defaultDate);
-  const [recipientName, setRecipientName] = useState('MS. EMELITA I. ESCALANTE');
-  const [recipientTitle, setRecipientTitle] = useState('Branch Head');
-  const [bankBranch, setBankBranch] = useState('Land Bank of the Philippines - Butuan Branch');
-  const [bankAddressLine1, setBankAddressLine1] = useState('Ong Hoc Building, Montilla Blvd. Cor. P. Burgoz St.,');
-  const [bankAddressLine2, setBankAddressLine2] = useState('Butuan City');
-  const [salutationName, setSalutationName] = useState('Ms. Escalante');
   const [signatoryName, setSignatoryName] = useState('MARI-FLOR A. DOLLAGA-LIBANG');
   const [signatoryTitle, setSignatoryTitle] = useState('Regional Director');
 
@@ -168,12 +174,8 @@ export default function ReplacementPrint({
   const introInputRef = useRef<HTMLTextAreaElement>(null);
   const closingInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fallback demo rows if no records in database yet
-  const displayRecords = useMemo(() => {
-    if (records.length > 0) {
-      return records;
-    }
-    return [
+  const fallbackBlankRows: ReplacementRecord[] = useMemo(
+    () => [
       {
         id: 1,
         item_no: '1',
@@ -207,55 +209,41 @@ export default function ReplacementPrint({
         status: 'Pending',
         remarks: null,
       },
-    ] as ReplacementRecord[];
-  }, [records]);
+    ],
+    []
+  );
 
-  // Pagination calculation
-  const pagesData = useMemo(() => {
-    const totalRecords = displayRecords.length;
-    if (totalRecords <= rowsPerPageFirst) {
-      return [
-        {
-          pageIndex: 0,
-          rows: displayRecords,
-          isFirstPage: true,
-          isLastPage: true,
-          globalStartIdx: 0,
-        },
-      ];
-    }
-
-    const pages = [];
-    const firstPageRows = displayRecords.slice(0, rowsPerPageFirst);
-    pages.push({
-      pageIndex: 0,
-      rows: firstPageRows,
-      isFirstPage: true,
-      isLastPage: false,
-      globalStartIdx: 0,
-    });
-
-    let currentIdx = rowsPerPageFirst;
-    let pageIdx = 1;
-
-    while (currentIdx < totalRecords) {
-      const nextBatch = displayRecords.slice(currentIdx, currentIdx + rowsPerPageSubsequent);
-      const isLast = currentIdx + rowsPerPageSubsequent >= totalRecords;
-      pages.push({
-        pageIndex: pageIdx,
-        rows: nextBatch,
-        isFirstPage: false,
-        isLastPage: isLast,
-        globalStartIdx: currentIdx,
-      });
-      currentIdx += rowsPerPageSubsequent;
-      pageIdx++;
-    }
-
-    return pages;
-  }, [displayRecords, rowsPerPageFirst, rowsPerPageSubsequent]);
-
-  const totalPages = pagesData.length;
+  const {
+    directories,
+    groupMode,
+    setGroupMode,
+    groupedForms,
+    activeFormKey,
+    setActiveFormKey,
+    pagesData,
+    totalPages,
+    totalForms,
+    recipientName,
+    setRecipientName,
+    recipientTitle,
+    setRecipientTitle,
+    bankBranch,
+    setBankBranch,
+    bankAddressLine1,
+    setBankAddressLine1,
+    bankAddressLine2,
+    setBankAddressLine2,
+    salutationName,
+    setSalutationName,
+    applyBranchDirectoryToActiveForm,
+  } = useMultiBranchPrintForms({
+    records,
+    fallbackBlankRows,
+    branchDirectories,
+    singlePageMaxRows: rowsPerPageFirst,
+    rowsPerPageFirst,
+    rowsPerPageOther: rowsPerPageSubsequent,
+  });
 
   const handleClose = () => {
     if (window.opener) {
@@ -517,6 +505,13 @@ export default function ReplacementPrint({
             </div>
 
             <div className="flex items-center gap-2">
+              <PrintBranchToolbarControls
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                recordsCount={records.length}
+                totalForms={totalForms}
+              />
+
               {canEditLetterDetails && (
                 <button
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
@@ -555,6 +550,15 @@ export default function ReplacementPrint({
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              <PrintFormEditorSelector
+                activeFormKey={activeFormKey}
+                currentBranchName={bankBranch}
+                directories={directories}
+                groupedForms={groupedForms}
+                onSelectBranchDirectory={applyBranchDirectoryToActiveForm}
+                onSelectFormKey={setActiveFormKey}
+              />
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                 <div>
@@ -781,13 +785,23 @@ export default function ReplacementPrint({
             }}
           >
             {pagesData.map((pageItem) => {
-              const currentPageNum = pageItem.pageIndex + 1;
+              const currentPageNum = pageItem.formPageNum;
+              const pageHeader = pageItem.headerDetails;
 
               return (
-                <div
-                  key={pageItem.pageIndex}
-                  className="printable-page relative mb-8 flex min-h-[297mm] w-[210mm] flex-col justify-between rounded-lg bg-white p-[15mm] text-black shadow-xl ring-1 ring-slate-200/80 print:relative print:m-0 print:mb-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:w-full print:rounded-none print:p-0 print:pb-[22mm] print:shadow-none print:ring-0 print:overflow-hidden"
-                >
+                <React.Fragment key={pageItem.pageIndex}>
+                  <PrintFormScreenBanner
+                    bankBranch={pageHeader.bankBranch}
+                    formIndex={pageItem.formIndex}
+                    formLabel={pageItem.formLabel}
+                    isFirstPage={pageItem.isFirstPage}
+                    recipientName={pageHeader.recipientName}
+                    rowsCount={groupedForms[pageItem.formIndex]?.records.length || pageItem.rows.length}
+                    totalForms={pageItem.totalForms}
+                  />
+                  <div
+                    className="printable-page relative mb-8 flex min-h-[297mm] w-[210mm] flex-col justify-between rounded-lg bg-white p-[15mm] text-black shadow-xl ring-1 ring-slate-200/80 print:relative print:m-0 print:mb-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:w-full print:rounded-none print:p-0 print:pb-[22mm] print:shadow-none print:ring-0 print:overflow-hidden"
+                  >
                   <div className="flex-1">
                     {/* Header Logos & Agency Branding (Page 1 only) */}
                     {pageItem.isFirstPage ? (
@@ -837,16 +851,16 @@ export default function ReplacementPrint({
 
                         {/* Recipient Addressee Block */}
                         <div className="mt-6 text-sm leading-snug text-black print:mt-4">
-                          <div className="font-bold tracking-wide uppercase">{recipientName}</div>
-                          <div>{recipientTitle}</div>
-                          <div>{bankBranch}</div>
-                          <div>{bankAddressLine1}</div>
-                          <div>{bankAddressLine2}</div>
+                          <div className="font-bold tracking-wide uppercase">{pageHeader.recipientName}</div>
+                          <div>{pageHeader.recipientTitle}</div>
+                          <div>{pageHeader.bankBranch}</div>
+                          <div>{pageHeader.bankAddressLine1}</div>
+                          <div>{pageHeader.bankAddressLine2}</div>
                         </div>
 
                         {/* Salutation */}
                         <div className="mt-6 text-sm text-black print:mt-4">
-                          Dear <span className="font-bold">{salutationName}</span>:
+                          Dear <span className="font-bold">{pageHeader.salutationName}</span>:
                         </div>
 
                         {/* Introductory Paragraphs (Editable) */}
@@ -978,7 +992,7 @@ export default function ReplacementPrint({
                   {/* Clean Official Footer (No JSP/reference code as requested) */}
                   <footer className="paper-footer mt-auto pt-4 text-center text-[10px] text-slate-800 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
                     <div className="text-xs font-semibold text-black">
-                      PAGE {currentPageNum} of {totalPages}
+                      PAGE {currentPageNum} of {pageItem.formTotalPages}
                     </div>
                     <div className="mt-1 text-[9px] leading-tight text-slate-700 print:text-black">
                       DSWD Field Office Caraga, R. Palma St., Butuan City, Philippines, 8600
@@ -989,6 +1003,7 @@ export default function ReplacementPrint({
                     </div>
                   </footer>
                 </div>
+                </React.Fragment>
               );
             })}
           </div>
