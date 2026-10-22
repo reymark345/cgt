@@ -564,15 +564,6 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
           </button>
 
           <button
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-xs transition hover:opacity-90"
-            onClick={handleOpenAdd}
-            type="button"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add DRN
-          </button>
-
-          <button
             className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary"
             disabled={loading}
             onClick={fetchDrnRecords}
@@ -684,6 +675,15 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
                 </option>
               ))}
             </select>
+
+            <button
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-xs transition hover:opacity-90"
+              onClick={handleOpenAdd}
+              type="button"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add DRN
+            </button>
           </div>
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
