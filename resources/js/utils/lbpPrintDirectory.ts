@@ -481,6 +481,224 @@ export type PaginatedFormPage<T> = {
   header: FormHeaderDetails;
 };
 
+/**
+ * Strictly disables Inspect Element, right-click context menu, F12, and DevTools shortcuts
+ * across all Request Print Preview pages. Also shields the document if DevTools is opened.
+ */
+export function useStrictPrintPreviewProtection() {
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    const isEditableTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName.toUpperCase();
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        Boolean(target.isContentEditable)
+      );
+    };
+
+    const blockEvent = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') {
+        e.stopImmediatePropagation();
+      }
+      return false;
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      return blockEvent(e);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 2) {
+        return blockEvent(e);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = (e.key || '').toUpperCase();
+      const keyCode = e.keyCode || e.which;
+      const ctrlOrMeta = e.ctrlKey || e.metaKey;
+      const shiftOrAlt = e.shiftKey || e.altKey;
+
+      // F12
+      if (key === 'F12' || keyCode === 123) {
+        return blockEvent(e);
+      }
+
+      // ContextMenu key or Shift+F10
+      if (key === 'CONTEXTMENU' || keyCode === 93 || (e.shiftKey && (key === 'F10' || keyCode === 121))) {
+        return blockEvent(e);
+      }
+
+      // Ctrl/Cmd + Shift/Alt + I / J / C / K / E / M (DevTools / Inspect / Console / Network)
+      if (
+        ctrlOrMeta &&
+        shiftOrAlt &&
+        ['I', 'J', 'C', 'K', 'E', 'M'].includes(key)
+      ) {
+        return blockEvent(e);
+      }
+
+      if (
+        ctrlOrMeta &&
+        shiftOrAlt &&
+        [73, 74, 67, 75, 69, 77].includes(keyCode)
+      ) {
+        return blockEvent(e);
+      }
+
+      // Ctrl/Cmd + U (View Source) or Ctrl/Cmd + S (Save HTML)
+      if (ctrlOrMeta && (key === 'U' || key === 'S' || keyCode === 85 || keyCode === 83)) {
+        return blockEvent(e);
+      }
+    };
+
+    const handleSelectStart = (e: Event) => {
+      if (!isEditableTarget(e.target)) {
+        return blockEvent(e);
+      }
+    };
+
+    const handleDragStart = (e: DragEvent) => {
+      if (!isEditableTarget(e.target)) {
+        return blockEvent(e);
+      }
+    };
+
+    const handleCopyCut = (e: ClipboardEvent) => {
+      if (!isEditableTarget(e.target)) {
+        return blockEvent(e);
+      }
+    };
+
+    // Inject strict print-preview protection styles (disables text selection outside inputs)
+    const styleEl = document.createElement('style');
+    styleEl.setAttribute('data-print-security', 'strict');
+    styleEl.textContent = `
+      body {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+      }
+      input, textarea, select {
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+      }
+      header.no-print > div:first-child,
+      header.non-printable > div:first-child {
+        max-width: 100% !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
+        gap: 0.5rem !important;
+      }
+      header.no-print > div:first-child > div,
+      header.non-printable > div:first-child > div {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+      }
+      body.cgt-devtools-blocked > *:not(#cgt-print-security-shield) {
+        display: none !important;
+        visibility: hidden !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    const prevOnContextMenu = document.oncontextmenu;
+    const prevOnKeyDown = document.onkeydown;
+    document.oncontextmenu = () => false;
+
+    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    document.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    window.addEventListener('mousedown', handleMouseDown, { capture: true });
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keyup', handleKeyDown, { capture: true });
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    document.addEventListener('selectstart', handleSelectStart, { capture: true });
+    document.addEventListener('dragstart', handleDragStart, { capture: true });
+    document.addEventListener('copy', handleCopyCut, { capture: true });
+    document.addEventListener('cut', handleCopyCut, { capture: true });
+
+    // Create security shield overlay if DevTools is forced open via browser menu
+    const shieldEl = document.createElement('div');
+    shieldEl.id = 'cgt-print-security-shield';
+    shieldEl.style.cssText =
+      'display:none;position:fixed;inset:0;z-index:2147483647;background:#0f172a;color:#f8fafc;align-items:center;justify-content:center;flex-direction:column;padding:24px;text-align:center;font-family:system-ui,-apple-system,sans-serif;';
+    shieldEl.innerHTML = `
+      <div style="max-width:460px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="font-size:16px;font-weight:700;color:#f87171;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">
+          Protected Print Preview
+        </div>
+        <div style="font-size:13px;line-height:1.6;color:#cbd5e1;">
+          Inspect Element and Developer Tools are strictly restricted on official endorsement print previews. Please close Developer Tools to continue viewing or printing this document.
+        </div>
+      </div>
+    `;
+    document.body.appendChild(shieldEl);
+
+    const setShieldActive = (active: boolean) => {
+      if (active) {
+        document.body.classList.add('cgt-devtools-blocked');
+        shieldEl.style.display = 'flex';
+      } else {
+        document.body.classList.remove('cgt-devtools-blocked');
+        shieldEl.style.display = 'none';
+      }
+    };
+
+    const checkDevTools = () => {
+      const start = performance.now();
+      try {
+        // Only pauses when DevTools is open
+        new Function('debugger')();
+      } catch {
+        // ignore
+      }
+      const elapsed = performance.now() - start;
+      if (elapsed > 120) {
+        setShieldActive(true);
+      } else {
+        setShieldActive(false);
+      }
+    };
+
+    const intervalId = window.setInterval(checkDevTools, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.oncontextmenu = prevOnContextMenu;
+      document.onkeydown = prevOnKeyDown;
+      window.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+      document.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+      window.removeEventListener('mousedown', handleMouseDown, { capture: true });
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keyup', handleKeyDown, { capture: true });
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      document.removeEventListener('selectstart', handleSelectStart, { capture: true });
+      document.removeEventListener('dragstart', handleDragStart, { capture: true });
+      document.removeEventListener('copy', handleCopyCut, { capture: true });
+      document.removeEventListener('cut', handleCopyCut, { capture: true });
+      document.body.classList.remove('cgt-devtools-blocked');
+      if (styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+      if (shieldEl.parentNode) {
+        shieldEl.parentNode.removeChild(shieldEl);
+      }
+    };
+  }, []);
+}
+
 export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
   records,
   fallbackBlankRows,
@@ -500,6 +718,8 @@ export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
   rowsPerPageFirst?: number;
   rowsPerPageOther?: number;
 }) {
+  useStrictPrintPreviewProtection();
+
   const effectiveSinglePageMaxRows = singlePageMaxRows ?? singlePageMax ?? 5;
   const effectiveFallbackRows = useMemo(() => {
     if (fallbackBlankRows && fallbackBlankRows.length > 0) {

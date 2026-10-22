@@ -27,13 +27,13 @@ export function PrintBranchToolbarControls({
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50/90 p-1 shadow-2xs dark:border-slate-700 dark:bg-slate-800/90">
-      <span className="hidden items-center gap-1 px-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 lg:inline-flex dark:text-slate-400">
+    <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50/90 p-1 shadow-2xs whitespace-nowrap dark:border-slate-700 dark:bg-slate-800/90">
+      <span className="hidden items-center gap-1 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 xl:inline-flex dark:text-slate-400">
         <Building2 className="h-3 w-3 text-blue-600 dark:text-blue-400" />
         Forms:
       </span>
       <button
-        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
           groupMode === 'branch'
             ? 'bg-blue-600 text-white shadow-2xs'
             : 'text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
@@ -46,7 +46,7 @@ export function PrintBranchToolbarControls({
         <span>Per Branch</span>
       </button>
       <button
-        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
           groupMode === 'municipality'
             ? 'bg-blue-600 text-white shadow-2xs'
             : 'text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
@@ -59,7 +59,7 @@ export function PrintBranchToolbarControls({
         <span>Per Address</span>
       </button>
       <button
-        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
           groupMode === 'single'
             ? 'bg-blue-600 text-white shadow-2xs'
             : 'text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
@@ -71,7 +71,7 @@ export function PrintBranchToolbarControls({
         <Layers className="h-3 w-3" />
         <span>Single Form</span>
       </button>
-      <span className="ml-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+      <span className="ml-0.5 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 whitespace-nowrap dark:bg-blue-900/50 dark:text-blue-200">
         {totalForms} {totalForms === 1 ? 'Form' : 'Forms'}
       </span>
     </div>

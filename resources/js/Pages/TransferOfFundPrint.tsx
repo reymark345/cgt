@@ -458,7 +458,7 @@ export default function TransferOfFundPrint({
       <div className="min-h-screen bg-slate-100 font-sans text-slate-900 antialiased dark:bg-slate-950 print:m-0 print:min-h-0 print:bg-white print:p-0">
         {/* Floating Top Control Toolbar (Hidden during print) */}
         <header className="no-print sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 print:hidden">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+          <div className="mx-auto flex w-full max-w-full flex-nowrap items-center justify-between gap-2 overflow-x-auto whitespace-nowrap">
             <div className="flex items-center gap-3">
               <button
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
@@ -541,13 +541,14 @@ export default function TransferOfFundPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
-              <PrintBranchToolbarControls
-                accentColor="indigo"
-                groupMode={groupMode}
-                onChangeGroupMode={setGroupMode}
-                totalForms={totalForms}
-                totalRecords={records.length}
-              />
+              <button
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95 cursor-pointer dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                onClick={handlePrint}
+                type="button"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Print Document</span>
+              </button>
 
               {canEditLetterDetails && (
                 <button
@@ -564,14 +565,13 @@ export default function TransferOfFundPrint({
                 </button>
               )}
 
-              <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95 cursor-pointer dark:bg-indigo-600 dark:hover:bg-indigo-500"
-                onClick={handlePrint}
-                type="button"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                <span>Print Document</span>
-              </button>
+              <PrintBranchToolbarControls
+                accentColor="indigo"
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                totalForms={totalForms}
+                totalRecords={records.length}
+              />
             </div>
           </div>
 

@@ -443,7 +443,7 @@ export default function ForcePinPrint({
       <div className="min-h-screen bg-slate-100 text-slate-800 antialiased dark:bg-slate-900 dark:text-slate-100">
         {/* On-Screen Sticky Control Bar */}
         <header className="non-printable sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md shadow-xs dark:border-slate-800 dark:bg-slate-900/95">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+          <div className="mx-auto flex w-full max-w-full flex-nowrap items-center justify-between gap-2 overflow-x-auto whitespace-nowrap">
             {/* Left Section: Back button and Title */}
             <div className="flex items-center gap-3">
               <button
@@ -527,13 +527,14 @@ export default function ForcePinPrint({
 
             {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
-              <PrintBranchToolbarControls
-                accentColor="amber"
-                groupMode={groupMode}
-                onChangeGroupMode={setGroupMode}
-                totalForms={totalForms}
-                totalRecords={records.length}
-              />
+              <button
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-amber-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700 active:scale-95 cursor-pointer dark:bg-amber-600 dark:hover:bg-amber-500"
+                onClick={handlePrint}
+                type="button"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Print Document</span>
+              </button>
 
               {canEditLetterDetails && (
                 <button
@@ -550,14 +551,13 @@ export default function ForcePinPrint({
                 </button>
               )}
 
-              <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-amber-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700 active:scale-95 cursor-pointer dark:bg-amber-600 dark:hover:bg-amber-500"
-                onClick={handlePrint}
-                type="button"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                <span>Print Document</span>
-              </button>
+              <PrintBranchToolbarControls
+                accentColor="amber"
+                groupMode={groupMode}
+                onChangeGroupMode={setGroupMode}
+                totalForms={totalForms}
+                totalRecords={records.length}
+              />
             </div>
           </div>
 
