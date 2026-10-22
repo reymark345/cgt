@@ -36,7 +36,7 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => $user->avatar,
                     'division' => $user->division,
                     'section' => $user->section,
-                    'role' => $user->role ?: 'Grants Staff',
+                    'role' => $user->role ?: 'Financial Analyst',
                     'is_admin' => $user->isAdmin(),
                     'is_approved' => $user->isApprovedAccount(),
                     'approval_status' => $user->approval_status ?: ($user->isApprovedAccount() ? 'approved' : 'pending'),
@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'inquiry_display_fields' => fn () => \App\Http\Controllers\InquiryController::getDisplayFieldsSetting(),
             'second_copy_ref_prefix' => fn () => \App\Http\Controllers\LibraryDirectoryController::getSecondCopyRefPrefix(),
+            'available_drn_count' => fn () => \App\Http\Controllers\LibraryDirectoryController::getAvailableDrnCount(),
         ];
     }
 }

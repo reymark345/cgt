@@ -476,7 +476,7 @@ export default function Landing() {
                 <div className="text-xs font-extrabold uppercase tracking-normal text-primary">System Workflow</div>
                 <h2 className="mt-3 text-3xl font-extrabold tracking-normal text-slate-950 sm:text-4xl">From Reference Sync to Card Requests</h2>
                 <p className="mt-4 text-base leading-7 text-slate-600">
-                  A streamlined path for Grants Staff and Administrators to look up beneficiaries, queue EMV card
+                  A streamlined path for Financial Analysts and Administrators to look up beneficiaries, queue EMV card
                   requests, coordinate with LBP Servicing Branches, and generate official notices.
                 </p>
               </div>

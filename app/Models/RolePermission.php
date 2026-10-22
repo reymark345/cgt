@@ -96,11 +96,28 @@ class RolePermission extends Model
 
         if (static::query()->count() === 0) {
             static::seedDefaults();
+        } else {
+            // Automatically migrate legacy 'Grants Staff' role to 'Financial Analyst'
+            $legacyRole = static::query()
+                ->where('slug', 'grants-staff')
+                ->orWhereRaw('LOWER(name) = ?', ['grants staff'])
+                ->first();
+            if ($legacyRole) {
+                $legacyRole->update([
+                    'name' => 'Financial Analyst',
+                    'slug' => 'financial-analyst',
+                ]);
+            }
+            if (Schema::hasTable('users') && Schema::hasColumn('users', 'role')) {
+                \Illuminate\Support\Facades\DB::table('users')
+                    ->whereRaw('LOWER(role) = ?', ['grants staff'])
+                    ->update(['role' => 'Financial Analyst']);
+            }
         }
     }
 
     /**
-     * Seed the initial Admin and Grants Staff roles.
+     * Seed the initial Admin and Financial Analyst roles.
      */
     public static function seedDefaults(): void
     {
@@ -123,8 +140,8 @@ class RolePermission extends Model
                 ],
             ],
             [
-                'name' => 'Grants Staff',
-                'slug' => 'grants-staff',
+                'name' => 'Financial Analyst',
+                'slug' => 'financial-analyst',
                 'description' => 'Default role assigned to staff users. Requires manual Admin approval before proceeding into the application. Allowed to view and print forms across all Request modules, but cannot Edit Letter Details in Print Preview, nor access System or Libraries.',
                 'badge_color' => 'blue',
                 'is_system' => true,
@@ -188,7 +205,7 @@ class RolePermission extends Model
             ], $role->permissions);
         }
 
-        // Default Grants Staff permissions
+        // Default Financial Analyst permissions
         return [
             'access_dashboard' => true,
             'access_inquiry' => true,

@@ -4,6 +4,7 @@ import {
   ArrowRightLeft,
   ArrowUpDown,
   Banknote,
+  Check,
   CheckCircle2,
   Download,
   FileSpreadsheet,
@@ -15,6 +16,7 @@ import {
   KeyRound,
   Loader2,
   Lock,
+  Minus,
   Plus,
   Printer,
   RefreshCw,
@@ -766,17 +768,34 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   };
 
-  const renderRowCheckbox = (id: number, idx: number) => (
-    <td className="w-10 px-4 py-3 text-center">
-      <input
-        type="checkbox"
-        checked={selectedIds.includes(id)}
-        onChange={() => toggleSelectRow(id)}
-        aria-label={`Select row ${(currentPage - 1) * 15 + idx + 1}`}
-        className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary focus:ring-primary"
-      />
-    </td>
-  );
+  const renderRowCheckbox = (id: number, idx: number) => {
+    const isChecked = selectedIds.includes(id);
+    return (
+      <td className="w-11 px-4 py-3 text-center">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isChecked}
+          aria-label={`Select row ${(currentPage - 1) * 15 + idx + 1}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSelectRow(id);
+          }}
+          className={`group relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+            isChecked
+              ? 'border-primary bg-gradient-to-br from-primary to-sky-600 text-white shadow-xs shadow-primary/30 ring-2 ring-primary/20 dark:border-sky-400 dark:from-sky-400 dark:to-cyan-400 dark:text-slate-950 dark:ring-sky-400/25'
+              : 'border-slate-300/90 bg-white/90 text-transparent shadow-2xs hover:border-primary hover:bg-primary/5 hover:ring-3 hover:ring-primary/15 dark:border-slate-600 dark:bg-slate-900/80 dark:hover:border-sky-400 dark:hover:bg-sky-400/10'
+          }`}
+        >
+          <Check
+            className={`h-3 w-3 stroke-[3.2] transition-transform duration-150 ${
+              isChecked ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+            }`}
+          />
+        </button>
+      </td>
+    );
+  };
 
   const refreshCurrentModuleData = useCallback(() => {
     if (view === 'opening') {
@@ -849,6 +868,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
       const data = await res.json();
 
+      if (typeof data.available_drn_count === 'number') {
+        window.dispatchEvent(
+          new CustomEvent('cgt:drn-updated', {
+            detail: { availableCount: data.available_drn_count },
+          }),
+        );
+      }
+
       if (!res.ok || !data.success) {
         setFeedback({
           type: 'error',
@@ -857,7 +884,14 @@ export function DataModuleView({ view }: DataModuleViewProps) {
         return;
       }
 
-      window.dispatchEvent(new CustomEvent('cgt:drn-updated'));
+      if (typeof data.available_drn_count !== 'number') {
+        window.dispatchEvent(new CustomEvent('cgt:drn-updated'));
+      } else if (data.available_drn_count <= 50) {
+        setFeedback({
+          type: 'error',
+          message: `The DRN is running out, with only ${data.available_drn_count} remaining.`,
+        });
+      }
       refreshCurrentModuleData();
 
       const printUrl =
@@ -1300,19 +1334,33 @@ export function DataModuleView({ view }: DataModuleViewProps) {
             <thead className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:bg-secondary/30">
               <tr>
                 {isRequestModule && (
-                  <th className="w-10 px-4 py-3 text-center">
-                    <input
-                      type="checkbox"
-                      checked={allPageSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = somePageSelected;
-                      }}
-                      onChange={toggleSelectAll}
-                      disabled={currentPageIds.length === 0}
+                  <th className="w-11 px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={somePageSelected ? 'mixed' : allPageSelected}
                       aria-label="Select all rows on this page"
-                      title="Check All"
-                      className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+                      title={allPageSelected ? 'Uncheck All on Page' : 'Check All on Page'}
+                      disabled={currentPageIds.length === 0}
+                      onClick={toggleSelectAll}
+                      className={`group relative inline-flex h-[18px] w-[18px] items-center justify-center rounded-[6px] border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-45 ${
+                        allPageSelected
+                          ? 'border-primary bg-gradient-to-br from-primary to-sky-600 text-white shadow-xs shadow-primary/30 ring-2 ring-primary/20 dark:border-sky-400 dark:from-sky-400 dark:to-cyan-400 dark:text-slate-950 dark:ring-sky-400/25'
+                          : somePageSelected
+                            ? 'border-primary bg-primary/15 text-primary ring-2 ring-primary/20 dark:border-sky-400 dark:bg-sky-400/20 dark:text-sky-300'
+                            : 'border-slate-300/90 bg-white/90 text-transparent shadow-2xs hover:border-primary hover:bg-primary/5 hover:ring-3 hover:ring-primary/15 dark:border-slate-600 dark:bg-slate-900/80 dark:hover:border-sky-400 dark:hover:bg-sky-400/10'
+                      }`}
+                    >
+                      {somePageSelected && !allPageSelected ? (
+                        <Minus className="h-3 w-3 stroke-[3.2]" />
+                      ) : (
+                        <Check
+                          className={`h-3 w-3 stroke-[3.2] transition-transform duration-150 ${
+                            allPageSelected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+                          }`}
+                        />
+                      )}
+                    </button>
                   </th>
                 )}
                 {config.columns.filter((col) => isColVisible(col)).map((col, idx) => (

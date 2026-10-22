@@ -146,7 +146,7 @@ export default function PendingApproval({ account }: PendingApprovalProps) {
                     <span className="text-slate-400">Default Assigned Role:</span>
                     <span className="inline-flex items-center gap-1 font-bold text-cyan-300">
                       <ShieldCheck className="h-3.5 w-3.5" />
-                      {account?.role || 'Grants Staff'}
+                      {account?.role || 'Financial Analyst'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-slate-900/90 px-3 py-2">
@@ -167,7 +167,7 @@ export default function PendingApproval({ account }: PendingApprovalProps) {
                 <ul className="space-y-1.5 pl-6 list-disc text-slate-400">
                   <li>
                     Your account has been registered in the queue with the default role of{' '}
-                    <strong className="text-slate-200">{account?.role || 'Grants Staff'}</strong>.
+                    <strong className="text-slate-200">{account?.role || 'Financial Analyst'}</strong>.
                   </li>
                   <li>
                     Please notify the <strong className="text-slate-200">System Administrator</strong> to approve your account under{' '}

@@ -116,14 +116,14 @@ class SSOAuthService
         ];
 
         if (! $existingUser) {
-            $attributes['role'] = $isFirstUser ? 'Admin' : 'Grants Staff';
+            $attributes['role'] = $isFirstUser ? 'Admin' : 'Financial Analyst';
             $attributes['is_approved'] = $isFirstUser;
             $attributes['approval_status'] = $isFirstUser ? 'approved' : 'pending';
             $attributes['approved_at'] = $isFirstUser ? Carbon::now() : null;
             $attributes['approved_by'] = $isFirstUser ? 1 : null;
         } elseif (empty($existingUser->role)) {
             $isAdminAccount = $existingUser->id === 1 || strcasecmp((string) $existingUser->username, 'rnvaldehueza') === 0;
-            $attributes['role'] = $isAdminAccount ? 'Admin' : 'Grants Staff';
+            $attributes['role'] = $isAdminAccount ? 'Admin' : 'Financial Analyst';
             $attributes['is_approved'] = $isAdminAccount;
             $attributes['approval_status'] = $isAdminAccount ? 'approved' : 'pending';
         }

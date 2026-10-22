@@ -242,7 +242,7 @@ export function RolesPermissionsView({
         headers: getCsrfHeaders(),
         body: JSON.stringify({
           approved,
-          role: user.role || 'Grants Staff',
+          role: user.role || 'Financial Analyst',
         }),
       });
       const data = await res.json();
@@ -310,7 +310,7 @@ export function RolesPermissionsView({
     [users],
   );
   const staffCount = useMemo(
-    () => users.filter((u) => (u.role || 'Grants Staff').toLowerCase() !== 'admin').length,
+    () => users.filter((u) => (u.role || 'Financial Analyst').toLowerCase() !== 'admin').length,
     [users],
   );
 
@@ -318,7 +318,7 @@ export function RolesPermissionsView({
     return users.filter((u) => {
       if (approvalFilter === 'PENDING' && u.isApproved) return false;
       if (approvalFilter === 'APPROVED' && !u.isApproved) return false;
-      if (roleFilter !== 'ALL' && (u.role || 'Grants Staff') !== roleFilter) return false;
+      if (roleFilter !== 'ALL' && (u.role || 'Financial Analyst') !== roleFilter) return false;
 
       if (userSearch.trim()) {
         const q = userSearch.toLowerCase().trim();
@@ -338,7 +338,7 @@ export function RolesPermissionsView({
   const roleOptions = useMemo(() => {
     const names = roles.map((r) => r.roleName);
     if (!names.includes('Admin')) names.unshift('Admin');
-    if (!names.includes('Grants Staff')) names.push('Grants Staff');
+    if (!names.includes('Financial Analyst')) names.push('Financial Analyst');
     return Array.from(new Set(names));
   }, [roles]);
 
@@ -365,7 +365,7 @@ export function RolesPermissionsView({
 
             <p className="max-w-3xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
               Manage system roles (<strong className="text-foreground">Admin</strong> and{' '}
-              <strong className="text-foreground">Grants Staff</strong>), module access restrictions (Libraries,
+              <strong className="text-foreground">Financial Analyst</strong>), module access restrictions (Libraries,
               System sidebar, and Request Print Preview forms), and manually approve staff accounts before they can
               proceed into the application.
             </p>
@@ -461,7 +461,7 @@ export function RolesPermissionsView({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Grants Staff (Default)
+              Financial Analyst (Default)
             </span>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
               <Users className="h-5 w-5" />
@@ -512,7 +512,7 @@ export function RolesPermissionsView({
         <div className="text-xs text-muted-foreground">
           Default role for newly synced users:{' '}
           <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 font-bold text-blue-600 dark:text-blue-300">
-            Grants Staff (Pending Admin Approval)
+            Financial Analyst (Pending Admin Approval)
           </span>
         </div>
       </div>
@@ -675,7 +675,7 @@ export function RolesPermissionsView({
                           <select
                             aria-label={`Assign role for ${u.name}`}
                             disabled={isPrimaryAdmin || isBusy}
-                            value={u.role || 'Grants Staff'}
+                            value={u.role || 'Financial Analyst'}
                             onChange={(e) => handleChangeUserRole(u, e.target.value)}
                             className={`h-8 rounded-lg border px-2.5 text-xs font-bold shadow-2xs transition focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60 ${
                               isUserAdmin
@@ -825,7 +825,7 @@ export function RolesPermissionsView({
                           <h3 className="text-base font-extrabold text-foreground">
                             {role.roleName}
                           </h3>
-                          {role.roleKey === 'grants-staff' && (
+                          {(role.roleKey === 'financial-analyst' || role.roleKey === 'grants-staff') && (
                             <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
                               Default Staff Role
                             </span>

@@ -1,6 +1,7 @@
 import { PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import {
+  AlertTriangle,
   Archive,
   ArrowRightLeft,
   Banknote,
@@ -86,6 +87,7 @@ type SharedPageProps = {
       permissions?: Record<string, boolean>;
     } | null;
   };
+  available_drn_count?: number;
 };
 
 const viewMeta: Record<string, { section: string; icon: typeof LayoutDashboard }> = {
@@ -196,12 +198,58 @@ export function AppShell({
   onSetSidebarOpen,
   onToggleDarkMode,
 }: AppShellProps) {
-  const { auth } = usePage<SharedPageProps>().props;
+  const { auth, available_drn_count } = usePage<SharedPageProps>().props;
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [referencesCollapsed, setReferencesCollapsed] = useState(false);
   const [dataCollapsed, setDataCollapsed] = useState(false);
   const [librariesCollapsed, setLibrariesCollapsed] = useState(false);
+  const [availableDrnCount, setAvailableDrnCount] = useState<number | undefined>(
+    typeof available_drn_count === 'number' ? available_drn_count : undefined,
+  );
+  const [lowDrnBannerDismissed, setLowDrnBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (typeof available_drn_count === 'number') {
+      setAvailableDrnCount(available_drn_count);
+    }
+  }, [available_drn_count]);
+
+  useEffect(() => {
+    const handleDrnUpdated = async (e: Event) => {
+      const detailCount = (e as CustomEvent<{ availableCount?: number }>)?.detail?.availableCount;
+      if (typeof detailCount === 'number') {
+        setAvailableDrnCount(detailCount);
+        if (detailCount <= 50) {
+          setLowDrnBannerDismissed(false);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch('/libraries/drn/data', {
+          headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.available_drn_count === 'number') {
+            setAvailableDrnCount(data.available_drn_count);
+            if (data.available_drn_count <= 50) {
+              setLowDrnBannerDismissed(false);
+            }
+          }
+        }
+      } catch {
+        // Ignore background refresh error
+      }
+    };
+
+    window.addEventListener('cgt:drn-updated', handleDrnUpdated);
+    return () => window.removeEventListener('cgt:drn-updated', handleDrnUpdated);
+  }, []);
 
   // Desktop sidebar collapse/unhide state with persistence
   const [desktopSidebarVisible, setDesktopSidebarVisible] = useState(() => {
@@ -228,7 +276,7 @@ export function AppShell({
   const user = auth?.user;
   const displayName = user?.name ?? 'Reymark N. Valdehueza';
   const displayPosition = user?.position ?? user?.email ?? 'COMPUTER PROGRAMMER III';
-  const userRole = user?.role || (user?.is_admin ? 'Admin' : 'Grants Staff');
+  const userRole = user?.role || (user?.is_admin ? 'Admin' : 'Financial Analyst');
   const isAdmin = Boolean(user?.is_admin || userRole === 'Admin');
   const canAccessLibraries = Boolean(isAdmin || user?.permissions?.access_libraries);
   const canAccessSystem = Boolean(isAdmin || user?.permissions?.access_system);
@@ -265,11 +313,30 @@ export function AppShell({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onSetNotice]);
 
+  const isLowDrn = typeof availableDrnCount === 'number' && availableDrnCount <= 50;
+  const lowDrnMessage =
+    typeof availableDrnCount === 'number'
+      ? `The DRN is running out, with only ${availableDrnCount} remaining.`
+      : '';
+
   const mockNotifications = [
-    { id: 1, title: 'Database Synced', time: '10m ago', text: `${incomingCount} records loaded and verified.`, unread: true },
-    { id: 2, title: 'DSWD Caraga Connect', time: '1h ago', text: 'SSO session active and secure.', unread: false },
-    { id: 3, title: 'Audit Schedule', time: 'Yesterday', text: 'Quarterly EMV review due this Friday.', unread: false },
+    ...(isLowDrn
+      ? [
+          {
+            id: 0,
+            title: 'Low DRN Alert',
+            time: 'Action required',
+            text: lowDrnMessage,
+            unread: true,
+            isWarning: true,
+          },
+        ]
+      : []),
+    { id: 1, title: 'Database Synced', time: '10m ago', text: `${incomingCount} records loaded and verified.`, unread: true, isWarning: false },
+    { id: 2, title: 'DSWD Caraga Connect', time: '1h ago', text: 'SSO session active and secure.', unread: false, isWarning: false },
+    { id: 3, title: 'Audit Schedule', time: 'Yesterday', text: 'Quarterly EMV review due this Friday.', unread: false, isWarning: false },
   ];
+  const unreadNotificationsCount = mockNotifications.filter((n) => n.unread).length;
 
   const sidebar = (
     <aside className="flex h-full w-64 flex-col border-r border-border/80 bg-card p-3 shadow-xs dark:border-border dark:bg-card">
@@ -786,19 +853,31 @@ export function AppShell({
                   className="relative"
                   onClick={() => setNotificationsOpen((v) => !v)}
                   size="icon"
-                  title="Notifications"
+                  title={isLowDrn ? lowDrnMessage : 'Notifications'}
                   variant="ghost"
                 >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                  <Bell className={cn('h-4 w-4', isLowDrn && 'text-amber-600 dark:text-amber-400')} />
+                  <span
+                    className={cn(
+                      'absolute right-1.5 top-1.5 h-2 w-2 rounded-full',
+                      isLowDrn ? 'bg-amber-500 ring-2 ring-amber-500/30 animate-pulse' : 'bg-primary',
+                    )}
+                  />
                 </Button>
 
                 {notificationsOpen && (
                   <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border bg-card p-3 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-border dark:bg-card">
                     <div className="flex items-center justify-between border-b border-border/60 pb-2">
                       <div className="text-xs font-bold">Notifications</div>
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                        1 unread
+                      <span
+                        className={cn(
+                          'rounded-full px-2 py-0.5 text-[10px] font-bold',
+                          isLowDrn
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                            : 'bg-primary/10 text-primary',
+                        )}
+                      >
+                        {unreadNotificationsCount} unread
                       </span>
                     </div>
                     <div className="mt-2 space-y-2">
@@ -807,18 +886,35 @@ export function AppShell({
                           key={notif.id}
                           className={cn(
                             'rounded-lg p-2.5 text-xs transition hover:bg-secondary/60 cursor-pointer',
-                            notif.unread && 'bg-primary/5 border border-primary/20',
+                            notif.isWarning
+                              ? 'border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 dark:border-amber-500/30 dark:bg-amber-500/10'
+                              : notif.unread && 'bg-primary/5 border border-primary/20',
                           )}
                           onClick={() => {
                             setNotificationsOpen(false);
-                            onSetNotice(`Notification: ${notif.title}`);
+                            if (notif.isWarning && canAccessLibraries) {
+                              onOpenView('drn');
+                            }
+                            onSetNotice(notif.isWarning ? notif.text : `Notification: ${notif.title}`);
                           }}
                         >
                           <div className="flex items-center justify-between font-semibold">
-                            <span>{notif.title}</span>
+                            <span className={cn('inline-flex items-center gap-1.5', notif.isWarning && 'text-amber-700 dark:text-amber-300')}>
+                              {notif.isWarning && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />}
+                              {notif.title}
+                            </span>
                             <span className="text-[10px] text-muted-foreground">{notif.time}</span>
                           </div>
-                          <p className="mt-1 text-[11px] text-muted-foreground leading-normal">{notif.text}</p>
+                          <p
+                            className={cn(
+                              'mt-1 text-[11px] leading-normal',
+                              notif.isWarning
+                                ? 'font-medium text-amber-800 dark:text-amber-200'
+                                : 'text-muted-foreground',
+                            )}
+                          >
+                            {notif.text}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -841,6 +937,40 @@ export function AppShell({
 
         {/* Page Content Body */}
         <main className="min-h-[calc(100vh-3.5rem)] bg-background p-4 sm:p-6 lg:p-8">
+          {isLowDrn && !lowDrnBannerDismissed && (
+            <div className="mx-auto mb-4 flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs shadow-xs dark:border-amber-500/30 dark:bg-amber-500/10">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4" />
+                </span>
+                <div>
+                  <span className="font-bold text-amber-900 dark:text-amber-200">DRN Notification: </span>
+                  <span className="font-semibold text-amber-800 dark:text-amber-100">{lowDrnMessage}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {canAccessLibraries && currentView !== 'drn' && (
+                  <button
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-600/30 bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-amber-500"
+                    onClick={() => onOpenView('drn')}
+                    type="button"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Add More DRN
+                  </button>
+                )}
+                <button
+                  aria-label="Dismiss DRN notification"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-300"
+                  onClick={() => setLowDrnBannerDismissed(true)}
+                  title="Dismiss notification"
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
           {children}
         </main>
       </div>

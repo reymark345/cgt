@@ -73,7 +73,7 @@ class EnsureSsoAuthenticated
         }
 
         // 2. Libraries routes (Directory & DRN Library management)
-        // Note: 'libraries/drn/assign-for-print' is used by Request Print Preview to auto-assign DRNs for both Admin and Grants Staff
+        // Note: 'libraries/drn/assign-for-print' is used by Request Print Preview to auto-assign DRNs for both Admin and Financial Analyst
         $isLibraryRoute = ($path === 'directory' || $path === 'drn' || $path === 'libraries/directory' || str_starts_with($path, 'libraries/'))
             && $path !== 'libraries/drn/assign-for-print';
         if ($isLibraryRoute) {
@@ -87,9 +87,10 @@ class EnsureSsoAuthenticated
         }
 
         // 3. Request Forms Print Preview & Auto-DRN Assignment routes (/{module}/print and /libraries/drn/assign-for-print)
-        // Allowed for Admin, Grants Staff, and any role with Request module access
-        $isGrantsStaff = strcasecmp(trim((string) $user->role), 'Grants Staff') === 0;
-        if (($path === 'libraries/drn/assign-for-print' || str_ends_with($path, '/print')) && ! $isGrantsStaff && ! $user->hasPermission('access_requests')) {
+        // Allowed for Admin, Financial Analyst, and any role with Request module access
+        $normalizedRole = strtolower(trim((string) $user->role));
+        $isFinancialAnalyst = in_array($normalizedRole, ['financial analyst', 'grants staff'], true);
+        if (($path === 'libraries/drn/assign-for-print' || str_ends_with($path, '/print')) && ! $isFinancialAnalyst && ! $user->hasPermission('access_requests')) {
             if ($request->expectsJson() && ! $request->header('X-Inertia')) {
                 return response()->json(['message' => 'Access denied. You do not have permission to access Request Print Preview forms.'], 403);
             }

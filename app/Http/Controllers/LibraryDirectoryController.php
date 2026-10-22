@@ -233,6 +233,25 @@ class LibraryDirectoryController extends Controller
     }
 
     /**
+     * Return the current count of available (unassigned) DRN records in drn_libraries.
+     */
+    public static function getAvailableDrnCount(): int
+    {
+        try {
+            DrnLibrary::ensureTableExists();
+
+            return DrnLibrary::query()
+                ->where(function ($q) {
+                    $q->whereNull('request_type')
+                        ->orWhereRaw("TRIM(COALESCE(request_type, '')) = ''");
+                })
+                ->count();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * Update the global 2nd copy signatory reference prefix (Admin only).
      */
     public function updateSecondCopyRefPrefix(Request $request): JsonResponse
@@ -288,6 +307,7 @@ class LibraryDirectoryController extends Controller
         return response()->json([
             'success' => true,
             'records' => $records,
+            'available_drn_count' => static::getAvailableDrnCount(),
             'current_user_name' => $this->resolveLoggedInUserName($request),
             'is_admin' => $this->isCurrentUserAdmin($request),
             'second_copy_ref_prefix' => static::getSecondCopyRefPrefix(),
@@ -367,6 +387,7 @@ class LibraryDirectoryController extends Controller
             'success' => true,
             'message' => $message,
             'record' => $record,
+            'available_drn_count' => static::getAvailableDrnCount(),
         ]);
     }
 
@@ -390,6 +411,7 @@ class LibraryDirectoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'DRN record removed successfully.',
+            'available_drn_count' => static::getAvailableDrnCount(),
         ]);
     }
 
@@ -537,6 +559,7 @@ class LibraryDirectoryController extends Controller
                 if ($availableDrns->count() < $neededNewDrnsCount) {
                     return response()->json([
                         'success' => false,
+                        'available_drn_count' => $availableDrns->count(),
                         'message' => 'DRN is not enough please add more DRN',
                     ], 422);
                 }
@@ -584,6 +607,7 @@ class LibraryDirectoryController extends Controller
                 'drns' => $assignedDrnStrings,
                 'forms_count' => $formsCount,
                 'newly_assigned_count' => $neededNewDrnsCount,
+                'available_drn_count' => static::getAvailableDrnCount(),
                 'request_type' => $moduleInfo['label'],
                 'print_url' => $moduleInfo['print_path'].'?'.http_build_query($queryParams),
             ]);
@@ -838,6 +862,7 @@ class LibraryDirectoryController extends Controller
             'message' => $msg,
             'imported_count' => $importedCount,
             'skipped_duplicates_count' => $skippedDuplicatesCount,
+            'available_drn_count' => static::getAvailableDrnCount(),
             'records' => $records,
         ]);
     }

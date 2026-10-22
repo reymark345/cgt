@@ -43,7 +43,7 @@ class RolePermissionController extends Controller
                 'division' => $user->division,
                 'section' => $user->section,
                 'avatar' => $user->avatar,
-                'role' => $user->role ?: 'Grants Staff',
+                'role' => $user->role ?: 'Financial Analyst',
                 'approvalStatus' => $user->approval_status ?: 'pending',
                 'requestedAt' => optional($user->created_at)->format('M d, Y h:i A'),
             ],
@@ -59,7 +59,7 @@ class RolePermissionController extends Controller
         RolePermission::ensureTableExists();
 
         $roles = RolePermission::query()
-            ->orderByRaw("CASE WHEN slug = 'admin' THEN 0 WHEN slug = 'grants-staff' THEN 1 ELSE 2 END")
+            ->orderByRaw("CASE WHEN slug = 'admin' THEN 0 WHEN slug IN ('financial-analyst', 'grants-staff') THEN 1 ELSE 2 END")
             ->orderBy('id')
             ->get()
             ->map(function (RolePermission $role) {
@@ -278,7 +278,7 @@ class RolePermissionController extends Controller
 
         $roleName = ! empty($validated['role'])
             ? trim($validated['role'])
-            : ($targetUser->role ?: 'Grants Staff');
+            : ($targetUser->role ?: 'Financial Analyst');
 
         $roleModel = RolePermission::whereRaw('LOWER(name) = ?', [strtolower($roleName)])
             ->orWhere('slug', Str::slug($roleName))
@@ -303,7 +303,7 @@ class RolePermissionController extends Controller
     }
 
     /**
-     * Update a user's assigned role (e.g. Admin or Grants Staff).
+     * Update a user's assigned role (e.g. Admin or Financial Analyst).
      */
     public function updateUserRole(Request $request, int $id): JsonResponse
     {
@@ -383,7 +383,7 @@ class RolePermissionController extends Controller
             'areaOfAssignment' => $user->area_of_assignment,
             'contactNumber' => $user->contact_number,
             'roleId' => $user->role_id,
-            'role' => $user->role ?: 'Grants Staff',
+            'role' => $user->role ?: 'Financial Analyst',
             'isApproved' => $isApproved,
             'approvalStatus' => $user->approval_status ?: ($isApproved ? 'approved' : 'pending'),
             'approvedAt' => optional($user->approved_at)->format('M d, Y h:i A'),

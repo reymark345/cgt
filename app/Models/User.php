@@ -198,7 +198,7 @@ class User extends Model
         if (! Schema::hasColumn('users', 'role')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->unsignedBigInteger('role_id')->nullable()->after('portal_status');
-                $table->string('role', 100)->default('Grants Staff')->after('role_id');
+                $table->string('role', 100)->default('Financial Analyst')->after('role_id');
                 $table->boolean('is_approved')->default(false)->after('role');
                 $table->string('approval_status', 40)->default('pending')->after('is_approved');
                 $table->timestamp('approved_at')->nullable()->after('approval_status');
@@ -206,7 +206,7 @@ class User extends Model
             });
 
             $adminRoleId = RolePermission::query()->where('slug', 'admin')->value('id');
-            $staffRoleId = RolePermission::query()->where('slug', 'grants-staff')->value('id');
+            $staffRoleId = RolePermission::query()->where('slug', 'financial-analyst')->value('id');
 
             // Ensure the primary Admin (id = 1 / rnvaldehueza) is set as Admin and Approved
             $adminUser = static::query()
@@ -225,12 +225,12 @@ class User extends Model
                 ]);
             }
 
-            // Default all other users to Grants Staff and pending approval unless already approved
+            // Default all other users to Financial Analyst and pending approval unless already approved
             static::query()
                 ->where('id', '!=', $adminUser?->id ?? 0)
                 ->update([
                     'role_id' => $staffRoleId,
-                    'role' => 'Grants Staff',
+                    'role' => 'Financial Analyst',
                     'is_approved' => false,
                     'approval_status' => 'pending',
                 ]);
@@ -262,7 +262,7 @@ class User extends Model
      */
     public function effectivePermissions(): array
     {
-        return RolePermission::resolvePermissionsForRole($this->role ?: 'Grants Staff');
+        return RolePermission::resolvePermissionsForRole($this->role ?: 'Financial Analyst');
     }
 
     public function hasPermission(string $permissionKey): bool

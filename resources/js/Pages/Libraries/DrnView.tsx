@@ -231,7 +231,9 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
   useEffect(() => {
     fetchDrnRecords();
 
-    const handleRefresh = () => {
+    const handleRefresh = (e?: Event) => {
+      const source = (e as CustomEvent<{ source?: string }>)?.detail?.source;
+      if (source === 'drn-view') return;
       fetchDrnRecords();
     };
     window.addEventListener('cgt:drn-updated', handleRefresh);
@@ -241,6 +243,11 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
       window.removeEventListener('focus', handleRefresh);
     };
   }, [fetchDrnRecords]);
+
+  const availableDrnCount = useMemo(
+    () => records.filter((r) => !(r.request_type || '').trim()).length,
+    [records],
+  );
 
   const requestTypeOptions = useMemo(() => {
     const set = new Set<string>(STANDARD_REQUEST_TYPES);
@@ -324,6 +331,13 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
         setNewForm({
           drn: '',
         });
+        if (typeof data.available_drn_count === 'number') {
+          window.dispatchEvent(
+            new CustomEvent('cgt:drn-updated', {
+              detail: { availableCount: data.available_drn_count, source: 'drn-view' },
+            }),
+          );
+        }
         showMessage(data.message || 'DRN record added successfully.');
       } else {
         showMessage(data.message || 'Failed to add DRN record.', 'error');
@@ -379,6 +393,13 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
       if (res.ok && data.success) {
         setRecords((prev) => prev.map((r) => (r.id === id ? data.record : r)));
         setEditingId(null);
+        if (typeof data.available_drn_count === 'number') {
+          window.dispatchEvent(
+            new CustomEvent('cgt:drn-updated', {
+              detail: { availableCount: data.available_drn_count, source: 'drn-view' },
+            }),
+          );
+        }
         showMessage(data.message || 'DRN record updated successfully.');
       } else {
         showMessage(data.message || 'Failed to update DRN record.', 'error');
@@ -408,6 +429,13 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
       const data = await res.json();
       if (res.ok && data.success) {
         setRecords((prev) => prev.filter((r) => r.id !== item.id));
+        if (typeof data.available_drn_count === 'number') {
+          window.dispatchEvent(
+            new CustomEvent('cgt:drn-updated', {
+              detail: { availableCount: data.available_drn_count, source: 'drn-view' },
+            }),
+          );
+        }
         showMessage(data.message || 'DRN record removed.');
       } else {
         showMessage(data.message || 'Failed to delete DRN record.', 'error');
@@ -463,6 +491,13 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
         } else {
           await fetchDrnRecords();
         }
+        if (typeof data.available_drn_count === 'number') {
+          window.dispatchEvent(
+            new CustomEvent('cgt:drn-updated', {
+              detail: { availableCount: data.available_drn_count, source: 'drn-view' },
+            }),
+          );
+        }
         showMessage(data.message || 'Excel file imported successfully.');
       } else {
         showMessage(data.message || 'Failed to import Excel file.', 'error');
@@ -504,13 +539,24 @@ export function DrnView({ currentUserName, isAdmin = false, onSetNotice }: DrnVi
             <FileText className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-extrabold tracking-tight text-foreground sm:text-xl">
                 Libraries — DRN
               </h1>
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary dark:text-cyan-300">
                 Document Reference Numbers
               </span>
+              {!loading && (
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold tracking-wider ${
+                    availableDrnCount <= 50
+                      ? 'border border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                      : 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  }`}
+                >
+                  Available DRN: {availableDrnCount}
+                </span>
+              )}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Manage Document Reference Numbers (DRN) by Request Type. Add individual DRNs or import in bulk via Excel (.xlsx / .csv).
