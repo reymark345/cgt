@@ -32,6 +32,7 @@ class OtcWithdrawalController extends Controller
                     ->orWhere('reason_of_request', 'like', "%{$search}%")
                     ->orWhere('account_balance', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('drn', 'like', "%{$search}%")
                     ->orWhereHas('creator', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%");
                     });
@@ -83,6 +84,7 @@ class OtcWithdrawalController extends Controller
                 'Card Number',
                 'Reason of Request',
                 'Account Balance',
+                'DRN',
                 'Added By',
                 'Status',
                 'Created At',
@@ -97,6 +99,7 @@ class OtcWithdrawalController extends Controller
                     $row->card_number,
                     $row->reason_of_request,
                     $row->account_balance,
+                    $row->drn,
                     $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     optional($row->created_at)->format('Y-m-d H:i:s'),

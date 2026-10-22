@@ -47,11 +47,15 @@ class Replacement extends Model
                 $table->string('card_number')->nullable()->index();
                 $table->text('reason_of_request')->nullable();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
             });
+        } elseif (! Schema::hasColumn('replacement', 'drn')) {
+            Schema::table('replacement', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
+            });
         }
     }
 }
-

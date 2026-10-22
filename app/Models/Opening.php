@@ -48,9 +48,14 @@ class Opening extends Model
                 $table->string('card_number_of_old')->nullable()->index();
                 $table->string('status_of_old_grantee')->nullable();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
+            });
+        } elseif (! Schema::hasColumn('opening', 'drn')) {
+            Schema::table('opening', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
             });
         }
     }

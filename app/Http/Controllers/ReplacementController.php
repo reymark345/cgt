@@ -31,6 +31,7 @@ class ReplacementController extends Controller
                     ->orWhere('card_number', 'like', "%{$search}%")
                     ->orWhere('reason_of_request', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('drn', 'like', "%{$search}%")
                     ->orWhereHas('creator', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%");
                     });
@@ -81,6 +82,7 @@ class ReplacementController extends Controller
                 'Name/ Updated Name',
                 'Card Number',
                 'Reason of Request',
+                'DRN',
                 'Added By',
                 'Status',
                 'Created At',
@@ -94,6 +96,7 @@ class ReplacementController extends Controller
                     $row->name,
                     $row->card_number,
                     $row->reason_of_request,
+                    $row->drn,
                     $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     optional($row->created_at)->format('Y-m-d H:i:s'),

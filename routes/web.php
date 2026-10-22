@@ -40,6 +40,8 @@ Route::middleware('sso.auth')->group(function () {
     Route::get('/inquiry', [EmvRecordController::class, 'dashboard'])->name('inquiry');
     Route::get('/directory', [EmvRecordController::class, 'dashboard'])->name('directory');
     Route::get('/libraries/directory', [EmvRecordController::class, 'dashboard']);
+    Route::get('/drn', [EmvRecordController::class, 'dashboard'])->name('drn');
+    Route::get('/libraries/drn', [EmvRecordController::class, 'dashboard']);
     Route::get('/grantee-list', [EmvRecordController::class, 'dashboard'])->name('grantee-list');
     Route::get('/grantee', [EmvRecordController::class, 'dashboard']);
     Route::get('/emv-database', [EmvRecordController::class, 'dashboard'])->name('emv-database');
@@ -76,6 +78,13 @@ Route::middleware('sso.auth')->group(function () {
     Route::post('/libraries/directory/municipalities/{id}/destroy', [LibraryDirectoryController::class, 'destroyMunicipality'])->name('libraries.directory.municipalities.destroy');
     Route::post('/libraries/directory/branches/store', [LibraryDirectoryController::class, 'storeBranch'])->name('libraries.directory.branches.store');
     Route::post('/libraries/directory/branches/{id}/destroy', [LibraryDirectoryController::class, 'destroyBranch'])->name('libraries.directory.branches.destroy');
+
+    Route::get('/libraries/drn/data', [LibraryDirectoryController::class, 'drnIndex'])->name('libraries.drn.data');
+    Route::post('/libraries/drn/store', [LibraryDirectoryController::class, 'storeDrn'])->name('libraries.drn.store');
+    Route::post('/libraries/drn/{id}/destroy', [LibraryDirectoryController::class, 'destroyDrn'])->name('libraries.drn.destroy');
+    Route::post('/libraries/drn/import', [LibraryDirectoryController::class, 'importDrn'])->name('libraries.drn.import');
+    Route::post('/libraries/drn/assign-for-print', [LibraryDirectoryController::class, 'assignDrnForPrint'])->name('libraries.drn.assign-for-print');
+    Route::post('/libraries/drn/reference-prefix', [LibraryDirectoryController::class, 'updateSecondCopyRefPrefix'])->name('libraries.drn.reference-prefix');
 
     Route::get('/emv-records/import', fn () => redirect()->route('emv-database'));
     Route::post('/emv-records/import', [EmvRecordController::class, 'import'])->name('emv-records.import');

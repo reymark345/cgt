@@ -832,8 +832,13 @@ class InquiryController extends Controller
                 $table->longText('grantee_fields')->nullable();
                 $table->longText('emv_fields')->nullable();
                 $table->longText('payroll_fields')->nullable();
+                $table->longText('table_fields')->nullable();
                 $table->unsignedBigInteger('updated_by')->nullable();
                 $table->timestamps();
+            });
+        } elseif (! \Illuminate\Support\Facades\Schema::hasColumn('inquiry_display_settings', 'table_fields')) {
+            \Illuminate\Support\Facades\Schema::table('inquiry_display_settings', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->longText('table_fields')->nullable()->after('payroll_fields');
             });
         }
     }
@@ -848,6 +853,7 @@ class InquiryController extends Controller
             'grantee_fields' => $row && $row->grantee_fields !== null ? json_decode($row->grantee_fields, true) : null,
             'emv_fields' => $row && $row->emv_fields !== null ? json_decode($row->emv_fields, true) : null,
             'payroll_fields' => $row && $row->payroll_fields !== null ? json_decode($row->payroll_fields, true) : null,
+            'table_fields' => $row && isset($row->table_fields) && $row->table_fields !== null ? (json_decode($row->table_fields, true) ?: []) : [],
         ];
     }
 
@@ -869,7 +875,7 @@ class InquiryController extends Controller
         if ($user && ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only Admin users can modify Inquiry display fields.',
+                'message' => 'Only Admin users can modify display fields.',
             ], 403);
         }
 
@@ -889,11 +895,25 @@ class InquiryController extends Controller
             ? json_encode(array_values($request->input('payroll_fields')))
             : ($existing ? $existing->payroll_fields : null);
 
+        $existingTableFields = $existing && isset($existing->table_fields) && $existing->table_fields !== null
+            ? (json_decode($existing->table_fields, true) ?: [])
+            : [];
+
+        if ($request->has('table_fields') && is_array($request->input('table_fields'))) {
+            foreach ($request->input('table_fields') as $tableKey => $cols) {
+                if (is_string($tableKey) && is_array($cols)) {
+                    $existingTableFields[$tableKey] = array_values(array_map('strval', $cols));
+                }
+            }
+        }
+        $tableFieldsJson = json_encode($existingTableFields);
+
         if ($existing) {
             DB::table('inquiry_display_settings')->where('id', 1)->update([
                 'grantee_fields' => $granteeFields,
                 'emv_fields' => $emvFields,
                 'payroll_fields' => $payrollFields,
+                'table_fields' => $tableFieldsJson,
                 'updated_by' => $user ? $user->id : null,
                 'updated_at' => now(),
             ]);
@@ -903,6 +923,7 @@ class InquiryController extends Controller
                 'grantee_fields' => $granteeFields,
                 'emv_fields' => $emvFields,
                 'payroll_fields' => $payrollFields,
+                'table_fields' => $tableFieldsJson,
                 'updated_by' => $user ? $user->id : null,
                 'created_at' => now(),
                 'updated_at' => now(),

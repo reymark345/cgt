@@ -46,11 +46,15 @@ class Locking extends Model
                 $table->string('name')->nullable();
                 $table->string('card_number')->nullable()->index();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
             });
+        } elseif (! Schema::hasColumn('locking', 'drn')) {
+            Schema::table('locking', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
+            });
         }
     }
 }
-

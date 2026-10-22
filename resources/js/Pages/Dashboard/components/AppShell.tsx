@@ -99,6 +99,7 @@ const viewMeta: Record<string, { section: string; icon: typeof LayoutDashboard }
   'roles-permissions': { section: 'System', icon: ShieldCheck },
   'audit-trail': { section: 'System', icon: History },
   directory: { section: 'Libraries', icon: Building2 },
+  drn: { section: 'Libraries', icon: FileText },
   Inquiry: { section: 'Transactions', icon: UserCog },
   inquiry: { section: 'Transactions', icon: UserCog },
   open: { section: 'Data', icon: UserCog },
@@ -540,6 +541,13 @@ export function AppShell({
                   onClick={() => onOpenView('directory')}
                 >
                   Directory
+                </NavItem>
+                <NavItem
+                  active={currentView === 'drn'}
+                  icon={FileText}
+                  onClick={() => onOpenView('drn')}
+                >
+                  DRN
                 </NavItem>
               </div>
             )}

@@ -48,11 +48,15 @@ class TransferOfFund extends Model
                 $table->string('new_card_number')->nullable()->index();
                 $table->string('new_cardholder_name')->nullable();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
             });
+        } elseif (! Schema::hasColumn('transfer_of_fund', 'drn')) {
+            Schema::table('transfer_of_fund', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
+            });
         }
     }
 }
-

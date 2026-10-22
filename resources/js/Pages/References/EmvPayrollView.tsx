@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   AlertCircle,
@@ -267,6 +267,14 @@ export function EmvPayrollView({
   payrollHhSets = [],
   onSetNotice,
 }: PayrollViewProps) {
+  const { auth, inquiry_display_fields } = usePage<{
+    auth?: { user?: { id?: number; role?: string | null; is_admin?: boolean } | null };
+    inquiry_display_fields?: { table_fields?: Record<string, string[]> | null } | null;
+  }>().props;
+  const isAdmin = Boolean(
+    auth?.user?.is_admin ||
+      (typeof auth?.user?.role === 'string' && auth.user.role.trim().toLowerCase() === 'admin')
+  );
   const [data, setData] = useState<PayrollRecord[]>(payrollRecords);
   const [dbTotal, setDbTotal] = useState<number>(payrollTotalCount);
   const [totalCount, setTotalCount] = useState<number>(payrollTotalCount);
@@ -281,7 +289,13 @@ export function EmvPayrollView({
   const [yearFilter, setYearFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<PayrollSortKey[]>(getInitialVisibleColumns);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<PayrollSortKey[]>(() => {
+    const serverSaved = inquiry_display_fields?.table_fields?.payroll_table;
+    if (Array.isArray(serverSaved) && serverSaved.length > 0) {
+      return serverSaved as PayrollSortKey[];
+    }
+    return getInitialVisibleColumns();
+  });
   const [sortKey, setSortKey] = useState<PayrollSortKey>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
@@ -501,18 +515,61 @@ export function EmvPayrollView({
     setPage(1);
   };
 
+  const persistPayrollColumns = async (nextKeys: PayrollSortKey[]) => {
+    setVisibleColumnKeys(nextKeys);
+    if (!isAdmin) return;
+    try {
+      const metaToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+      const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+      await fetch('/inquiry/display-fields', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(metaToken ? { 'X-CSRF-TOKEN': metaToken } : {}),
+          ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+        },
+        body: JSON.stringify({
+          user_id: auth?.user?.id ?? null,
+          table_fields: { payroll_table: nextKeys },
+        }),
+      });
+    } catch {
+      // ignore network error
+    }
+  };
+
+  useEffect(() => {
+    fetch('/inquiry/display-fields', { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        const saved = json?.display_fields?.table_fields?.payroll_table;
+        if (Array.isArray(saved) && saved.length > 0) {
+          setVisibleColumnKeys(saved as PayrollSortKey[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleToggleColumn = (key: PayrollSortKey) => {
-    setVisibleColumnKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    if (!isAdmin) return;
+    const next = visibleColumnKeys.includes(key)
+      ? visibleColumnKeys.filter((k) => k !== key)
+      : [...visibleColumnKeys, key];
+    if (next.length === 0) return;
+    persistPayrollColumns(next);
   };
 
   const handleSelectAllColumns = () => {
-    setVisibleColumnKeys(payrollColumns.map((col) => col.key));
+    if (!isAdmin) return;
+    persistPayrollColumns(payrollColumns.map((col) => col.key));
   };
 
   const handleResetColumns = () => {
-    setVisibleColumnKeys(defaultVisibleColumns);
+    if (!isAdmin) return;
+    persistPayrollColumns(defaultVisibleColumns);
     try {
       localStorage.setItem(STORAGE_VISIBLE_COLUMNS_KEY, JSON.stringify(defaultVisibleColumns));
     } catch {
@@ -910,16 +967,18 @@ export function EmvPayrollView({
               </Button>
             </div>
 
-            {/* Visible Columns Selector */}
+            {/* Visible Columns Selector (Admin Only) */}
+            {isAdmin && (
             <div className="relative">
               <Button
                 className="gap-2 shadow-xs font-medium"
                 onClick={() => setShowColumnPicker((prev) => !prev)}
                 variant="outline"
+                title="Admin Only: Configure visible columns for all users"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span>
-                  Columns ({visibleColumnKeys.length}/{payrollColumns.length})
+                  Display Fields ({visibleColumnKeys.length}/{payrollColumns.length})
                 </span>
                 <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showColumnPicker && 'rotate-180')} />
               </Button>
@@ -929,7 +988,7 @@ export function EmvPayrollView({
                 <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-border/80 bg-popover p-3 shadow-xl dark:border-border dark:bg-popover animate-in fade-in-50 zoom-in-95">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Visible Columns
+                      Display Fields
                     </span>
                     <button
                       className="text-muted-foreground hover:text-foreground"
@@ -1010,6 +1069,7 @@ export function EmvPayrollView({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 

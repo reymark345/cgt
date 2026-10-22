@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Activity,
@@ -162,6 +162,14 @@ export function GranteeView({
   onSetNotice,
   isImporting = false,
 }: GranteeViewProps) {
+  const { auth, inquiry_display_fields } = usePage<{
+    auth?: { user?: { id?: number; role?: string | null; is_admin?: boolean } | null };
+    inquiry_display_fields?: { table_fields?: Record<string, string[]> | null } | null;
+  }>().props;
+  const isAdmin = Boolean(
+    auth?.user?.is_admin ||
+      (typeof auth?.user?.role === 'string' && auth.user.role.trim().toLowerCase() === 'admin')
+  );
   const [data, setData] = useState<GranteeRecord[]>(grantees);
   const [dbTotal, setDbTotal] = useState<number>(granteeTotalCount);
   const [totalCount, setTotalCount] = useState<number>(granteeTotalCount);
@@ -171,7 +179,13 @@ export function GranteeView({
   const [statusFilter, setStatusFilter] = useState('All');
   const [setFilter, setSetFilter] = useState('All');
   const [municipalityFilter, setMunicipalityFilter] = useState('All');
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<GranteeSortKey[]>(getInitialVisibleColumns);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<GranteeSortKey[]>(() => {
+    const serverSaved = inquiry_display_fields?.table_fields?.grantee_table;
+    if (Array.isArray(serverSaved) && serverSaved.length > 0) {
+      return serverSaved as GranteeSortKey[];
+    }
+    return getInitialVisibleColumns();
+  });
   const [sortKey, setSortKey] = useState<GranteeSortKey>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
@@ -350,18 +364,61 @@ export function GranteeView({
     setPage(1);
   };
 
+  const persistGranteeColumns = async (nextKeys: GranteeSortKey[]) => {
+    setVisibleColumnKeys(nextKeys);
+    if (!isAdmin) return;
+    try {
+      const metaToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+      const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+      await fetch('/inquiry/display-fields', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(metaToken ? { 'X-CSRF-TOKEN': metaToken } : {}),
+          ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+        },
+        body: JSON.stringify({
+          user_id: auth?.user?.id ?? null,
+          table_fields: { grantee_table: nextKeys },
+        }),
+      });
+    } catch {
+      // ignore network error
+    }
+  };
+
+  useEffect(() => {
+    fetch('/inquiry/display-fields', { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        const saved = json?.display_fields?.table_fields?.grantee_table;
+        if (Array.isArray(saved) && saved.length > 0) {
+          setVisibleColumnKeys(saved as GranteeSortKey[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleToggleColumn = (key: GranteeSortKey) => {
-    setVisibleColumnKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    if (!isAdmin) return;
+    const next = visibleColumnKeys.includes(key)
+      ? visibleColumnKeys.filter((k) => k !== key)
+      : [...visibleColumnKeys, key];
+    if (next.length === 0) return;
+    persistGranteeColumns(next);
   };
 
   const handleSelectAllColumns = () => {
-    setVisibleColumnKeys(granteeColumns.map((col) => col.key));
+    if (!isAdmin) return;
+    persistGranteeColumns(granteeColumns.map((col) => col.key));
   };
 
   const handleResetColumns = () => {
-    setVisibleColumnKeys(defaultVisibleColumns);
+    if (!isAdmin) return;
+    persistGranteeColumns(defaultVisibleColumns);
     try {
       localStorage.setItem(STORAGE_VISIBLE_COLUMNS_KEY, JSON.stringify(defaultVisibleColumns));
     } catch {
@@ -699,15 +756,17 @@ export function GranteeView({
               <span>Export CSV (All 39 Columns)</span>
             </Button>
 
+            {isAdmin && (
             <div className="relative">
               <Button
                 className="gap-2 shadow-xs"
                 onClick={() => setShowColumnPicker((v) => !v)}
                 type="button"
                 variant="outline"
+                title="Admin Only: Configure visible columns for all users"
               >
                 <SlidersHorizontal className="h-4 w-4 text-primary" />
-                <span>Columns</span>
+                <span>Display Fields</span>
                 <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
                   {visibleColumnKeys.length}/{granteeColumns.length}
                 </span>
@@ -718,7 +777,7 @@ export function GranteeView({
               {showColumnPicker && (
                 <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border bg-card p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 dark:border-border dark:bg-card">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <span className="text-xs font-bold text-foreground">Visible Columns ({visibleColumnKeys.length}/39)</span>
+                    <span className="text-xs font-bold text-foreground">Display Fields ({visibleColumnKeys.length}/39)</span>
                     <button
                       className="text-[11px] font-semibold text-primary hover:underline"
                       onClick={handleResetColumns}
@@ -747,7 +806,7 @@ export function GranteeView({
                     </button>
                     <button
                       className="text-muted-foreground hover:underline"
-                      onClick={() => setVisibleColumnKeys(['hh_id', 'entry_id', 'last_name', 'first_name'])}
+                      onClick={() => persistGranteeColumns(['hh_id', 'entry_id', 'last_name', 'first_name'])}
                       type="button"
                     >
                       Minimal
@@ -797,6 +856,7 @@ export function GranteeView({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 

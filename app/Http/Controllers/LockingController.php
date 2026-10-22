@@ -30,6 +30,7 @@ class LockingController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('card_number', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('drn', 'like', "%{$search}%")
                     ->orWhereHas('creator', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%");
                     });
@@ -79,6 +80,7 @@ class LockingController extends Controller
                 'Household Id Number',
                 'Name',
                 'Card Number',
+                'DRN',
                 'Added By',
                 'Status',
                 'Remarks',
@@ -92,6 +94,7 @@ class LockingController extends Controller
                     $row->household_id_number,
                     $row->name,
                     $row->card_number,
+                    $row->drn,
                     $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     $row->remarks,

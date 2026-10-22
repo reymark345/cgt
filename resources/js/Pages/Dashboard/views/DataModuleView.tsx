@@ -28,8 +28,12 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import {
+  TableDisplayFieldsButton,
+  useTableDisplayFields,
+} from '../../../Components/TableDisplayFieldsControl';
 import type { CurrentView } from '../types';
 
 type OpeningRecord = {
@@ -43,6 +47,7 @@ type OpeningRecord = {
   status_of_old_grantee: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -58,6 +63,7 @@ type DistributionRecord = {
   schedule: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -73,6 +79,7 @@ type OtcWithdrawalRecord = {
   account_balance: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -87,6 +94,7 @@ type ReplacementRecord = {
   reason_of_request: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -102,6 +110,7 @@ type TransferOfFundRecord = {
   new_cardholder_name: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -115,6 +124,7 @@ type ForcePinRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -128,6 +138,7 @@ type LockingRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -141,6 +152,7 @@ type LiftingRecord = {
   card_number: string | null;
   status: string | null;
   remarks: string | null;
+  drn?: string | null;
   created_by?: string | null;
   created_at: string | null;
 };
@@ -178,6 +190,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name of Old Grantee',
       'Card Number of Old',
       'Status of Old Grantee',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -196,6 +209,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name',
       'Card Number',
       'Schedule',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -214,6 +228,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Card Number',
       'Reason of Request',
       'Account Balance',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -231,6 +246,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Name/ Updated Name',
       'Card Number',
       'Reason of Request',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -249,6 +265,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Old Cardholder Name',
       'New Card Number',
       'New Cardholder Name',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -265,6 +282,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -281,6 +299,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -297,6 +316,7 @@ const moduleConfigs: Record<string, DataModuleConfig> = {
       'Household Id Number',
       'Name',
       'Card Number',
+      'DRN',
       'Added By',
       'Action',
     ],
@@ -434,6 +454,21 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     accentColor: 'text-primary bg-primary/10 dark:text-accent-foreground dark:bg-primary/20',
     columns: ['ID', 'Reference', 'Household ID', 'Name', 'Date', 'Status'],
   };
+
+  const columnOptions = useMemo(
+    () => config.columns.map((col) => ({ key: col, label: col })),
+    [config.columns]
+  );
+
+  const {
+    isAdmin: isAdminUser,
+    visibleKeys: visibleColumns,
+    isColVisible,
+    toggleColumn: handleToggleColumn,
+    selectAllColumns: handleSelectAllColumns,
+    resetDefaultColumns: handleResetDefaultColumns,
+    isSaving: isSavingDisplayFields,
+  } = useTableDisplayFields(`request_${view}`, columnOptions, config.columns);
 
   const Icon = config.icon;
 
@@ -676,6 +711,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
   const [recordToUndo, setRecordToUndo] = useState<UndoTarget | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [isAssigningDrn, setIsAssigningDrn] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -742,6 +778,114 @@ export function DataModuleView({ view }: DataModuleViewProps) {
     </td>
   );
 
+  const refreshCurrentModuleData = useCallback(() => {
+    if (view === 'opening') {
+      fetchOpeningData(currentPage, debouncedSearch);
+    } else if (view === 'distribution') {
+      fetchDistributionData(currentPage, debouncedSearch);
+    } else if (view === 'otc-withdrawal') {
+      fetchOtcData(currentPage, debouncedSearch);
+    } else if (view === 'replacement') {
+      fetchReplacementData(currentPage, debouncedSearch);
+    } else if (view === 'transfer-of-fund') {
+      fetchTransferOfFundData(currentPage, debouncedSearch);
+    } else if (view === 'force-pin') {
+      fetchForcePinData(currentPage, debouncedSearch);
+    } else if (view === 'locking') {
+      fetchLockingData(currentPage, debouncedSearch);
+    } else if (view === 'lifting') {
+      fetchLiftingData(currentPage, debouncedSearch);
+    }
+  }, [
+    view,
+    currentPage,
+    debouncedSearch,
+    fetchOpeningData,
+    fetchDistributionData,
+    fetchOtcData,
+    fetchReplacementData,
+    fetchTransferOfFundData,
+    fetchForcePinData,
+    fetchLockingData,
+    fetchLiftingData,
+  ]);
+
+  const renderDrnCell = (drn?: string | null) => (
+    <td className="px-4 py-3 whitespace-nowrap">
+      {drn ? (
+        <span className="inline-flex items-center rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary">
+          {drn}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground">-</span>
+      )}
+    </td>
+  );
+
+  const handlePrintFormRequest = async (modulePath: string, idsToPrint: number[]) => {
+    if (isAssigningDrn || idsToPrint.length === 0) return;
+    setIsAssigningDrn(true);
+    setFeedback(null);
+
+    try {
+      const metaToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+      const cookieMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+
+      const res = await fetch('/libraries/drn/assign-for-print', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(metaToken ? { 'X-CSRF-TOKEN': metaToken } : {}),
+          ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
+        },
+        body: JSON.stringify({
+          module: modulePath,
+          ids: idsToPrint,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setFeedback({
+          type: 'error',
+          message: data.message || 'DRN is not enough please add more DRN',
+        });
+        return;
+      }
+
+      window.dispatchEvent(new CustomEvent('cgt:drn-updated'));
+      refreshCurrentModuleData();
+
+      const printUrl =
+        data.print_url ||
+        `/${modulePath}/print?ids=${idsToPrint.join(',')}${
+          Array.isArray(data.drns) && data.drns.length > 0
+            ? `&drns=${encodeURIComponent(data.drns.join(','))}`
+            : ''
+        }`;
+
+      const link = document.createElement('a');
+      link.href = printUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Failed to assign DRN for print:', err);
+      setFeedback({
+        type: 'error',
+        message: 'DRN is not enough please add more DRN',
+      });
+    } finally {
+      setIsAssigningDrn(false);
+    }
+  };
+
   const renderRowPrintButton = (id: number, modulePath: string, hoverClasses: string, titleText: string) => {
     const isChecked = selectedIds.includes(id);
     if (!isChecked) {
@@ -758,16 +902,16 @@ export function DataModuleView({ view }: DataModuleViewProps) {
       );
     }
     return (
-      <a
-        href={`/${modulePath}/print?ids=${id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition ${hoverClasses}`}
+      <button
+        type="button"
+        disabled={isAssigningDrn}
+        onClick={() => handlePrintFormRequest(modulePath, [id])}
+        className={`inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-border bg-card px-2 text-[11px] font-medium text-foreground transition disabled:opacity-50 ${hoverClasses}`}
         title={titleText}
       >
         <Printer className="h-3 w-3" />
         <span>Print</span>
-      </a>
+      </button>
     );
   };
 
@@ -1053,11 +1197,11 @@ export function DataModuleView({ view }: DataModuleViewProps) {
 
             {isRequestModule && (
               hasSelectedRows ? (
-                <a
-                  href={`/${view}/print?ids=${selectedIds.join(',')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition ${
+                <button
+                  type="button"
+                  disabled={isAssigningDrn}
+                  onClick={() => handlePrintFormRequest(view, selectedIds)}
+                  className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-2xs transition disabled:opacity-50 ${
                     view === 'distribution'
                       ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25'
                       : view === 'otc-withdrawal'
@@ -1076,9 +1220,13 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                   }`}
                   title={`Open printable ${config.title} Form for ${selectedIds.length} selected record(s)`}
                 >
-                  <Printer className="h-3.5 w-3.5" />
+                  {isAssigningDrn ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Printer className="h-3.5 w-3.5" />
+                  )}
                   <span>Print Form ({selectedIds.length})</span>
-                </a>
+                </button>
               ) : (
                 <button
                   type="button"
@@ -1094,6 +1242,15 @@ export function DataModuleView({ view }: DataModuleViewProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            <TableDisplayFieldsButton
+              isAdmin={isAdminUser}
+              columns={columnOptions}
+              visibleKeys={visibleColumns}
+              onToggleColumn={handleToggleColumn}
+              onSelectAll={handleSelectAllColumns}
+              onResetDefaults={handleResetDefaultColumns}
+              isSaving={isSavingDisplayFields}
+            />
             <button
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground dark:border-border"
               type="button"
@@ -1158,7 +1315,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                     />
                   </th>
                 )}
-                {config.columns.map((col, idx) => (
+                {config.columns.filter((col) => isColVisible(col)).map((col, idx) => (
                   <th key={idx} className={`px-4 py-3 ${col === 'Action' ? 'text-right' : ''}`}>
                     {col}
                   </th>
@@ -1169,7 +1326,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               {view === 'opening' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Opening records...</span>
@@ -1185,73 +1342,92 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name_of_new_grantee || (
-                          <span className="text-muted-foreground italic">None / Pending</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-foreground">
-                        {item.name_of_old_grantee || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground">
-                        {item.card_number_of_old || '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            item.status_of_old_grantee?.toLowerCase().includes('active')
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-secondary text-muted-foreground'
-                          }`}
-                        >
-                          {item.status_of_old_grantee || 'Active'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'opening',
-                            'hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400',
-                            'Print Endorsement Form for this grantee'
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name of New Grantee') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name_of_new_grantee || (
+                            <span className="text-muted-foreground italic">None / Pending</span>
                           )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name_of_old_grantee || item.name_of_new_grantee || null,
-                                address: item.address,
-                                card_number: item.card_number_of_old,
-                                moduleType: 'opening',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Opening list"
+                        </td>
+                      )}
+                      {isColVisible('Name of Old Grantee') && (
+                        <td className="px-4 py-3 text-foreground">
+                          {item.name_of_old_grantee || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number of Old') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground">
+                          {item.card_number_of_old || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Status of Old Grantee') && (
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                              item.status_of_old_grantee?.toLowerCase().includes('active')
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-secondary text-muted-foreground'
+                            }`}
                           >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                            {item.status_of_old_grantee || 'Active'}
+                          </span>
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'opening',
+                              'hover:border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400',
+                              'Print Endorsement Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name_of_old_grantee || item.name_of_new_grantee || null,
+                                  address: item.address,
+                                  card_number: item.card_number_of_old,
+                                  moduleType: 'opening',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Opening list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1271,7 +1447,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'distribution' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-cyan-600 dark:text-cyan-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Distribution records...</span>
@@ -1287,69 +1463,88 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {item.run_date || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                        {item.schedule ? (
-                          <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300">
-                            {item.schedule}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground italic">Pending schedule</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'distribution',
-                            'hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400',
-                            'Print Distribution Endorsement Form for this grantee'
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Run Date') && (
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {item.run_date || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Schedule') && (
+                        <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                          {item.schedule ? (
+                            <span className="inline-flex items-center rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300">
+                              {item.schedule}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic">Pending schedule</span>
                           )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'distribution',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Distribution list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'distribution',
+                              'hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400',
+                              'Print Distribution Endorsement Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'distribution',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Distribution list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1369,7 +1564,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'otc-withdrawal' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-emerald-600 dark:text-emerald-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading OTC Withdrawal records...</span>
@@ -1385,63 +1580,82 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
-                        {item.reason_of_request || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {item.account_balance || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'otc-withdrawal',
-                            'hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400',
-                            'Print OTC Withdrawal Endorsement Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'otc-withdrawal',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from OTC Withdrawal list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name/ Updated Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Reason of Request') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
+                          {item.reason_of_request || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Account Balance') && (
+                        <td className="px-4 py-3 font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                          {item.account_balance || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'otc-withdrawal',
+                              'hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400',
+                              'Print OTC Withdrawal Endorsement Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'otc-withdrawal',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from OTC Withdrawal list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1461,7 +1675,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'replacement' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Replacement records...</span>
@@ -1477,60 +1691,77 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="max-w-[250px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
-                        {item.reason_of_request || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'replacement',
-                            'hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400',
-                            'Print Replacement Endorsement Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'replacement',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Replacement list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name/ Updated Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Reason of Request') && (
+                        <td className="max-w-[250px] truncate px-4 py-3 text-muted-foreground" title={item.reason_of_request || ''}>
+                          {item.reason_of_request || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'replacement',
+                              'hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400',
+                              'Print Replacement Endorsement Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'replacement',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Replacement list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1550,7 +1781,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'transfer-of-fund' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Transfer of Fund records...</span>
@@ -1566,63 +1797,82 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.old_card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.old_cardholder_name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.new_card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.new_cardholder_name || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'transfer-of-fund',
-                            'hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400',
-                            'Print Transfer of Fund Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.new_cardholder_name || item.old_cardholder_name || null,
-                                address: item.address,
-                                card_number: item.old_card_number || item.new_card_number,
-                                moduleType: 'transfer-of-fund',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Transfer of Fund list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Old Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.old_card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Old Cardholder Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.old_cardholder_name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('New Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.new_card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('New Cardholder Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.new_cardholder_name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'transfer-of-fund',
+                              'hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400',
+                              'Print Transfer of Fund Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.new_cardholder_name || item.old_cardholder_name || null,
+                                  address: item.address,
+                                  card_number: item.old_card_number || item.new_card_number,
+                                  moduleType: 'transfer-of-fund',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Transfer of Fund list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1642,7 +1892,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'force-pin' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Force PIN records...</span>
@@ -1658,57 +1908,72 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'force-pin',
-                            'hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400',
-                            'Print Force PIN Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'force-pin',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Force PIN list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'force-pin',
+                              'hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400',
+                              'Print Force PIN Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'force-pin',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Force PIN list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1728,7 +1993,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'locking' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-rose-600 dark:text-rose-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Locking records...</span>
@@ -1744,57 +2009,72 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'locking',
-                            'hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400',
-                            'Print Locking Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'locking',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Locking list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'locking',
+                              'hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400',
+                              'Print Locking Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'locking',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Locking list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1814,7 +2094,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
               ) : view === 'lifting' ? (
                 loading ? (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex flex-col items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-400" />
                         <span className="mt-2 text-xs font-medium text-muted-foreground">Loading Lifting records...</span>
@@ -1830,57 +2110,72 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                       }`}
                     >
                       {renderRowCheckbox(item.id, idx)}
-                      <td className="px-4 py-3 font-semibold text-foreground">
-                        {(currentPage - 1) * 15 + idx + 1}
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
-                        {item.address || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono font-medium text-foreground">
-                        {item.household_id_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                        {item.card_number || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {item.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {renderRowPrintButton(
-                            item.id,
-                            'lifting',
-                            'hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400',
-                            'Print Lifting Form for this grantee'
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRecordToUndo({
-                                id: item.id,
-                                household_id_number: item.household_id_number,
-                                name: item.name,
-                                address: item.address,
-                                card_number: item.card_number,
-                                moduleType: 'lifting',
-                              })
-                            }
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                            title="Undo / Remove from Lifting list"
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      </td>
+                      {isColVisible('Item No') && (
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {(currentPage - 1) * 15 + idx + 1}
+                        </td>
+                      )}
+                      {isColVisible('Address') && (
+                        <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={item.address || ''}>
+                          {item.address || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Household Id Number') && (
+                        <td className="px-4 py-3 font-mono font-medium text-foreground">
+                          {item.household_id_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Name') && (
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.name || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Card Number') && (
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {item.card_number || '-'}
+                        </td>
+                      )}
+                      {isColVisible('DRN') && renderDrnCell(item.drn)}
+                      {isColVisible('Added By') && (
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                          {item.created_by || '-'}
+                        </td>
+                      )}
+                      {isColVisible('Action') && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renderRowPrintButton(
+                              item.id,
+                              'lifting',
+                              'hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400',
+                              'Print Lifting Form for this grantee'
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRecordToUndo({
+                                  id: item.id,
+                                  household_id_number: item.household_id_number,
+                                  name: item.name,
+                                  address: item.address,
+                                  card_number: item.card_number,
+                                  moduleType: 'lifting',
+                                })
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50/70 px-2 text-[11px] font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                              title="Undo / Remove from Lifting list"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Undo</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-16 text-center" colSpan={config.columns.length + 1}>
+                    <td className="px-4 py-16 text-center" colSpan={visibleColumns.length + 1}>
                       <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                           <FileSpreadsheet className="h-6 w-6" />
@@ -1899,7 +2194,7 @@ export function DataModuleView({ view }: DataModuleViewProps) {
                 )
               ) : (
                 <tr>
-                  <td className="px-4 py-16 text-center" colSpan={config.columns.length}>
+                  <td className="px-4 py-16 text-center" colSpan={visibleColumns.length}>
                     <div className="mx-auto flex max-w-sm flex-col items-center justify-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
                         <FileSpreadsheet className="h-6 w-6" />

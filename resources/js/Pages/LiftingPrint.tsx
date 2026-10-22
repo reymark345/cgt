@@ -14,6 +14,7 @@ import {
   PrintBranchToolbarControls,
   PrintFormEditorSelector,
   PrintFormScreenBanner,
+  SecondCopySignatoryReference,
 } from '../Components/PrintBranchGroupingControls';
 import {
   LbpBranchDirectoryItem,
@@ -712,36 +713,31 @@ export default function LiftingPrint({
             }}
           >
             {pagesData.map((pageItem) => {
-              const currentPageNum = pageItem.pageIndex + 1;
+              const currentPageNum = pageItem.formPageNum;
               const pageHeader = pageItem.header;
 
               return (
-                <div
-                  key={`${pageItem.formKey}-p-${pageItem.pageIndex}`}
-                  className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
-                >
-                  <div className="flex-1">
-                    {pageItem.isFirstPage && (
-                      <PrintFormScreenBanner
-                        accentColor="teal"
-                        canEdit={canEditLetterDetails}
-                        formIndex={pageItem.formIndex}
-                        formLabel={pageItem.formLabel}
-                        header={pageHeader}
-                        isActive={activeFormKey === pageItem.formKey}
-                        onSelectForm={() => {
-                          setActiveFormKey(pageItem.formKey);
-                          if (canEditLetterDetails) {
-                            setIsCustomizing(true);
-                          }
-                        }}
-                        totalForms={pageItem.totalForms}
-                      />
-                    )}
-                    {pageItem.isFirstPage ? (
+                <div key={`${pageItem.formKey}-p-${pageItem.pageIndex}`} className="flex w-full flex-col items-center print:block">
+                  <PrintFormScreenBanner
+                    bankBranch={pageHeader.bankBranch}
+                    formIndex={pageItem.formIndex}
+                    formLabel={pageItem.formLabel}
+                    isFirstPage={pageItem.isFirstPage && !pageItem.hideHeaderFooter}
+                    recipientName={pageHeader.recipientName}
+                    rowsCount={groupedForms[pageItem.formIndex]?.records.length || pageItem.rows.length}
+                    totalForms={pageItem.totalForms}
+                  />
+                  <div
+                    className="printable-page relative mx-auto flex w-full max-w-[780px] min-h-[1050px] flex-col justify-between rounded-lg border border-slate-300 bg-white p-8 text-black shadow-xl sm:p-12 print:relative print:m-0 print:h-[272mm] print:min-h-[272mm] print:max-h-[272mm] print:max-w-none print:rounded-none print:border-none print:bg-white print:p-0 print:pb-[22mm] print:shadow-none print:overflow-hidden"
+                  >
+                    <div className="flex-1">
+                      {pageItem.isFirstPage ? (
                       <>
                         {/* Top Logos Header */}
-                        <div className="flex items-center gap-3">
+                        <div
+                          className={`flex items-center gap-3 ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                          style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                        >
                           {/* DSWD Logo */}
                           <div className="flex items-center">
                             <SmartImage
@@ -798,8 +794,14 @@ export default function LiftingPrint({
                           </div>
                         </div>
 
+                        {pageItem.hideHeaderFooter && pageItem.drn && (
+                          <div className="mb-1 text-right text-xs font-normal text-black">
+                            DRN: {pageItem.drn}
+                          </div>
+                        )}
+
                         {/* Date */}
-                        <div className="mt-8 text-sm font-normal text-black print:mt-4">
+                        <div className={`${pageItem.hideHeaderFooter ? 'mt-0 print:mt-0' : 'mt-8 print:mt-4'} text-sm font-normal text-black`}>
                           {letterDate}
                         </div>
 
@@ -838,7 +840,10 @@ export default function LiftingPrint({
                       </>
                     ) : (
                       /* Continuation Page Header */
-                      <div className="mb-4 flex items-center justify-between border-b border-black pb-2 text-xs">
+                      <div
+                        className={`mb-4 flex items-center justify-between border-b border-black pb-2 text-xs ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                        style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                      >
                         <div className="flex items-center gap-2">
                           <span className="font-bold uppercase tracking-tight text-black">
                             DSWD Field Office Caraga
@@ -855,7 +860,7 @@ export default function LiftingPrint({
                     )}
 
                     {/* Beneficiaries Table (5 columns matching official sample form) */}
-                    <div className="mt-4 overflow-x-auto print:mt-2.5">
+                    <div className={`${!pageItem.isFirstPage && pageItem.hideHeaderFooter ? 'mt-0 print:mt-0' : 'mt-4 print:mt-2.5'} overflow-x-auto`}>
                       <table className="w-full border-collapse border border-black text-center text-xs">
                         <thead>
                           <tr className="border-b border-black bg-slate-50 font-bold text-black print:bg-transparent">
@@ -932,6 +937,7 @@ export default function LiftingPrint({
                           <div className="mt-14 print:mt-9">
                             <div className="font-bold tracking-wide text-black">{signatoryName}</div>
                             <div className="text-xs text-black">{signatoryTitle}</div>
+                            <SecondCopySignatoryReference hideHeaderFooter={pageItem.hideHeaderFooter} />
                           </div>
                         </div>
                       </>
@@ -939,7 +945,10 @@ export default function LiftingPrint({
                   </div>
 
                   {/* Dynamic Footer with Page & DSWD Contact Info (Strictly without any JSP reference code) */}
-                  <footer className="paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
+                  <footer
+                    className={`paper-footer mt-auto pt-3 text-center text-[10px] text-slate-700 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                    style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                  >
                     <div className="font-bold tracking-wider">
                       {getPageInfo(currentPageNum, pageItem.formTotalPages)}
                     </div>
@@ -959,6 +968,7 @@ export default function LiftingPrint({
                       Tel Nos.: (085) 303-8620 email: focrg@dswd.gov.ph
                     </div>
                   </footer>
+                  </div>
                 </div>
               );
             })}

@@ -34,6 +34,25 @@ import {
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { cn } from '@/lib/utils';
+import {
+  TableDisplayFieldsButton,
+  useTableDisplayFields,
+  type TableColumnDefinition,
+} from '@/Components/TableDisplayFieldsControl';
+
+const AUDIT_TRAIL_COLUMNS: TableColumnDefinition[] = [
+  { key: '#', label: '#' },
+  { key: 'TIMESTAMP', label: 'TIMESTAMP' },
+  { key: 'USER', label: 'USER' },
+  { key: 'METHOD', label: 'METHOD' },
+  { key: 'MODULE', label: 'MODULE' },
+  { key: 'ACTION PERFORMED', label: 'ACTION PERFORMED' },
+  { key: 'TARGET / HH ID', label: 'TARGET / HH ID' },
+  { key: 'ENDPOINT', label: 'ENDPOINT' },
+  { key: 'IP ADDRESS', label: 'IP ADDRESS' },
+  { key: 'STATUS', label: 'STATUS' },
+  { key: 'PAYLOAD', label: 'PAYLOAD' },
+];
 
 export type AuditTrailRecord = {
   id: number;
@@ -97,6 +116,14 @@ function getModuleBadgeStyle(moduleName: string) {
 export function AuditTrailView({ isActive = false, onCountChange, onSetNotice }: AuditTrailViewProps) {
   const [records, setRecords] = useState<AuditTrailRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+
+  const {
+    visibleKeys: auditVisibleKeys,
+    isColumnVisible: isAuditColVisible,
+    toggleColumn: toggleAuditCol,
+    showAllColumns: showAllAuditCols,
+    resetDefaultColumns: resetDefaultAuditCols,
+  } = useTableDisplayFields('audit_trail_table', AUDIT_TRAIL_COLUMNS);
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -414,6 +441,15 @@ export function AuditTrailView({ isActive = false, onCountChange, onSetNotice }:
                 Reset
               </Button>
             )}
+
+            <TableDisplayFieldsButton
+              columns={AUDIT_TRAIL_COLUMNS}
+              onNotice={onSetNotice}
+              onResetDefaults={resetDefaultAuditCols}
+              onShowAll={showAllAuditCols}
+              onToggleColumn={toggleAuditCol}
+              visibleKeys={auditVisibleKeys}
+            />
           </div>
         </div>
 
@@ -422,95 +458,117 @@ export function AuditTrailView({ isActive = false, onCountChange, onSetNotice }:
           <table className="w-full border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-border/70 bg-secondary/40 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('id')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>#</span>
-                    {renderSortIcon('id')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('created_at')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>TIMESTAMP</span>
-                    {renderSortIcon('created_at')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('user_name')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>USER</span>
-                    {renderSortIcon('user_name')}
-                  </div>
-                </th>
-                <th className="whitespace-nowrap px-4 py-3">METHOD</th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('module')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>MODULE</span>
-                    {renderSortIcon('module')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('action')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ACTION PERFORMED</span>
-                    {renderSortIcon('action')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('target_id')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>TARGET / HH ID</span>
-                    {renderSortIcon('target_id')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('url')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ENDPOINT</span>
-                    {renderSortIcon('url')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('ip_address')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>IP ADDRESS</span>
-                    {renderSortIcon('ip_address')}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
-                  onClick={() => handleSort('status_code')}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>STATUS</span>
-                    {renderSortIcon('status_code')}
-                  </div>
-                </th>
-                <th className="whitespace-nowrap px-4 py-3 text-right">PAYLOAD</th>
+                {isAuditColVisible('#') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>#</span>
+                      {renderSortIcon('id')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('TIMESTAMP') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>TIMESTAMP</span>
+                      {renderSortIcon('created_at')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('USER') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('user_name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>USER</span>
+                      {renderSortIcon('user_name')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('METHOD') && (
+                  <th className="whitespace-nowrap px-4 py-3">METHOD</th>
+                )}
+                {isAuditColVisible('MODULE') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('module')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>MODULE</span>
+                      {renderSortIcon('module')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('ACTION PERFORMED') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('action')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>ACTION PERFORMED</span>
+                      {renderSortIcon('action')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('TARGET / HH ID') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('target_id')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>TARGET / HH ID</span>
+                      {renderSortIcon('target_id')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('ENDPOINT') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('url')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>ENDPOINT</span>
+                      {renderSortIcon('url')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('IP ADDRESS') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('ip_address')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>IP ADDRESS</span>
+                      {renderSortIcon('ip_address')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('STATUS') && (
+                  <th
+                    className="cursor-pointer whitespace-nowrap px-4 py-3 hover:text-foreground"
+                    onClick={() => handleSort('status_code')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>STATUS</span>
+                      {renderSortIcon('status_code')}
+                    </div>
+                  </th>
+                )}
+                {isAuditColVisible('PAYLOAD') && (
+                  <th className="whitespace-nowrap px-4 py-3 text-right">PAYLOAD</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {loading && records.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-12 text-center text-muted-foreground" colSpan={11}>
+                  <td className="px-4 py-12 text-center text-muted-foreground" colSpan={Math.max(1, auditVisibleKeys.length)}>
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RefreshCw className="h-5 w-5 animate-spin text-primary" />
                       <span>Loading audit trail logs...</span>
@@ -519,7 +577,7 @@ export function AuditTrailView({ isActive = false, onCountChange, onSetNotice }:
                 </tr>
               ) : records.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-12 text-center text-muted-foreground" colSpan={11}>
+                  <td className="px-4 py-12 text-center text-muted-foreground" colSpan={Math.max(1, auditVisibleKeys.length)}>
                     <div className="flex flex-col items-center justify-center gap-2">
                       <History className="h-8 w-8 text-muted-foreground/50" />
                       <div className="font-semibold text-foreground">No POST Audit Trail Logs Found</div>
@@ -537,84 +595,106 @@ export function AuditTrailView({ isActive = false, onCountChange, onSetNotice }:
                       key={log.id}
                       className="transition-colors hover:bg-secondary/40"
                     >
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] font-semibold text-muted-foreground">
-                        #{log.id}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <div className="font-medium text-foreground">{log.created_at || '—'}</div>
-                        {log.created_at_human && (
-                          <div className="text-[10px] text-muted-foreground">{log.created_at_human}</div>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-[10px] font-bold text-primary">
-                            {getInitials(log.user_name)}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-foreground">{log.user_name}</div>
-                            <div className="text-[10px] text-muted-foreground">
-                              {log.user_position || log.user_email || log.user_division || 'Portal User'}
+                      {isAuditColVisible('#') && (
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] font-semibold text-muted-foreground">
+                          #{log.id}
+                        </td>
+                      )}
+                      {isAuditColVisible('TIMESTAMP') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <div className="font-medium text-foreground">{log.created_at || '—'}</div>
+                          {log.created_at_human && (
+                            <div className="text-[10px] text-muted-foreground">{log.created_at_human}</div>
+                          )}
+                        </td>
+                      )}
+                      {isAuditColVisible('USER') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-[10px] font-bold text-primary">
+                              {getInitials(log.user_name)}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground">{log.user_name}</div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {log.user_position || log.user_email || log.user_division || 'Portal User'}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                          {log.method}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span
-                          className={cn(
-                            'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold',
-                            getModuleBadgeStyle(log.module),
-                          )}
-                        >
-                          {log.module}
-                        </span>
-                      </td>
-                      <td className="max-w-xs truncate px-4 py-3 font-medium text-foreground" title={log.action}>
-                        {log.action}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {log.target_id ? (
-                          <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
-                            {log.target_id}
+                        </td>
+                      )}
+                      {isAuditColVisible('METHOD') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                            {log.method}
                           </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-muted-foreground">
-                        {log.url}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-muted-foreground">
-                        {log.ip_address || '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span
-                          className={cn(
-                            'inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
-                            isSuccessStatus
-                              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                        </td>
+                      )}
+                      {isAuditColVisible('MODULE') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold',
+                              getModuleBadgeStyle(log.module),
+                            )}
+                          >
+                            {log.module}
+                          </span>
+                        </td>
+                      )}
+                      {isAuditColVisible('ACTION PERFORMED') && (
+                        <td className="max-w-xs truncate px-4 py-3 font-medium text-foreground" title={log.action}>
+                          {log.action}
+                        </td>
+                      )}
+                      {isAuditColVisible('TARGET / HH ID') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          {log.target_id ? (
+                            <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+                              {log.target_id}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
                           )}
-                        >
-                          {log.status_code}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <Button
-                          className="h-7 gap-1 px-2.5 text-[11px]"
-                          onClick={() => setSelectedLog(log)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Inspect
-                        </Button>
-                      </td>
+                        </td>
+                      )}
+                      {isAuditColVisible('ENDPOINT') && (
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                          {log.url}
+                        </td>
+                      )}
+                      {isAuditColVisible('IP ADDRESS') && (
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                          {log.ip_address || '—'}
+                        </td>
+                      )}
+                      {isAuditColVisible('STATUS') && (
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
+                              isSuccessStatus
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                            )}
+                          >
+                            {log.status_code}
+                          </span>
+                        </td>
+                      )}
+                      {isAuditColVisible('PAYLOAD') && (
+                        <td className="whitespace-nowrap px-4 py-3 text-right">
+                          <Button
+                            className="h-7 gap-1 px-2.5 text-[11px]"
+                            onClick={() => setSelectedLog(log)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Inspect
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

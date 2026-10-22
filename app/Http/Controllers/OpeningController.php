@@ -31,6 +31,7 @@ class OpeningController extends Controller
                     ->orWhere('name_of_old_grantee', 'like', "%{$search}%")
                     ->orWhere('card_number_of_old', 'like', "%{$search}%")
                     ->orWhere('status_of_old_grantee', 'like', "%{$search}%")
+                    ->orWhere('drn', 'like', "%{$search}%")
                     ->orWhereHas('creator', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%");
                     });
@@ -82,6 +83,7 @@ class OpeningController extends Controller
                 'Name of Old Grantee',
                 'Card Number of Old',
                 'Status of Old Grantee',
+                'DRN',
                 'Added By',
                 'Status',
                 'Created At',
@@ -96,6 +98,7 @@ class OpeningController extends Controller
                     $row->name_of_old_grantee,
                     $row->card_number_of_old,
                     $row->status_of_old_grantee,
+                    $row->drn,
                     $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     optional($row->created_at)->format('Y-m-d H:i:s'),

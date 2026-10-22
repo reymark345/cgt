@@ -48,11 +48,15 @@ class Distribution extends Model
                 $table->string('card_number')->nullable()->index();
                 $table->string('schedule')->nullable();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
             });
+        } elseif (! Schema::hasColumn('distribution', 'drn')) {
+            Schema::table('distribution', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
+            });
         }
     }
 }
-

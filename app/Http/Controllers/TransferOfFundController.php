@@ -31,6 +31,7 @@ class TransferOfFundController extends Controller
                     ->orWhere('old_cardholder_name', 'like', "%{$search}%")
                     ->orWhere('new_card_number', 'like', "%{$search}%")
                     ->orWhere('new_cardholder_name', 'like', "%{$search}%")
+                    ->orWhere('drn', 'like', "%{$search}%")
                     ->orWhereHas('creator', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%");
                     });
@@ -82,6 +83,7 @@ class TransferOfFundController extends Controller
                 'Old Cardholder Name',
                 'New Card Number',
                 'New Cardholder Name',
+                'DRN',
                 'Added By',
                 'Status',
                 'Remarks',
@@ -97,6 +99,7 @@ class TransferOfFundController extends Controller
                     $row->old_cardholder_name,
                     $row->new_card_number,
                     $row->new_cardholder_name,
+                    $row->drn,
                     $row->creator?->name ?? User::resolveUserNameById($row->created_by),
                     $row->status,
                     $row->remarks,

@@ -12,6 +12,30 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import {
+  TableDisplayFieldsButton,
+  useTableDisplayFields,
+  type TableColumnDefinition,
+} from '@/Components/TableDisplayFieldsControl';
+
+const COVERED_MUNI_COLUMNS: TableColumnDefinition[] = [
+  { key: '#', label: '#' },
+  { key: 'Province', label: 'Province' },
+  { key: 'Municipality', label: 'Municipality' },
+  { key: 'Covered LBP Branch', label: 'Covered LBP Branch' },
+  { key: 'Actions', label: 'Actions' },
+];
+
+const BRANCH_DIRECTORY_COLUMNS: TableColumnDefinition[] = [
+  { key: '#', label: '#' },
+  { key: 'branch', label: 'branch' },
+  { key: 'addressee_name', label: 'addressee_name' },
+  { key: 'addressee_position', label: 'addressee_position' },
+  { key: 'addressee_branch', label: 'addressee_branch' },
+  { key: 'address_1', label: 'address_1' },
+  { key: 'address_2', label: 'address_2' },
+  { key: 'Actions', label: 'Actions' },
+];
 
 export type CoveredMunicipalityItem = {
   id: number;
@@ -47,6 +71,22 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
   const [activeTab, setActiveTab] = useState<'covered-municipality' | 'branch-directory'>('covered-municipality');
   const [loading, setLoading] = useState<boolean>(true);
   const [savingId, setSavingId] = useState<number | 'new' | null>(null);
+
+  const {
+    visibleKeys: muniVisibleKeys,
+    isColumnVisible: isMuniColVisible,
+    toggleColumn: toggleMuniCol,
+    showAllColumns: showAllMuniCols,
+    resetDefaultColumns: resetDefaultMuniCols,
+  } = useTableDisplayFields('library_covered_municipality_table', COVERED_MUNI_COLUMNS);
+
+  const {
+    visibleKeys: branchVisibleKeys,
+    isColumnVisible: isBranchColVisible,
+    toggleColumn: toggleBranchCol,
+    showAllColumns: showAllBranchCols,
+    resetDefaultColumns: resetDefaultBranchCols,
+  } = useTableDisplayFields('library_branch_directory_table', BRANCH_DIRECTORY_COLUMNS);
 
   const [municipalities, setMunicipalities] = useState<CoveredMunicipalityItem[]>([]);
   const [branches, setBranches] = useState<BranchDirectoryItem[]>([]);
@@ -565,6 +605,15 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
               <span className="text-xs font-semibold text-muted-foreground">
                 Showing {filteredMunicipalities.length} of {municipalities.length}
               </span>
+
+              <TableDisplayFieldsButton
+                columns={COVERED_MUNI_COLUMNS}
+                onNotice={onSetNotice}
+                onResetDefaults={resetDefaultMuniCols}
+                onShowAll={showAllMuniCols}
+                onToggleColumn={toggleMuniCol}
+                visibleKeys={muniVisibleKeys}
+              />
             </div>
           </div>
 
@@ -578,81 +627,101 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-foreground">
-                  <th className="w-12 border-r border-border/60 px-3 py-3 text-center">#</th>
-                  <th className="border-r border-border/60 px-4 py-3">Province</th>
-                  <th className="border-r border-border/60 px-4 py-3">Municipality</th>
-                  <th className="border-r border-border/60 px-4 py-3">Covered LBP Branch</th>
-                  <th className="w-32 px-4 py-3 text-center">Actions</th>
+                  {isMuniColVisible('#') && (
+                    <th className="w-12 border-r border-border/60 px-3 py-3 text-center">#</th>
+                  )}
+                  {isMuniColVisible('Province') && (
+                    <th className="border-r border-border/60 px-4 py-3">Province</th>
+                  )}
+                  {isMuniColVisible('Municipality') && (
+                    <th className="border-r border-border/60 px-4 py-3">Municipality</th>
+                  )}
+                  {isMuniColVisible('Covered LBP Branch') && (
+                    <th className="border-r border-border/60 px-4 py-3">Covered LBP Branch</th>
+                  )}
+                  {isMuniColVisible('Actions') && (
+                    <th className="w-32 px-4 py-3 text-center">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {addingMuni && (
                   <tr className="bg-primary/5">
-                    <td className="border-r border-border/60 px-3 py-2.5 text-center font-bold text-primary">
-                      NEW
-                    </td>
-                    <td className="border-r border-border/60 px-3 py-2">
-                      <input
-                        className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewMuniForm((f) => ({ ...f, province: e.target.value.toUpperCase() }))}
-                        placeholder="e.g. AGUSAN DEL NORTE"
-                        type="text"
-                        value={newMuniForm.province}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 px-3 py-2">
-                      <input
-                        autoFocus
-                        className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewMuniForm((f) => ({ ...f, municipality: e.target.value.toUpperCase() }))}
-                        placeholder="e.g. BUENAVISTA"
-                        type="text"
-                        value={newMuniForm.municipality}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 px-3 py-2">
-                      <input
-                        className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        list="covered-branch-options"
-                        onChange={(e) => setNewMuniForm((f) => ({ ...f, covered_lbp_branch: e.target.value }))}
-                        placeholder="e.g. Butuan"
-                        type="text"
-                        value={newMuniForm.covered_lbp_branch}
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                          disabled={savingId === 'new'}
-                          onClick={saveNewMuni}
-                          type="button"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Save
-                        </button>
-                        <button
-                          className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
-                          onClick={() => setAddingMuni(false)}
-                          title="Cancel"
-                          type="button"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {isMuniColVisible('#') && (
+                      <td className="border-r border-border/60 px-3 py-2.5 text-center font-bold text-primary">
+                        NEW
+                      </td>
+                    )}
+                    {isMuniColVisible('Province') && (
+                      <td className="border-r border-border/60 px-3 py-2">
+                        <input
+                          className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewMuniForm((f) => ({ ...f, province: e.target.value.toUpperCase() }))}
+                          placeholder="e.g. AGUSAN DEL NORTE"
+                          type="text"
+                          value={newMuniForm.province}
+                        />
+                      </td>
+                    )}
+                    {isMuniColVisible('Municipality') && (
+                      <td className="border-r border-border/60 px-3 py-2">
+                        <input
+                          autoFocus
+                          className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewMuniForm((f) => ({ ...f, municipality: e.target.value.toUpperCase() }))}
+                          placeholder="e.g. BUENAVISTA"
+                          type="text"
+                          value={newMuniForm.municipality}
+                        />
+                      </td>
+                    )}
+                    {isMuniColVisible('Covered LBP Branch') && (
+                      <td className="border-r border-border/60 px-3 py-2">
+                        <input
+                          className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          list="covered-branch-options"
+                          onChange={(e) => setNewMuniForm((f) => ({ ...f, covered_lbp_branch: e.target.value }))}
+                          placeholder="e.g. Butuan"
+                          type="text"
+                          value={newMuniForm.covered_lbp_branch}
+                        />
+                      </td>
+                    )}
+                    {isMuniColVisible('Actions') && (
+                      <td className="px-3 py-2 text-center">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                            disabled={savingId === 'new'}
+                            onClick={saveNewMuni}
+                            type="button"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Save
+                          </button>
+                          <button
+                            className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
+                            onClick={() => setAddingMuni(false)}
+                            title="Cancel"
+                            type="button"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )}
 
                 {loading ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={5}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={Math.max(1, muniVisibleKeys.length)}>
                       Loading LBP Branch Covered Municipalities...
                     </td>
                   </tr>
                 ) : filteredMunicipalities.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={5}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={Math.max(1, muniVisibleKeys.length)}>
                       No matching municipalities found.
                     </td>
                   </tr>
@@ -668,96 +737,106 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
                           if (!isEditing) startEditMuni(item);
                         }}
                       >
-                        <td className="border-r border-border/60 px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
-                          {rowNum}
-                        </td>
-                        <td className="border-r border-border/60 px-4 py-2 font-medium text-foreground">
-                          {isEditing ? (
-                            <input
-                              className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) =>
-                                setEditMuniForm((f) => ({ ...f, province: e.target.value.toUpperCase() }))
-                              }
-                              type="text"
-                              value={editMuniForm.province}
-                            />
-                          ) : (
-                            item.province
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-4 py-2 font-semibold text-foreground">
-                          {isEditing ? (
-                            <input
-                              autoFocus
-                              className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-semibold uppercase text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) =>
-                                setEditMuniForm((f) => ({ ...f, municipality: e.target.value.toUpperCase() }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditMuni(item.id);
-                                if (e.key === 'Escape') setEditingMuniId(null);
-                              }}
-                              type="text"
-                              value={editMuniForm.municipality}
-                            />
-                          ) : (
-                            item.municipality
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-4 py-2">
-                          {isEditing ? (
-                            <input
-                              className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                              list="covered-branch-options"
-                              onChange={(e) =>
-                                setEditMuniForm((f) => ({ ...f, covered_lbp_branch: e.target.value }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditMuni(item.id);
-                                if (e.key === 'Escape') setEditingMuniId(null);
-                              }}
-                              type="text"
-                              value={editMuniForm.covered_lbp_branch}
-                            />
-                          ) : (
-                            <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary dark:text-cyan-300">
-                              {item.covered_lbp_branch}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          {isEditing ? (
-                            <div className="inline-flex items-center gap-1.5">
+                        {isMuniColVisible('#') && (
+                          <td className="border-r border-border/60 px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                            {rowNum}
+                          </td>
+                        )}
+                        {isMuniColVisible('Province') && (
+                          <td className="border-r border-border/60 px-4 py-2 font-medium text-foreground">
+                            {isEditing ? (
+                              <input
+                                className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-medium uppercase text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) =>
+                                  setEditMuniForm((f) => ({ ...f, province: e.target.value.toUpperCase() }))
+                                }
+                                type="text"
+                                value={editMuniForm.province}
+                              />
+                            ) : (
+                              item.province
+                            )}
+                          </td>
+                        )}
+                        {isMuniColVisible('Municipality') && (
+                          <td className="border-r border-border/60 px-4 py-2 font-semibold text-foreground">
+                            {isEditing ? (
+                              <input
+                                autoFocus
+                                className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-semibold uppercase text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) =>
+                                  setEditMuniForm((f) => ({ ...f, municipality: e.target.value.toUpperCase() }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditMuni(item.id);
+                                  if (e.key === 'Escape') setEditingMuniId(null);
+                                }}
+                                type="text"
+                                value={editMuniForm.municipality}
+                              />
+                            ) : (
+                              item.municipality
+                            )}
+                          </td>
+                        )}
+                        {isMuniColVisible('Covered LBP Branch') && (
+                          <td className="border-r border-border/60 px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                className="w-full rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                                list="covered-branch-options"
+                                onChange={(e) =>
+                                  setEditMuniForm((f) => ({ ...f, covered_lbp_branch: e.target.value }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditMuni(item.id);
+                                  if (e.key === 'Escape') setEditingMuniId(null);
+                                }}
+                                type="text"
+                                value={editMuniForm.covered_lbp_branch}
+                              />
+                            ) : (
+                              <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary dark:text-cyan-300">
+                                {item.covered_lbp_branch}
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        {isMuniColVisible('Actions') && (
+                          <td className="px-3 py-2 text-center">
+                            {isEditing ? (
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                                  disabled={savingId === item.id}
+                                  onClick={() => saveEditMuni(item.id)}
+                                  type="button"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                  Save
+                                </button>
+                                <button
+                                  className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setEditingMuniId(null)}
+                                  title="Cancel"
+                                  type="button"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ) : (
                               <button
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                                disabled={savingId === item.id}
-                                onClick={() => saveEditMuni(item.id)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/50 px-2.5 py-1 text-[11px] font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                                onClick={() => startEditMuni(item)}
+                                title="Edit row"
                                 type="button"
                               >
-                                <Check className="h-3.5 w-3.5" />
-                                Save
+                                <Edit3 className="h-3 w-3" />
+                                Edit
                               </button>
-                              <button
-                                className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => setEditingMuniId(null)}
-                                title="Cancel"
-                                type="button"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/50 px-2.5 py-1 text-[11px] font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                              onClick={() => startEditMuni(item)}
-                              title="Edit row"
-                              type="button"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                              Edit
-                            </button>
-                          )}
-                        </td>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -862,119 +941,162 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
               )}
             </div>
 
-            <span className="text-xs font-semibold text-muted-foreground">
-              Showing {filteredBranches.length} of {branches.length} LBP Branches
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Showing {filteredBranches.length} of {branches.length} LBP Branches
+              </span>
+
+              <TableDisplayFieldsButton
+                columns={BRANCH_DIRECTORY_COLUMNS}
+                onNotice={onSetNotice}
+                onResetDefaults={resetDefaultBranchCols}
+                onShowAll={showAllBranchCols}
+                onToggleColumn={toggleBranchCol}
+                visibleKeys={branchVisibleKeys}
+              />
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-secondary/50 text-[11px] font-bold tracking-wider text-foreground">
-                  <th className="w-10 border-r border-border/60 px-3 py-3 text-center">#</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">branch</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">addressee_name</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">addressee_position</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">addressee_branch</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">address_1</th>
-                  <th className="border-r border-border/60 px-3.5 py-3">address_2</th>
-                  <th className="w-32 px-3.5 py-3 text-center">Actions</th>
+                  {isBranchColVisible('#') && (
+                    <th className="w-10 border-r border-border/60 px-3 py-3 text-center">#</th>
+                  )}
+                  {isBranchColVisible('branch') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">branch</th>
+                  )}
+                  {isBranchColVisible('addressee_name') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">addressee_name</th>
+                  )}
+                  {isBranchColVisible('addressee_position') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">addressee_position</th>
+                  )}
+                  {isBranchColVisible('addressee_branch') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">addressee_branch</th>
+                  )}
+                  {isBranchColVisible('address_1') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">address_1</th>
+                  )}
+                  {isBranchColVisible('address_2') && (
+                    <th className="border-r border-border/60 px-3.5 py-3">address_2</th>
+                  )}
+                  {isBranchColVisible('Actions') && (
+                    <th className="w-32 px-3.5 py-3 text-center">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {addingBranch && (
                   <tr className="bg-primary/5 align-top">
-                    <td className="border-r border-border/60 px-3 py-2.5 text-center font-bold text-primary">
-                      NEW
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        autoFocus
-                        className="w-full min-w-[120px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, branch: e.target.value }))}
-                        placeholder="e.g. Butuan"
-                        type="text"
-                        value={newBranchForm.branch}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        className="w-full min-w-[180px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_name: e.target.value }))}
-                        placeholder="e.g. MS. EMELITA I. ESCALANTE"
-                        type="text"
-                        value={newBranchForm.addressee_name}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        className="w-full min-w-[110px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_position: e.target.value }))}
-                        placeholder="Branch Head"
-                        type="text"
-                        value={newBranchForm.addressee_position}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        className="w-full min-w-[260px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_branch: e.target.value }))}
-                        placeholder="Land Bank of the Philippines - ..."
-                        type="text"
-                        value={newBranchForm.addressee_branch}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        className="w-full min-w-[260px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, address_1: e.target.value }))}
-                        placeholder="Street / Building Address..."
-                        type="text"
-                        value={newBranchForm.address_1}
-                      />
-                    </td>
-                    <td className="border-r border-border/60 p-2">
-                      <input
-                        className="w-full min-w-[150px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                        onChange={(e) => setNewBranchForm((f) => ({ ...f, address_2: e.target.value }))}
-                        placeholder="City / Province"
-                        type="text"
-                        value={newBranchForm.address_2}
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                          disabled={savingId === 'new'}
-                          onClick={saveNewBranch}
-                          type="button"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Save
-                        </button>
-                        <button
-                          className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
-                          onClick={() => setAddingBranch(false)}
-                          title="Cancel"
-                          type="button"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {isBranchColVisible('#') && (
+                      <td className="border-r border-border/60 px-3 py-2.5 text-center font-bold text-primary">
+                        NEW
+                      </td>
+                    )}
+                    {isBranchColVisible('branch') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          autoFocus
+                          className="w-full min-w-[120px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, branch: e.target.value }))}
+                          placeholder="e.g. Butuan"
+                          type="text"
+                          value={newBranchForm.branch}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('addressee_name') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          className="w-full min-w-[180px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_name: e.target.value }))}
+                          placeholder="e.g. MS. EMELITA I. ESCALANTE"
+                          type="text"
+                          value={newBranchForm.addressee_name}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('addressee_position') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          className="w-full min-w-[110px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_position: e.target.value }))}
+                          placeholder="Branch Head"
+                          type="text"
+                          value={newBranchForm.addressee_position}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('addressee_branch') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          className="w-full min-w-[260px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, addressee_branch: e.target.value }))}
+                          placeholder="Land Bank of the Philippines - ..."
+                          type="text"
+                          value={newBranchForm.addressee_branch}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('address_1') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          className="w-full min-w-[260px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, address_1: e.target.value }))}
+                          placeholder="Street / Building Address..."
+                          type="text"
+                          value={newBranchForm.address_1}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('address_2') && (
+                      <td className="border-r border-border/60 p-2">
+                        <input
+                          className="w-full min-w-[150px] rounded-lg border border-primary/50 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                          onChange={(e) => setNewBranchForm((f) => ({ ...f, address_2: e.target.value }))}
+                          placeholder="City / Province"
+                          type="text"
+                          value={newBranchForm.address_2}
+                        />
+                      </td>
+                    )}
+                    {isBranchColVisible('Actions') && (
+                      <td className="p-2 text-center">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                            disabled={savingId === 'new'}
+                            onClick={saveNewBranch}
+                            type="button"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Save
+                          </button>
+                          <button
+                            className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
+                            onClick={() => setAddingBranch(false)}
+                            title="Cancel"
+                            type="button"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )}
 
                 {loading ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={8}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={Math.max(1, branchVisibleKeys.length)}>
                       Loading LBP Branch Directory...
                     </td>
                   </tr>
                 ) : filteredBranches.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={8}>
+                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={Math.max(1, branchVisibleKeys.length)}>
                       No matching LBP branches found.
                     </td>
                   </tr>
@@ -990,141 +1112,157 @@ export function DirectoryView({ onSetNotice }: DirectoryViewProps) {
                           if (!isEditing) startEditBranch(item);
                         }}
                       >
-                        <td className="border-r border-border/60 px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
-                          {rowNum}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 font-bold text-foreground whitespace-nowrap">
-                          {isEditing ? (
-                            <input
-                              autoFocus
-                              className="w-full min-w-[130px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) => setEditBranchForm((f) => ({ ...f, branch: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.branch}
-                            />
-                          ) : (
-                            item.branch
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 font-semibold text-foreground whitespace-nowrap">
-                          {isEditing ? (
-                            <input
-                              className="w-full min-w-[190px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) => setEditBranchForm((f) => ({ ...f, addressee_name: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.addressee_name}
-                            />
-                          ) : (
-                            item.addressee_name
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground whitespace-nowrap">
-                          {isEditing ? (
-                            <input
-                              className="w-full min-w-[110px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) =>
-                                setEditBranchForm((f) => ({ ...f, addressee_position: e.target.value }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.addressee_position}
-                            />
-                          ) : (
-                            item.addressee_position
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground">
-                          {isEditing ? (
-                            <input
-                              className="w-full min-w-[270px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) => setEditBranchForm((f) => ({ ...f, addressee_branch: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.addressee_branch}
-                            />
-                          ) : (
-                            item.addressee_branch
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground">
-                          {isEditing ? (
-                            <input
-                              className="w-full min-w-[270px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) => setEditBranchForm((f) => ({ ...f, address_1: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.address_1}
-                            />
-                          ) : (
-                            item.address_1
-                          )}
-                        </td>
-                        <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground whitespace-nowrap">
-                          {isEditing ? (
-                            <input
-                              className="w-full min-w-[160px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
-                              onChange={(e) => setEditBranchForm((f) => ({ ...f, address_2: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEditBranch(item.id);
-                                if (e.key === 'Escape') setEditingBranchId(null);
-                              }}
-                              type="text"
-                              value={editBranchForm.address_2}
-                            />
-                          ) : (
-                            item.address_2
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center whitespace-nowrap">
-                          {isEditing ? (
-                            <div className="inline-flex items-center gap-1.5">
+                        {isBranchColVisible('#') && (
+                          <td className="border-r border-border/60 px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                            {rowNum}
+                          </td>
+                        )}
+                        {isBranchColVisible('branch') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 font-bold text-foreground whitespace-nowrap">
+                            {isEditing ? (
+                              <input
+                                autoFocus
+                                className="w-full min-w-[130px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) => setEditBranchForm((f) => ({ ...f, branch: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.branch}
+                              />
+                            ) : (
+                              item.branch
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('addressee_name') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 font-semibold text-foreground whitespace-nowrap">
+                            {isEditing ? (
+                              <input
+                                className="w-full min-w-[190px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) => setEditBranchForm((f) => ({ ...f, addressee_name: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.addressee_name}
+                              />
+                            ) : (
+                              item.addressee_name
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('addressee_position') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground whitespace-nowrap">
+                            {isEditing ? (
+                              <input
+                                className="w-full min-w-[110px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) =>
+                                  setEditBranchForm((f) => ({ ...f, addressee_position: e.target.value }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.addressee_position}
+                              />
+                            ) : (
+                              item.addressee_position
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('addressee_branch') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground">
+                            {isEditing ? (
+                              <input
+                                className="w-full min-w-[270px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) => setEditBranchForm((f) => ({ ...f, addressee_branch: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.addressee_branch}
+                              />
+                            ) : (
+                              item.addressee_branch
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('address_1') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground">
+                            {isEditing ? (
+                              <input
+                                className="w-full min-w-[270px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) => setEditBranchForm((f) => ({ ...f, address_1: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.address_1}
+                              />
+                            ) : (
+                              item.address_1
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('address_2') && (
+                          <td className="border-r border-border/60 px-3.5 py-2.5 text-foreground whitespace-nowrap">
+                            {isEditing ? (
+                              <input
+                                className="w-full min-w-[160px] rounded-lg border border-primary/50 bg-background px-2.5 py-1 text-xs text-foreground focus:border-primary focus:outline-none"
+                                onChange={(e) => setEditBranchForm((f) => ({ ...f, address_2: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEditBranch(item.id);
+                                  if (e.key === 'Escape') setEditingBranchId(null);
+                                }}
+                                type="text"
+                                value={editBranchForm.address_2}
+                              />
+                            ) : (
+                              item.address_2
+                            )}
+                          </td>
+                        )}
+                        {isBranchColVisible('Actions') && (
+                          <td className="px-3 py-2 text-center whitespace-nowrap">
+                            {isEditing ? (
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                                  disabled={savingId === item.id}
+                                  onClick={() => saveEditBranch(item.id)}
+                                  type="button"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                  Save
+                                </button>
+                                <button
+                                  className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setEditingBranchId(null)}
+                                  title="Cancel"
+                                  type="button"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ) : (
                               <button
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                                disabled={savingId === item.id}
-                                onClick={() => saveEditBranch(item.id)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/50 px-2.5 py-1 text-[11px] font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                                onClick={() => startEditBranch(item)}
+                                title="Edit row"
                                 type="button"
                               >
-                                <Check className="h-3.5 w-3.5" />
-                                Save
+                                <Edit3 className="h-3 w-3" />
+                                Edit
                               </button>
-                              <button
-                                className="inline-flex items-center rounded-lg border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => setEditingBranchId(null)}
-                                title="Cancel"
-                                type="button"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/50 px-2.5 py-1 text-[11px] font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                              onClick={() => startEditBranch(item)}
-                              title="Edit row"
-                              type="button"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                              Edit
-                            </button>
-                          )}
-                        </td>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })

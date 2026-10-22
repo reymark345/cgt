@@ -16,6 +16,7 @@ import { DataModuleView } from './Dashboard/views/DataModuleView';
 import { AuditTrailView } from './Dashboard/views/AuditTrailView';
 import { RolesPermissionsView } from './Dashboard/views/RolesPermissionsView';
 import { DirectoryView } from './Libraries/DirectoryView';
+import { DrnView } from './Libraries/DrnView';
 
 const pageTitles: Record<CurrentView, string> = {
   aging: 'Aging',
@@ -28,6 +29,7 @@ const pageTitles: Record<CurrentView, string> = {
   'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
   directory: 'Directory',
+  drn: 'DRN',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
   open: 'Data',
@@ -53,6 +55,7 @@ const headTitles: Record<CurrentView, string> = {
   'roles-permissions': 'Roles and Permissions',
   'audit-trail': 'Audit Trails',
   directory: 'Directory',
+  drn: 'DRN',
   Inquiry: 'Inquiry',
   inquiry: 'Inquiry',
   open: 'Data',
@@ -78,6 +81,7 @@ const VIEW_TO_PATH: Record<CurrentView, string> = {
   'roles-permissions': '/roles-and-permissions',
   'audit-trail': '/audit-trails',
   directory: '/directory',
+  drn: '/drn',
   Inquiry: '/inquiry',
   inquiry: '/inquiry',
   open: '/data',
@@ -97,6 +101,8 @@ const PATH_TO_VIEW: Record<string, CurrentView> = {
   '/inquiry': 'inquiry',
   '/directory': 'directory',
   '/libraries/directory': 'directory',
+  '/drn': 'drn',
+  '/libraries/drn': 'drn',
   '/grantee-list': 'grantee',
   '/grantee': 'grantee',
   '/emv-database': 'emv-database',
@@ -154,6 +160,13 @@ type HomeProps = {
 };
 
 type SharedPageProps = {
+  auth?: {
+    user?: {
+      name?: string | null;
+      username?: string | null;
+      is_admin?: boolean;
+    } | null;
+  };
   flash?: {
     message?: string | null;
     error?: string | null;
@@ -651,6 +664,14 @@ export default function Home({
 
         {currentView === 'directory' && (
           <DirectoryView onSetNotice={setNotice} />
+        )}
+
+        {currentView === 'drn' && (
+          <DrnView
+            currentUserName={props.auth?.user?.name || props.auth?.user?.username || undefined}
+            isAdmin={Boolean(props.auth?.user?.is_admin)}
+            onSetNotice={setNotice}
+          />
         )}
 
         {(currentView === 'Inquiry' || currentView === 'inquiry') && (

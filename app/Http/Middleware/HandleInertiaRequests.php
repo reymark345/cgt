@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'inquiry_display_fields' => fn () => \App\Http\Controllers\InquiryController::getDisplayFieldsSetting(),
+            'second_copy_ref_prefix' => fn () => \App\Http\Controllers\LibraryDirectoryController::getSecondCopyRefPrefix(),
         ];
     }
 }

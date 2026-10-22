@@ -14,6 +14,7 @@ export type LbpBranchDirectoryEntry = {
 export type PrintRecordWithBranch = {
   id?: number | string;
   address?: string | null;
+  drn?: string | null;
   resolved_municipality?: string | null;
   resolved_branch?: string | null;
   branch_directory?: LbpBranchDirectoryEntry | null;
@@ -479,6 +480,8 @@ export type PaginatedFormPage<T> = {
   isLastPage: boolean;
   headerDetails: FormHeaderDetails;
   header: FormHeaderDetails;
+  hideHeaderFooter?: boolean;
+  drn?: string;
 };
 
 /**
@@ -819,6 +822,17 @@ export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
     setFormOverrides({});
   };
 
+  const assignedDrns = useMemo(() => {
+    if (typeof window === 'undefined') return [] as string[];
+    const params = new URLSearchParams(window.location.search);
+    const drnsParam = params.get('drns') || '';
+    if (!drnsParam.trim()) return [] as string[];
+    return drnsParam
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, []);
+
   const pagesData: PaginatedFormPage<T>[] = useMemo(() => {
     const allPages: PaginatedFormPage<T>[] = [];
     let globalPageIndex = 0;
@@ -827,10 +841,14 @@ export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
     for (const form of groupedForms) {
       const formRows = form.records;
       const headerDetails = getHeaderDetailsForForm(form);
+      const recordDrn =
+        formRows
+          .map((r) => (typeof r.drn === 'string' ? r.drn.trim() : ''))
+          .find((d) => d.length > 0) || '';
+      const formDrn = recordDrn || assignedDrns[form.formIndex] || assignedDrns[0] || '';
 
       if (formRows.length <= effectiveSinglePageMaxRows) {
-        allPages.push({
-          pageIndex: globalPageIndex++,
+        const basePage = {
           formKey: form.formKey,
           formIndex: form.formIndex,
           totalForms,
@@ -843,6 +861,17 @@ export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
           isLastPage: true,
           headerDetails,
           header: headerDetails,
+          drn: formDrn,
+        };
+        allPages.push({
+          ...basePage,
+          pageIndex: globalPageIndex++,
+          hideHeaderFooter: false,
+        });
+        allPages.push({
+          ...basePage,
+          pageIndex: globalPageIndex++,
+          hideHeaderFooter: true,
         });
         continue;
       }
@@ -876,27 +905,31 @@ export function useMultiBranchPrintForms<T extends PrintRecordWithBranch>({
       }
 
       const formTotalPages = formChunks.length;
-      formChunks.forEach((chunk, cIdx) => {
-        allPages.push({
-          pageIndex: globalPageIndex++,
-          formKey: form.formKey,
-          formIndex: form.formIndex,
-          totalForms,
-          formLabel: form.label,
-          formPageNum: cIdx + 1,
-          formTotalPages,
-          rows: chunk.rows,
-          globalStartIdx: chunk.globalStartIdx,
-          isFirstPage: chunk.isFirstPage,
-          isLastPage: chunk.isLastPage,
-          headerDetails,
-          header: headerDetails,
+      for (const hideHeaderFooter of [false, true]) {
+        formChunks.forEach((chunk, cIdx) => {
+          allPages.push({
+            pageIndex: globalPageIndex++,
+            formKey: form.formKey,
+            formIndex: form.formIndex,
+            totalForms,
+            formLabel: form.label,
+            formPageNum: cIdx + 1,
+            formTotalPages,
+            rows: chunk.rows,
+            globalStartIdx: chunk.globalStartIdx,
+            isFirstPage: chunk.isFirstPage,
+            isLastPage: chunk.isLastPage,
+            headerDetails,
+            header: headerDetails,
+            hideHeaderFooter,
+            drn: formDrn,
+          });
         });
-      });
+      }
     }
 
     return allPages;
-  }, [groupedForms, formOverrides, effectiveSinglePageMaxRows, rowsPerPageFirst, rowsPerPageOther, directories]);
+  }, [groupedForms, formOverrides, effectiveSinglePageMaxRows, rowsPerPageFirst, rowsPerPageOther, directories, assignedDrns]);
 
   return {
     directories,

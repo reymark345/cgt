@@ -34,6 +34,20 @@ import {
 } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import {
+  TableDisplayFieldsButton,
+  useTableDisplayFields,
+  type TableColumnDefinition,
+} from '@/Components/TableDisplayFieldsControl';
+
+const USERS_TABLE_COLUMNS: TableColumnDefinition[] = [
+  { key: 'User / Personnel', label: 'User / Personnel' },
+  { key: 'Employee ID', label: 'Employee ID' },
+  { key: 'Position & Type', label: 'Position & Type' },
+  { key: 'Office & Section', label: 'Office & Section' },
+  { key: 'Status', label: 'Status' },
+  { key: 'Actions', label: 'Actions' },
+];
 
 export type UserListItem = {
   id: number;
@@ -99,6 +113,14 @@ function getAvatarColor(name: string) {
 
 export function UsersView({ users = [] }: UsersViewProps) {
   const [userList, setUserList] = useState<UserListItem[]>(users);
+
+  const {
+    visibleKeys: userVisibleKeys,
+    isColumnVisible: isUserColVisible,
+    toggleColumn: toggleUserCol,
+    showAllColumns: showAllUserCols,
+    resetDefaultColumns: resetDefaultUserCols,
+  } = useTableDisplayFields('users_table', USERS_TABLE_COLUMNS);
 
   useEffect(() => {
     setUserList(users);
@@ -539,7 +561,7 @@ export function UsersView({ users = [] }: UsersViewProps) {
           </div>
 
           {/* Rows per page selector & Result count */}
-          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground sm:justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground sm:justify-end">
             <span className="font-medium">
               Found <strong className="text-foreground">{totalItems}</strong> users
             </span>
@@ -563,6 +585,14 @@ export function UsersView({ users = [] }: UsersViewProps) {
                 <option value="ALL">All</option>
               </select>
             </div>
+
+            <TableDisplayFieldsButton
+              columns={USERS_TABLE_COLUMNS}
+              onResetDefaults={resetDefaultUserCols}
+              onShowAll={showAllUserCols}
+              onToggleColumn={toggleUserCol}
+              visibleKeys={userVisibleKeys}
+            />
           </div>
         </div>
 
@@ -572,102 +602,114 @@ export function UsersView({ users = [] }: UsersViewProps) {
             <thead className="bg-secondary/60 text-xs uppercase font-semibold text-muted-foreground dark:bg-card dark:text-accent-foreground border-b border-border/80">
               <tr>
                 {/* User Column */}
-                <th
-                  className="w-[26%] px-5 py-3.5 cursor-pointer select-none transition hover:text-foreground"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>User / Personnel</span>
-                    {sortField === 'name' ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                {isUserColVisible('User / Personnel') && (
+                  <th
+                    className="w-[26%] px-5 py-3.5 cursor-pointer select-none transition hover:text-foreground"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>User / Personnel</span>
+                      {sortField === 'name' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                        )
                       ) : (
-                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-40" />
-                    )}
-                  </div>
-                </th>
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </div>
+                  </th>
+                )}
 
                 {/* Employee ID Column */}
-                <th
-                  className="w-[16%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
-                  onClick={() => handleSort('employeeId')}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Employee ID</span>
-                    {sortField === 'employeeId' ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                {isUserColVisible('Employee ID') && (
+                  <th
+                    className="w-[16%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
+                    onClick={() => handleSort('employeeId')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Employee ID</span>
+                      {sortField === 'employeeId' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                        )
                       ) : (
-                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-40" />
-                    )}
-                  </div>
-                </th>
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </div>
+                  </th>
+                )}
 
                 {/* Position Column */}
-                <th
-                  className="w-[24%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
-                  onClick={() => handleSort('position')}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Position & Type</span>
-                    {sortField === 'position' ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                {isUserColVisible('Position & Type') && (
+                  <th
+                    className="w-[24%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
+                    onClick={() => handleSort('position')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Position & Type</span>
+                      {sortField === 'position' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                        )
                       ) : (
-                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-40" />
-                    )}
-                  </div>
-                </th>
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </div>
+                  </th>
+                )}
 
                 {/* Office Column */}
-                <th
-                  className="w-[22%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
-                  onClick={() => handleSort('division')}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Office & Section</span>
-                    {sortField === 'division' ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                {isUserColVisible('Office & Section') && (
+                  <th
+                    className="w-[22%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
+                    onClick={() => handleSort('division')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Office & Section</span>
+                      {sortField === 'division' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                        )
                       ) : (
-                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-40" />
-                    )}
-                  </div>
-                </th>
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </div>
+                  </th>
+                )}
 
                 {/* Status Column */}
-                <th
-                  className="w-[10%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Status</span>
-                    {sortField === 'status' ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                {isUserColVisible('Status') && (
+                  <th
+                    className="w-[10%] px-4 py-3.5 cursor-pointer select-none transition hover:text-foreground"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
+                      {sortField === 'status' ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                        )
                       ) : (
-                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-40" />
-                    )}
-                  </div>
-                </th>
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </div>
+                  </th>
+                )}
 
                 {/* Action Column */}
-                <th className="w-[12%] px-4 py-3.5 text-right font-medium">Actions</th>
+                {isUserColVisible('Actions') && (
+                  <th className="w-[12%] px-4 py-3.5 text-right font-medium">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -682,108 +724,120 @@ export function UsersView({ users = [] }: UsersViewProps) {
                     onClick={() => setSelectedUser(user)}
                   >
                     {/* User */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
-                          {user.avatar ? (
-                            <img
-                              alt={user.name}
-                              className="h-10 w-10 rounded-full object-cover ring-2 ring-border/80 shadow-xs"
-                              src={user.avatar}
+                    {isUserColVisible('User / Personnel') && (
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            {user.avatar ? (
+                              <img
+                                alt={user.name}
+                                className="h-10 w-10 rounded-full object-cover ring-2 ring-border/80 shadow-xs"
+                                src={user.avatar}
+                              />
+                            ) : (
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${avatarBg} text-xs font-bold ring-2 ring-border/80 shadow-xs`}
+                              >
+                                {getInitials(user.name)}
+                              </div>
+                            )}
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${
+                                isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
                             />
-                          ) : (
-                            <div
-                              className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${avatarBg} text-xs font-bold ring-2 ring-border/80 shadow-xs`}
-                            >
-                              {getInitials(user.name)}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-foreground group-hover:text-primary transition-colors">
+                              {user.name}
                             </div>
-                          )}
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>@{user.username || 'no-username'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* Employee ID */}
+                    {isUserColVisible('Employee ID') && (
+                      <td className="px-4 py-3.5">
+                        <div className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-bold text-foreground">
+                          {user.employeeId || 'N/A'}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground font-mono">
+                          {user.idNumber || '-'}
+                        </div>
+                      </td>
+                    )}
+
+                    {/* Position & Type */}
+                    {isUserColVisible('Position & Type') && (
+                      <td className="px-4 py-3.5">
+                        <div className="font-semibold text-foreground text-xs leading-snug line-clamp-1">
+                          {user.position || 'No position recorded'}
+                        </div>
+                        {user.employmentStatus && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.2 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
+                              {user.employmentStatus}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Office & Section */}
+                    {isUserColVisible('Office & Section') && (
+                      <td className="px-4 py-3.5">
+                        <div className="font-medium text-foreground text-xs line-clamp-1">
+                          {user.division || '-'}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                          <span>{user.section || user.areaOfAssignment || 'Regional Office'}</span>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* Status */}
+                    {isUserColVisible('Status') && (
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                            isActive
+                              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                              : 'border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
                           <span
-                            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${
+                            className={`h-1.5 w-1.5 rounded-full ${
                               isActive ? 'bg-emerald-500' : 'bg-slate-400'
                             }`}
                           />
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="truncate font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {user.name}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <span>@{user.username || 'no-username'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Employee ID */}
-                    <td className="px-4 py-3.5">
-                      <div className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-bold text-foreground">
-                        {user.employeeId || 'N/A'}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground font-mono">
-                        {user.idNumber || '-'}
-                      </div>
-                    </td>
-
-                    {/* Position & Type */}
-                    <td className="px-4 py-3.5">
-                      <div className="font-semibold text-foreground text-xs leading-snug line-clamp-1">
-                        {user.position || 'No position recorded'}
-                      </div>
-                      {user.employmentStatus && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.2 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
-                            {user.employmentStatus}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Office & Section */}
-                    <td className="px-4 py-3.5">
-                      <div className="font-medium text-foreground text-xs line-clamp-1">
-                        {user.division || '-'}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground line-clamp-1">
-                        <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                        <span>{user.section || user.areaOfAssignment || 'Regional Office'}</span>
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
-                          isActive
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                            : 'border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            isActive ? 'bg-emerald-500' : 'bg-slate-400'
-                          }`}
-                        />
-                        {user.portalStatus || 'Active'}
-                      </span>
-                    </td>
+                          {user.portalStatus || 'Active'}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Action */}
-                    <td className="px-4 py-3.5 text-right">
-                      <Button
-                        className="h-7 gap-1 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedUser(user);
-                        }}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        View
-                      </Button>
-                    </td>
+                    {isUserColVisible('Actions') && (
+                      <td className="px-4 py-3.5 text-right">
+                        <Button
+                          className="h-7 gap-1 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUser(user);
+                          }}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

@@ -19,6 +19,7 @@ import {
   PrintBranchToolbarControls,
   PrintFormEditorSelector,
   PrintFormScreenBanner,
+  SecondCopySignatoryReference,
 } from '../Components/PrintBranchGroupingControls';
 import {
   LbpBranchDirectoryEntry,
@@ -794,7 +795,7 @@ export default function ReplacementPrint({
                     bankBranch={pageHeader.bankBranch}
                     formIndex={pageItem.formIndex}
                     formLabel={pageItem.formLabel}
-                    isFirstPage={pageItem.isFirstPage}
+                    isFirstPage={pageItem.isFirstPage && !pageItem.hideHeaderFooter}
                     recipientName={pageHeader.recipientName}
                     rowsCount={groupedForms[pageItem.formIndex]?.records.length || pageItem.rows.length}
                     totalForms={pageItem.totalForms}
@@ -806,7 +807,10 @@ export default function ReplacementPrint({
                     {/* Header Logos & Agency Branding (Page 1 only) */}
                     {pageItem.isFirstPage ? (
                       <>
-                        <div className="flex items-center justify-start gap-4 pb-2">
+                        <div
+                          className={`flex items-center justify-start gap-4 pb-2 ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                          style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                        >
                           <div className="flex items-center gap-3">
                             <SmartImage
                               alt="DSWD Field Office - Caraga"
@@ -844,8 +848,14 @@ export default function ReplacementPrint({
                           </div>
                         </div>
 
+                        {pageItem.hideHeaderFooter && pageItem.drn && (
+                          <div className="mb-1 text-right text-xs font-normal text-black">
+                            DRN: {pageItem.drn}
+                          </div>
+                        )}
+
                         {/* Date of Letter */}
-                        <div className="mt-6 text-sm text-black print:mt-4">
+                        <div className={`${pageItem.hideHeaderFooter ? 'mt-0 print:mt-0' : 'mt-6 print:mt-4'} text-sm text-black`}>
                           {letterDate}
                         </div>
 
@@ -884,7 +894,10 @@ export default function ReplacementPrint({
                       </>
                     ) : (
                       /* Continuation Header for Page 2+ */
-                      <div className="mb-4 flex items-center justify-between border-b border-black pb-2 text-xs">
+                      <div
+                        className={`mb-4 flex items-center justify-between border-b border-black pb-2 text-xs ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                        style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                      >
                         <div className="flex items-center gap-2">
                           <span className="font-bold uppercase tracking-tight text-black">
                             DSWD Field Office Caraga
@@ -901,7 +914,7 @@ export default function ReplacementPrint({
                     )}
 
                     {/* Beneficiaries Table - 6 Columns matching image 2 */}
-                    <div className="mt-4 overflow-x-auto print:mt-2.5">
+                    <div className={`${!pageItem.isFirstPage && pageItem.hideHeaderFooter ? 'mt-0 print:mt-0' : 'mt-4 print:mt-2.5'} overflow-x-auto`}>
                       <table className="w-full border-collapse border border-black text-center text-xs">
                         <thead>
                           <tr className="border-b border-black bg-slate-50 font-bold text-black print:bg-transparent">
@@ -984,13 +997,17 @@ export default function ReplacementPrint({
                             {signatoryName}
                           </div>
                           <div>{signatoryTitle}</div>
+                          <SecondCopySignatoryReference hideHeaderFooter={pageItem.hideHeaderFooter} />
                         </div>
                       </>
                     )}
                   </div>
 
                   {/* Clean Official Footer (No JSP/reference code as requested) */}
-                  <footer className="paper-footer mt-auto pt-4 text-center text-[10px] text-slate-800 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black">
+                  <footer
+                    className={`paper-footer mt-auto pt-4 text-center text-[10px] text-slate-800 print:absolute print:bottom-0 print:left-0 print:right-0 print:w-full print:m-0 print:border-none print:p-0 print:text-black ${pageItem.hideHeaderFooter ? 'hidden print:hidden' : ''}`}
+                    style={pageItem.hideHeaderFooter ? { display: 'none' } : undefined}
+                  >
                     <div className="text-xs font-semibold text-black">
                       PAGE {currentPageNum} of {pageItem.formTotalPages}
                     </div>

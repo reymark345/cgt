@@ -48,11 +48,15 @@ class OtcWithdrawal extends Model
                 $table->text('reason_of_request')->nullable();
                 $table->string('account_balance')->nullable();
                 $table->string('status', 50)->default('Pending')->index();
+                $table->string('drn')->nullable()->index();
                 $table->text('remarks')->nullable();
                 $table->unsignedBigInteger('created_by')->nullable()->index();
                 $table->timestamps();
             });
+        } elseif (! Schema::hasColumn('otc_withdrawal', 'drn')) {
+            Schema::table('otc_withdrawal', function (Blueprint $table) {
+                $table->string('drn')->nullable()->index()->after('status');
+            });
         }
     }
 }
-
