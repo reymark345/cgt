@@ -1267,12 +1267,12 @@ export function EmvPayrollView({
         </div>
 
         {/* Responsive Table Scroll Container */}
-        <div className="overflow-x-auto">
+        <div className="max-h-[calc(100vh-210px)] overflow-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
-            <thead className="bg-secondary/50 border-b border-border/70 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            <thead className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs border-b border-border/70 text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-2xs">
               <tr>
-                <th className="px-4 py-3 text-center w-12">#</th>
-                <th className="px-4 py-3 text-center w-20">Action</th>
+                <th className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 text-center w-12 shadow-[inset_0_-1px_0_0_var(--border)]">#</th>
+                <th className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 text-center w-20 shadow-[inset_0_-1px_0_0_var(--border)]">Action</th>
 
                 {payrollColumns
                   .filter((col) => visibleColumnKeys.includes(col.key))
@@ -1281,7 +1281,7 @@ export function EmvPayrollView({
                     return (
                       <th
                         key={col.key}
-                        className="px-4 py-3 cursor-pointer select-none hover:bg-secondary/80 transition-colors"
+                        className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 cursor-pointer select-none hover:bg-secondary/80 transition-colors shadow-[inset_0_-1px_0_0_var(--border)]"
                         onClick={() => handleSort(col.key)}
                       >
                         <div className="flex items-center gap-1.5">

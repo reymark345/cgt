@@ -996,18 +996,18 @@ export function GranteeView({
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto">
+        <div className="max-h-[calc(100vh-210px)] overflow-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
-            <thead className="border-b border-border/80 bg-secondary/40 text-muted-foreground uppercase font-bold tracking-wider text-[11px]">
+            <thead className="sticky top-0 z-20 border-b border-border/80 bg-secondary/95 backdrop-blur-xs text-muted-foreground uppercase font-bold tracking-wider text-[11px] shadow-2xs">
               <tr>
-                <th className="px-4 py-3 text-center w-12">#</th>
-                <th className="px-4 py-3 text-center w-16">Profile</th>
+                <th className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 text-center w-12 shadow-[inset_0_-1px_0_0_var(--border)]">#</th>
+                <th className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 text-center w-16 shadow-[inset_0_-1px_0_0_var(--border)]">Profile</th>
                 {granteeColumns
                   .filter((col) => visibleColumnKeys.includes(col.key))
                   .map((col) => (
                     <th
                       key={col.key}
-                      className="px-4 py-3 cursor-pointer select-none transition-colors hover:text-foreground"
+                      className="sticky top-0 z-20 bg-secondary/95 backdrop-blur-xs px-4 py-3 cursor-pointer select-none transition-colors hover:text-foreground shadow-[inset_0_-1px_0_0_var(--border)]"
                       onClick={() => handleSort(col.key)}
                     >
                       <div className="flex items-center gap-1.5">

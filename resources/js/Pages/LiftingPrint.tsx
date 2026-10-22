@@ -717,7 +717,7 @@ export default function LiftingPrint({
               const pageHeader = pageItem.header;
 
               return (
-                <div key={`${pageItem.formKey}-p-${pageItem.pageIndex}`} className="flex w-full flex-col items-center print:block">
+                <React.Fragment key={`${pageItem.formKey}-p-${pageItem.pageIndex}`}>
                   <PrintFormScreenBanner
                     bankBranch={pageHeader.bankBranch}
                     formIndex={pageItem.formIndex}
@@ -969,7 +969,7 @@ export default function LiftingPrint({
                     </div>
                   </footer>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })}
           </div>

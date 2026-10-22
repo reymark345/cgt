@@ -830,7 +830,7 @@ export default function OpeningPrint({
               const pageHeader = pageItem.headerDetails;
 
               return (
-                <div key={pageItem.pageIndex} className="flex w-full flex-col items-center print:block">
+                <React.Fragment key={pageItem.pageIndex}>
                   <PrintFormScreenBanner
                     bankBranch={pageHeader.bankBranch}
                     formIndex={pageItem.formIndex}
@@ -1088,7 +1088,7 @@ export default function OpeningPrint({
                     </div>
                   </footer>
                 </div>
-                </div>
+                </React.Fragment>
               );
             })}
           </div>
