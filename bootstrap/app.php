@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'grantees/import',
             'grantees/import/*',
             'inquiry/display-fields',
+            'libraries/drn/assign-for-print',
         ]);
         $middleware->web(append: [
             HandleInertiaRequests::class,

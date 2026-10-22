@@ -72,11 +72,12 @@ class EnsureSsoAuthenticated
             return redirect()->route('dashboard')->with('error', 'Access denied. Only Admin can access System modules.');
         }
 
-        // 2. Libraries routes (Directory view & updates)
-        $isLibraryRoute = $path === 'directory' || $path === 'libraries/directory' || str_starts_with($path, 'libraries/');
+        // 2. Libraries routes (Directory & DRN Library management)
+        // Note: 'libraries/drn/assign-for-print' is used by Request Print Preview to auto-assign DRNs for both Admin and Grants Staff
+        $isLibraryRoute = ($path === 'directory' || $path === 'drn' || $path === 'libraries/directory' || str_starts_with($path, 'libraries/'))
+            && $path !== 'libraries/drn/assign-for-print';
         if ($isLibraryRoute) {
-            $requiredPermission = $request->isMethod('post') ? 'update_libraries' : 'access_libraries';
-            if (! $user->hasPermission($requiredPermission)) {
+            if (! $user->hasPermission('access_libraries')) {
                 if ($request->expectsJson() && ! $request->header('X-Inertia')) {
                     return response()->json(['message' => 'Access denied. Only Admin can view or update Libraries.'], 403);
                 }
@@ -85,8 +86,10 @@ class EnsureSsoAuthenticated
             }
         }
 
-        // 3. Request Forms Print Preview routes (/{module}/print) - allowed for roles with Request module access
-        if (str_ends_with($path, '/print') && ! $user->hasPermission('access_requests')) {
+        // 3. Request Forms Print Preview & Auto-DRN Assignment routes (/{module}/print and /libraries/drn/assign-for-print)
+        // Allowed for Admin, Grants Staff, and any role with Request module access
+        $isGrantsStaff = strcasecmp(trim((string) $user->role), 'Grants Staff') === 0;
+        if (($path === 'libraries/drn/assign-for-print' || str_ends_with($path, '/print')) && ! $isGrantsStaff && ! $user->hasPermission('access_requests')) {
             if ($request->expectsJson() && ! $request->header('X-Inertia')) {
                 return response()->json(['message' => 'Access denied. You do not have permission to access Request Print Preview forms.'], 403);
             }
